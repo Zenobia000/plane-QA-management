@@ -59,7 +59,6 @@ def base_fields():
         ),
     ]
 
-
 class Migration(migrations.Migration):
     dependencies = [("db", "0122_testing_library")]
 
@@ -215,4 +214,3 @@ class Migration(migrations.Migration):
             ),
         ),
     ]
-

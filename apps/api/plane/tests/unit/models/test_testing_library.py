@@ -80,4 +80,3 @@ class TestTestingLibraryModels:
             version.save()
 
         assert TestCaseVersion.objects.get(id=version.id).title == "Immutable"
-

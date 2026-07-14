@@ -1,7 +1,7 @@
 # Native Testing Platform — Development WBS
 
-Baseline: Plane `preview` at `d3d3de44`  
-Delivery target: personal localhost fork  
+Baseline: Plane `preview` at `d3d3de44`
+Delivery target: independently maintained localhost repository
 Architecture contract: `docs/architecture/testing-platform-workflow.md`
 
 ## Status legend

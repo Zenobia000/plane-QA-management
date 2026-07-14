@@ -1,7 +1,7 @@
 # Plane Testing Platform: Architecture and Delivery Workflow
 
-Status: proposed  
-Baseline: `d3d3de44cf13991025783c598d8b34229fb47729` (`preview`, 2026-07-13)  
+Status: proposed
+Baseline: `d3d3de44cf13991025783c598d8b34229fb47729` (`preview`, 2026-07-13)
 Audience: product, design, frontend, backend, QA, and maintainers of this fork
 
 ## 1. Purpose

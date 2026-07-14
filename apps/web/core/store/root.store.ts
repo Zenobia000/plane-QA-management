@@ -65,6 +65,8 @@ import type { IStickyStore } from "./sticky/sticky.store";
 import { StickyStore } from "./sticky/sticky.store";
 import type { IThemeStore } from "./theme.store";
 import { ThemeStore } from "./theme.store";
+import type { ITestingStore } from "./testing.store";
+import { TestingStore } from "./testing.store";
 import type { IUserStore } from "./user";
 import { UserStore } from "./user";
 import type { IWorkspaceRootStore } from "./workspace";
@@ -101,6 +103,7 @@ export class CoreRootStore {
   editorAssetStore: IEditorAssetStore;
   workItemFilters: IWorkItemFilterStore;
   powerK: IPowerKStore;
+  testing: ITestingStore;
 
   constructor() {
     this.router = new RouterStore();
@@ -132,6 +135,7 @@ export class CoreRootStore {
     this.analytics = new AnalyticsStore();
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
+    this.testing = new TestingStore();
   }
 
   resetOnSignOut() {
@@ -165,5 +169,6 @@ export class CoreRootStore {
     this.editorAssetStore = new EditorAssetStore();
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
+    this.testing = new TestingStore();
   }
 }

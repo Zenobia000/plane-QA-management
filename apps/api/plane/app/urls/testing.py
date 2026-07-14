@@ -1,0 +1,102 @@
+# Copyright (c) 2023-present Plane Software, Inc. and contributors
+# SPDX-License-Identifier: AGPL-3.0-only
+# See the LICENSE file for details.
+
+from django.urls import path
+
+from plane.app.views.testing import (
+    AppAutomationIngestionEndpoint,
+    TestCaseDetailEndpoint,
+    TestCaseListCreateEndpoint,
+    TestCaseVersionDetailEndpoint,
+    TestCaseWorkItemLinkEndpoint,
+    TestFolderListCreateEndpoint,
+    TestLibraryCSVEndpoint,
+    TestResultDefectEndpoint,
+    TestRunCloseEndpoint,
+    TestRunDetailEndpoint,
+    TestRunListCreateEndpoint,
+    TestRunResultEndpoint,
+    TestingCapabilityEndpoint,
+    TestingOverviewEndpoint,
+    TestingRequirementCoverageEndpoint,
+)
+
+
+urlpatterns = [
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/automation-ingestions/",
+        AppAutomationIngestionEndpoint.as_view(),
+        name="app-testing-automation-ingestions",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/capabilities/",
+        TestingCapabilityEndpoint.as_view(),
+        name="testing-capabilities",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/overview/",
+        TestingOverviewEndpoint.as_view(),
+        name="testing-overview",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/requirement-coverage/",
+        TestingRequirementCoverageEndpoint.as_view(),
+        name="testing-requirement-coverage",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/folders/",
+        TestFolderListCreateEndpoint.as_view(),
+        name="testing-folders",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/",
+        TestCaseListCreateEndpoint.as_view(),
+        name="testing-test-cases",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases.csv",
+        TestLibraryCSVEndpoint.as_view(),
+        name="testing-test-cases-csv",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/",
+        TestCaseDetailEndpoint.as_view(),
+        name="testing-test-case-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/versions/<int:version>/",
+        TestCaseVersionDetailEndpoint.as_view(),
+        name="testing-test-case-version-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/work-items/",
+        TestCaseWorkItemLinkEndpoint.as_view(),
+        name="testing-test-case-work-items",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/",
+        TestRunListCreateEndpoint.as_view(),
+        name="testing-test-runs",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/<uuid:test_run_id>/",
+        TestRunDetailEndpoint.as_view(),
+        name="testing-test-run-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/<uuid:test_run_id>/cases/<uuid:run_case_id>/results/",
+        TestRunResultEndpoint.as_view(),
+        name="testing-test-run-results",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/<uuid:test_run_id>/cases/<uuid:run_case_id>/results/<uuid:result_id>/defects/",
+        TestResultDefectEndpoint.as_view(),
+        name="testing-test-result-defects",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/<uuid:test_run_id>/close/",
+        TestRunCloseEndpoint.as_view(),
+        name="testing-test-run-close",
+    ),
+]

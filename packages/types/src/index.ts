@@ -48,6 +48,7 @@ export * from "./settings";
 export * from "./state";
 export * from "./stickies";
 export * from "./timezone";
+export * from "./testing";
 export * from "./users";
 export * from "./utils";
 export * from "./view-props";

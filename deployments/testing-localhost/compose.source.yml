@@ -1,0 +1,19 @@
+services:
+  web:
+    image: plane-testing-web:${PLANE_TESTING_TAG:-dev}
+  api:
+    image: plane-testing-api:${PLANE_TESTING_TAG:-dev}
+    environment: &testing-api-environment
+      AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL:-http://plane-minio:9000}
+      USE_MINIO: ${USE_MINIO:-1}
+      WEB_URL: ${WEB_URL:-http://localhost}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost}
+  worker:
+    image: plane-testing-api:${PLANE_TESTING_TAG:-dev}
+    environment: *testing-api-environment
+  beat-worker:
+    image: plane-testing-api:${PLANE_TESTING_TAG:-dev}
+    environment: *testing-api-environment
+  migrator:
+    image: plane-testing-api:${PLANE_TESTING_TAG:-dev}
+    environment: *testing-api-environment

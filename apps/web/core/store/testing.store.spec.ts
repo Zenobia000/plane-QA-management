@@ -1,0 +1,101 @@
+import { describe, expect, it, vi } from "vitest";
+import type { TestingService } from "@plane/services";
+import type { TTestCase, TTestResult, TTestRun } from "@plane/types";
+import { TestingStore } from "./testing.store";
+
+const capability = {
+  enabled: true,
+  stage: "test",
+  capabilities: { test_cases: true, test_runs: true, reports: true, automation_ingestion: true },
+};
+const overview = {
+  library: { total: 0, requirement_linked: 0, coverage_percent: 0 },
+  runs: { total: 0, active: 0 },
+  latest_run: null,
+  open_defects: 0,
+  release_gate: { ready: false, blockers: [] },
+  scorecards: [],
+};
+
+const serviceMock = () =>
+  ({
+    getCapabilities: vi.fn().mockResolvedValue(capability),
+    getOverview: vi.fn().mockResolvedValue(overview),
+    getRequirementCoverage: vi.fn().mockResolvedValue({ total: 0, covered: 0, uncovered: 0, work_items: [] }),
+    getTestCases: vi.fn().mockResolvedValue([]),
+    getFolders: vi.fn().mockResolvedValue([]),
+    getTestRuns: vi.fn().mockResolvedValue([]),
+    createTestCase: vi.fn(),
+    recordResult: vi.fn(),
+  }) as unknown as TestingService;
+
+describe("TestingStore", () => {
+  it("deduplicates concurrent project loads", async () => {
+    const service = serviceMock();
+    const store = new TestingStore(service);
+    await Promise.all([store.fetchLibrary("workspace", "project"), store.fetchLibrary("workspace", "project")]);
+    expect(service.getTestCases).toHaveBeenCalledTimes(1);
+    expect(service.getTestRuns).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not mutate normalized state when create fails", async () => {
+    const service = serviceMock();
+    vi.mocked(service.createTestCase).mockRejectedValue(new Error("network"));
+    const store = new TestingStore(service);
+    await expect(store.createCase("workspace", "project", { title: "Failed create" })).rejects.toThrow("network");
+    expect(store.cases).toEqual({});
+  });
+
+  it("appends a retest and recomputes progress from latest statuses", async () => {
+    const service = serviceMock();
+    const result = {
+      id: "result-2",
+      sequence: 2,
+      status: "passed",
+      actual_result: {},
+      duration_ms: null,
+      executed_by_id: null,
+      created_at: "2026-07-14T00:00:00Z",
+      defects: [],
+    } satisfies TTestResult;
+    vi.mocked(service.recordResult).mockResolvedValue(result);
+    const store = new TestingStore(service);
+    store.runs.run = {
+      id: "run",
+      status: "active",
+      run_type: "fixed",
+      name: "Run",
+      description: {},
+      build: "",
+      configuration: {},
+      cycle_id: null,
+      module_id: null,
+      closed_at: null,
+      created_at: "",
+      updated_at: "",
+      progress: { total: 1, open: 0, passed: 0, failed: 1, blocked: 0, skipped: 0 },
+      run_cases: [
+        {
+          id: "case",
+          test_case_id: "test-case",
+          position: 1,
+          latest_status: "failed",
+          results: [{ ...result, id: "result-1", sequence: 1, status: "failed" }],
+          test_case_version: {} as TTestCase["current"],
+        },
+      ],
+    } satisfies TTestRun;
+
+    await store.recordResult("workspace", "project", "run", "case", { status: "passed" });
+
+    expect(store.runs.run.run_cases[0].results).toHaveLength(2);
+    expect(store.runs.run.progress).toEqual({
+      total: 1,
+      open: 0,
+      passed: 1,
+      failed: 0,
+      blocked: 0,
+      skipped: 0,
+    });
+  });
+});

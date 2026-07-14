@@ -216,6 +216,13 @@ export const coreRoutes: RouteConfigEntry[] = [
               "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/intake/page.tsx"
             ),
           ]),
+          // Testing
+          layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/layout.tsx", [
+            route(
+              ":workspaceSlug/projects/:projectId/testing",
+              "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/page.tsx"
+            ),
+          ]),
         ]),
 
         // Project Archives - Issues, Cycles, Modules

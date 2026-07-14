@@ -89,4 +89,18 @@ from .device import Device, DeviceSession
 
 from .sticky import Sticky
 
+from .testing import (
+    TestAutomationIngestion,
+    TestFolder,
+    TestCase,
+    TestCaseVersion,
+    TestCaseWorkItemLink,
+    TestCaseAutomationLink,
+    TestResult,
+    TestResultIssueLink,
+    TestRun,
+    TestRunCase,
+    TestStep,
+)
+
 from .description import Description, DescriptionVersion

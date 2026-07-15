@@ -1,19 +1,27 @@
 services:
   web:
-    image: plane-testing-web:${PLANE_TESTING_TAG:-dev}
+    image: ${PLANE_IMAGE_PREFIX:-plane-testing}/web:${PLANE_IMAGE_TAG:-${PLANE_TESTING_TAG:-dev}}
+  admin:
+    image: ${PLANE_IMAGE_PREFIX:-plane-testing}/admin:${PLANE_IMAGE_TAG:-${PLANE_TESTING_TAG:-dev}}
+  space:
+    image: ${PLANE_IMAGE_PREFIX:-plane-testing}/space:${PLANE_IMAGE_TAG:-${PLANE_TESTING_TAG:-dev}}
+  live:
+    image: ${PLANE_IMAGE_PREFIX:-plane-testing}/live:${PLANE_IMAGE_TAG:-${PLANE_TESTING_TAG:-dev}}
   api:
-    image: plane-testing-api:${PLANE_TESTING_TAG:-dev}
+    image: ${PLANE_IMAGE_PREFIX:-plane-testing}/api:${PLANE_IMAGE_TAG:-${PLANE_TESTING_TAG:-dev}}
     environment: &testing-api-environment
       AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL:-http://plane-minio:9000}
       USE_MINIO: ${USE_MINIO:-1}
       WEB_URL: ${WEB_URL:-http://localhost}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost}
   worker:
-    image: plane-testing-api:${PLANE_TESTING_TAG:-dev}
+    image: ${PLANE_IMAGE_PREFIX:-plane-testing}/api:${PLANE_IMAGE_TAG:-${PLANE_TESTING_TAG:-dev}}
     environment: *testing-api-environment
   beat-worker:
-    image: plane-testing-api:${PLANE_TESTING_TAG:-dev}
+    image: ${PLANE_IMAGE_PREFIX:-plane-testing}/api:${PLANE_IMAGE_TAG:-${PLANE_TESTING_TAG:-dev}}
     environment: *testing-api-environment
   migrator:
-    image: plane-testing-api:${PLANE_TESTING_TAG:-dev}
+    image: ${PLANE_IMAGE_PREFIX:-plane-testing}/api:${PLANE_IMAGE_TAG:-${PLANE_TESTING_TAG:-dev}}
     environment: *testing-api-environment
+  proxy:
+    image: ${PLANE_IMAGE_PREFIX:-plane-testing}/proxy:${PLANE_IMAGE_TAG:-${PLANE_TESTING_TAG:-dev}}

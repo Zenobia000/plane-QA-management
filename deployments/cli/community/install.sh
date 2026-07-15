@@ -2,11 +2,14 @@
 
 BRANCH=${BRANCH:-master}
 SCRIPT_DIR=$PWD
+SCRIPT_FILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE_ROOT=${PLANE_SOURCE_DIR:-$(cd "$SCRIPT_FILE_DIR/../../.." && pwd)}
 SERVICE_FOLDER=plane-app
 PLANE_INSTALL_DIR=$PWD/$SERVICE_FOLDER
-export APP_RELEASE=stable
-export DOCKERHUB_USER=makeplane
-export PULL_POLICY=${PULL_POLICY:-if_not_present}
+export APP_RELEASE=${APP_RELEASE:-local}
+export DOCKERHUB_USER=${DOCKERHUB_USER:-local}
+export PULL_POLICY=${PULL_POLICY:-never}
+export CUSTOM_BUILD=${CUSTOM_BUILD:-true}
 export GH_REPO=makeplane/plane
 export RELEASE_DOWNLOAD_URL="https://github.com/$GH_REPO/releases/download"
 export FALLBACK_DOWNLOAD_URL="https://raw.githubusercontent.com/$GH_REPO/$BRANCH/deployments/cli/community"
@@ -77,7 +80,7 @@ function initialize(){
         return 1
     fi
 
-    local IMAGE_NAME=makeplane/plane-proxy
+    local IMAGE_NAME=${DOCKERHUB_USER:-local}/plane-proxy
     local IMAGE_TAG=${APP_RELEASE}
     docker manifest inspect "${IMAGE_NAME}:${IMAGE_TAG}" | grep -q "\"architecture\": \"${CPU_ARCH}\"" &
     local pid=$!
@@ -185,24 +188,24 @@ function syncEnvFile(){
 function buildYourOwnImage(){
     echo "Building images locally..."
 
-    export DOCKERHUB_USER="myplane"
+    export DOCKERHUB_USER="${DOCKERHUB_USER:-local}"
     export APP_RELEASE="local"
     export PULL_POLICY="never"
     CUSTOM_BUILD="true"
 
-    # checkout the code to ~/tmp/plane folder and build the images
-    local PLANE_TEMP_CODE_DIR=~/tmp/plane
-    rm -rf $PLANE_TEMP_CODE_DIR
-    mkdir -p $PLANE_TEMP_CODE_DIR
-    REPO=https://github.com/$GH_REPO.git
-    git clone "$REPO" "$PLANE_TEMP_CODE_DIR"  --branch "$BRANCH" --single-branch --depth 1
+    if [ ! -f "$SOURCE_ROOT/apps/web/Dockerfile.web" ] || [ ! -f "$SOURCE_ROOT/deployments/cli/community/build.yml" ]; then
+        echo "Source root is invalid: $SOURCE_ROOT"
+        echo "Set PLANE_SOURCE_DIR to this repository root and retry."
+        exit 1
+    fi
 
-    cp "$PLANE_TEMP_CODE_DIR/deployments/cli/community/build.yml" "$PLANE_TEMP_CODE_DIR/build.yml"
+    cp "$SOURCE_ROOT/deployments/cli/community/build.yml" "$SOURCE_ROOT/build.local.yml"
+    cd "$SOURCE_ROOT" || exit
 
-    cd "$PLANE_TEMP_CODE_DIR" || exit
-
-    /bin/bash -c "$COMPOSE_CMD -f build.yml build --no-cache"  >&2
-    if [ $? -ne 0 ]; then
+    /bin/bash -c "$COMPOSE_CMD -f build.local.yml build --no-cache"  >&2
+    local BUILD_STATUS=$?
+    rm -f "$SOURCE_ROOT/build.local.yml"
+    if [ $BUILD_STATUS -ne 0 ]; then
         echo "Build failed. Exiting..."
         exit 1
     fi
@@ -248,47 +251,52 @@ function download() {
         mv $PLANE_INSTALL_DIR/docker-compose.yaml $PLANE_INSTALL_DIR/archive/$TS.docker-compose.yaml
     fi
 
-    RESPONSE=$(curl -sSL -H 'Cache-Control: no-cache, no-store' -w "HTTPSTATUS:%{http_code}" "$RELEASE_DOWNLOAD_URL/$APP_RELEASE/docker-compose.yml?$(date +%s)")
-    BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS\:.*//g')
-    STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
-
-    if [ "$STATUS" -eq 200 ]; then
-        echo "$BODY" > $PLANE_INSTALL_DIR/docker-compose.yaml
+    if [ "$LOCAL_BUILD" == "true" ]; then
+        cp "$SOURCE_ROOT/deployments/cli/community/docker-compose.yml" "$PLANE_INSTALL_DIR/docker-compose.yaml"
+        cp "$SOURCE_ROOT/deployments/cli/community/variables.env" "$PLANE_INSTALL_DIR/variables-upgrade.env"
     else
-        # Fallback to download from the raw github url
-        RESPONSE=$(curl -sSL -H 'Cache-Control: no-cache, no-store' -w "HTTPSTATUS:%{http_code}" "$FALLBACK_DOWNLOAD_URL/docker-compose.yml?$(date +%s)")
+        RESPONSE=$(curl -sSL -H 'Cache-Control: no-cache, no-store' -w "HTTPSTATUS:%{http_code}" "$RELEASE_DOWNLOAD_URL/$APP_RELEASE/docker-compose.yml?$(date +%s)")
         BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS\:.*//g')
         STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
 
         if [ "$STATUS" -eq 200 ]; then
             echo "$BODY" > $PLANE_INSTALL_DIR/docker-compose.yaml
         else
-            echo "Failed to download docker-compose.yml. HTTP Status: $STATUS"
-            echo "URL: $RELEASE_DOWNLOAD_URL/$APP_RELEASE/docker-compose.yml"
-            mv $PLANE_INSTALL_DIR/archive/$TS.docker-compose.yaml $PLANE_INSTALL_DIR/docker-compose.yaml
-            exit 1
+            # Fallback to download from the raw github url
+            RESPONSE=$(curl -sSL -H 'Cache-Control: no-cache, no-store' -w "HTTPSTATUS:%{http_code}" "$FALLBACK_DOWNLOAD_URL/docker-compose.yml?$(date +%s)")
+            BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS\:.*//g')
+            STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+
+            if [ "$STATUS" -eq 200 ]; then
+                echo "$BODY" > $PLANE_INSTALL_DIR/docker-compose.yaml
+            else
+                echo "Failed to download docker-compose.yml. HTTP Status: $STATUS"
+                echo "URL: $RELEASE_DOWNLOAD_URL/$APP_RELEASE/docker-compose.yml"
+                mv $PLANE_INSTALL_DIR/archive/$TS.docker-compose.yaml $PLANE_INSTALL_DIR/docker-compose.yaml
+                exit 1
+            fi
         fi
-    fi
 
-    RESPONSE=$(curl -sSL -H 'Cache-Control: no-cache, no-store' -w "HTTPSTATUS:%{http_code}" "$RELEASE_DOWNLOAD_URL/$APP_RELEASE/variables.env?$(date +%s)")
-    BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS\:.*//g')
-    STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
-
-    if [ "$STATUS" -eq 200 ]; then
-        echo "$BODY" > $PLANE_INSTALL_DIR/variables-upgrade.env
-    else
-        # Fallback to download from the raw github url
-        RESPONSE=$(curl -sSL -H 'Cache-Control: no-cache, no-store' -w "HTTPSTATUS:%{http_code}" "$FALLBACK_DOWNLOAD_URL/variables.env?$(date +%s)")
+        RESPONSE=$(curl -sSL -H 'Cache-Control: no-cache, no-store' -w "HTTPSTATUS:%{http_code}" "$RELEASE_DOWNLOAD_URL/$APP_RELEASE/variables.env?$(date +%s)")
         BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS\:.*//g')
         STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
 
         if [ "$STATUS" -eq 200 ]; then
             echo "$BODY" > $PLANE_INSTALL_DIR/variables-upgrade.env
         else
-            echo "Failed to download variables.env. HTTP Status: $STATUS"
-            echo "URL: $RELEASE_DOWNLOAD_URL/$APP_RELEASE/variables.env"
-            mv $PLANE_INSTALL_DIR/archive/$TS.docker-compose.yaml $PLANE_INSTALL_DIR/docker-compose.yaml
-            exit 1
+            # Fallback to download from the raw github url
+            RESPONSE=$(curl -sSL -H 'Cache-Control: no-cache, no-store' -w "HTTPSTATUS:%{http_code}" "$FALLBACK_DOWNLOAD_URL/variables.env?$(date +%s)")
+            BODY=$(echo "$RESPONSE" | sed -e 's/HTTPSTATUS\:.*//g')
+            STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+
+            if [ "$STATUS" -eq 200 ]; then
+                echo "$BODY" > $PLANE_INSTALL_DIR/variables-upgrade.env
+            else
+                echo "Failed to download variables.env. HTTP Status: $STATUS"
+                echo "URL: $RELEASE_DOWNLOAD_URL/$APP_RELEASE/variables.env"
+                mv $PLANE_INSTALL_DIR/archive/$TS.docker-compose.yaml $PLANE_INSTALL_DIR/docker-compose.yaml
+                exit 1
+            fi
         fi
     fi
 
@@ -303,7 +311,7 @@ function download() {
     syncEnvFile
 
     if [ "$LOCAL_BUILD" == "true" ]; then
-        export DOCKERHUB_USER="myplane"
+        export DOCKERHUB_USER="${DOCKERHUB_USER:-local}"
         export APP_RELEASE="local"
         export PULL_POLICY="never"
         CUSTOM_BUILD="true"
@@ -690,22 +698,22 @@ if [ -f "$DOCKER_ENV_PATH" ]; then
     CUSTOM_BUILD=$(getEnvValue "CUSTOM_BUILD" "$DOCKER_ENV_PATH")
 
     if [ -z "$DOCKERHUB_USER" ]; then
-        DOCKERHUB_USER=makeplane
+        DOCKERHUB_USER=local
         updateEnvFile "DOCKERHUB_USER" "$DOCKERHUB_USER" "$DOCKER_ENV_PATH"
     fi
 
     if [ -z "$APP_RELEASE" ]; then
-        APP_RELEASE=stable
+        APP_RELEASE=local
         updateEnvFile "APP_RELEASE" "$APP_RELEASE" "$DOCKER_ENV_PATH"
     fi
 
     if [ -z "$PULL_POLICY" ]; then
-        PULL_POLICY=if_not_present
+        PULL_POLICY=never
         updateEnvFile "PULL_POLICY" "$PULL_POLICY" "$DOCKER_ENV_PATH"
     fi
 
     if [ -z "$CUSTOM_BUILD" ]; then
-        CUSTOM_BUILD=false
+        CUSTOM_BUILD=true
         updateEnvFile "CUSTOM_BUILD" "$CUSTOM_BUILD" "$DOCKER_ENV_PATH"
     fi
 fi

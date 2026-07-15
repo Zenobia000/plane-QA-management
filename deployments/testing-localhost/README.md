@@ -4,8 +4,8 @@ This overlay tags the root repository's source builds instead of pulling officia
 Valkey, RabbitMQ and MinIO remain pinned infrastructure images from the upstream compose file.
 
 ```bash
-export PLANE_TESTING_TAG="$(git rev-parse --short HEAD)"
-docker compose -f docker-compose.yml -f deployments/testing-localhost/compose.source.yml build web api
+export PLANE_IMAGE_TAG="$(git rev-parse --short HEAD)"
+docker compose -f docker-compose.yml -f deployments/testing-localhost/compose.source.yml build web admin space live api proxy
 docker compose -f docker-compose.yml -f deployments/testing-localhost/compose.source.yml run --rm migrator
 docker compose -f docker-compose.yml -f deployments/testing-localhost/compose.source.yml up -d
 docker compose -f docker-compose.yml -f deployments/testing-localhost/compose.source.yml ps

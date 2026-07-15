@@ -12,7 +12,7 @@ from .services import (
     publish_test_case_version,
     record_test_result,
 )
-from .automation import IdempotencyConflict, ingest_automation_results, parse_junit_xml
+from .automation import IdempotencyConflict, ingest_automation_results, parse_junit_xml, serialize_ingestion_response
 from .portability import export_test_library_csv, import_test_library_csv
 
 __all__ = [
@@ -27,6 +27,7 @@ __all__ = [
     "IdempotencyConflict",
     "ingest_automation_results",
     "parse_junit_xml",
+    "serialize_ingestion_response",
     "export_test_library_csv",
     "import_test_library_csv",
 ]

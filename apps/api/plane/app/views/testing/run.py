@@ -7,7 +7,6 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from plane.api.serializers.testing import AutomationIngestionSerializer
-from plane.api.views.testing import ingestion_response
 from plane.app.permissions import ProjectEntityPermission
 from plane.app.serializers.testing import (
     TestDefectSerializer,
@@ -27,6 +26,7 @@ from plane.testing import (
     ingest_automation_results,
     parse_junit_xml,
     record_test_result,
+    serialize_ingestion_response,
 )
 
 
@@ -160,6 +160,6 @@ class AppAutomationIngestionEndpoint(BaseAPIView):
             id=ingestion.id
         )
         return Response(
-            ingestion_response(ingestion, replayed),
+            serialize_ingestion_response(ingestion, replayed),
             status=status.HTTP_200_OK if replayed else status.HTTP_201_CREATED,
         )

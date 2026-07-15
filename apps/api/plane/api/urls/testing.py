@@ -3,9 +3,101 @@
 
 from django.urls import path
 
-from plane.api.views.testing import AutomationIngestionEndpoint
+from plane.api.views.testing import (
+    AutomationIngestionEndpoint,
+    TestCaseDetailAPIEndpoint,
+    TestCaseListCreateAPIEndpoint,
+    TestCaseVersionDetailAPIEndpoint,
+    TestCaseWorkItemLinkAPIEndpoint,
+    TestCaseWorkItemLinkDetailAPIEndpoint,
+    TestFolderDetailAPIEndpoint,
+    TestFolderListCreateAPIEndpoint,
+    TestResultDefectAPIEndpoint,
+    TestRunCloseAPIEndpoint,
+    TestRunDetailAPIEndpoint,
+    TestRunListCreateAPIEndpoint,
+    TestRunResultAPIEndpoint,
+    TestingCapabilityAPIEndpoint,
+    TestingOverviewAPIEndpoint,
+    TestingRequirementCoverageAPIEndpoint,
+)
 
 urlpatterns = [
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/capabilities/",
+        TestingCapabilityAPIEndpoint.as_view(),
+        name="api-testing-capabilities",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/overview/",
+        TestingOverviewAPIEndpoint.as_view(),
+        name="api-testing-overview",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/requirement-coverage/",
+        TestingRequirementCoverageAPIEndpoint.as_view(),
+        name="api-testing-requirement-coverage",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/folders/",
+        TestFolderListCreateAPIEndpoint.as_view(),
+        name="api-testing-folders",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/folders/<uuid:folder_id>/",
+        TestFolderDetailAPIEndpoint.as_view(),
+        name="api-testing-folder-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/",
+        TestCaseListCreateAPIEndpoint.as_view(),
+        name="api-testing-test-cases",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/",
+        TestCaseDetailAPIEndpoint.as_view(),
+        name="api-testing-test-case-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/versions/<int:version>/",
+        TestCaseVersionDetailAPIEndpoint.as_view(),
+        name="api-testing-test-case-version-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/work-items/",
+        TestCaseWorkItemLinkAPIEndpoint.as_view(),
+        name="api-testing-test-case-work-items",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/work-items/<uuid:issue_id>/",
+        TestCaseWorkItemLinkDetailAPIEndpoint.as_view(),
+        name="api-testing-test-case-work-item-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/",
+        TestRunListCreateAPIEndpoint.as_view(),
+        name="api-testing-test-runs",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/<uuid:test_run_id>/",
+        TestRunDetailAPIEndpoint.as_view(),
+        name="api-testing-test-run-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/<uuid:test_run_id>/cases/<uuid:run_case_id>/results/",
+        TestRunResultAPIEndpoint.as_view(),
+        name="api-testing-test-run-results",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/<uuid:test_run_id>/cases/<uuid:run_case_id>/results/<uuid:result_id>/defects/",
+        TestResultDefectAPIEndpoint.as_view(),
+        name="api-testing-test-result-defects",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/<uuid:test_run_id>/close/",
+        TestRunCloseAPIEndpoint.as_view(),
+        name="api-testing-test-run-close",
+    ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/automation-ingestions/",
         AutomationIngestionEndpoint.as_view(),

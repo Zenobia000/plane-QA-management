@@ -1,0 +1,18 @@
+{
+  "format": "results",
+  "source": "plane-qa-cli-e2e",
+  "name": "Plane QA CLI idempotency fixture",
+  "build": "fixture",
+  "configuration": {
+    "environment": "local"
+  },
+  "results": [
+    {
+      "external_id": "plane-qa-cli/idempotency",
+      "title": "CLI upload is idempotent",
+      "status": "passed",
+      "duration_ms": 1,
+      "actual_result": {}
+    }
+  ]
+}

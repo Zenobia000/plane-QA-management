@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "plane-qa": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["apps/plane-qa-mcp/dist/server.mjs"],
+      "env": {
+        "PLANE_URL": "${PLANE_URL}",
+        "PLANE_API_KEY": "${PLANE_API_KEY}"
+      }
+    }
+  }
+}

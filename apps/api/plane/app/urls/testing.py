@@ -9,7 +9,9 @@ from plane.app.views.testing import (
     TestCaseDetailEndpoint,
     TestCaseListCreateEndpoint,
     TestCaseVersionDetailEndpoint,
+    TestCaseWorkItemLinkDetailEndpoint,
     TestCaseWorkItemLinkEndpoint,
+    TestFolderDetailEndpoint,
     TestFolderListCreateEndpoint,
     TestLibraryCSVEndpoint,
     TestResultDefectEndpoint,
@@ -50,6 +52,11 @@ urlpatterns = [
         name="testing-folders",
     ),
     path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/folders/<uuid:folder_id>/",
+        TestFolderDetailEndpoint.as_view(),
+        name="testing-folder-detail",
+    ),
+    path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/",
         TestCaseListCreateEndpoint.as_view(),
         name="testing-test-cases",
@@ -73,6 +80,11 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/work-items/",
         TestCaseWorkItemLinkEndpoint.as_view(),
         name="testing-test-case-work-items",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/work-items/<uuid:issue_id>/",
+        TestCaseWorkItemLinkDetailEndpoint.as_view(),
+        name="testing-test-case-work-item-detail",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-runs/",

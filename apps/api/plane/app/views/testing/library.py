@@ -5,6 +5,7 @@
 from django.db.models import F, Prefetch
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.http import HttpResponse
 
@@ -20,7 +21,7 @@ from plane.app.serializers.testing import (
     TestLibraryCSVImportSerializer,
 )
 from plane.app.views.base import BaseAPIView
-from plane.db.models import TestCase, TestCaseVersion, TestFolder, TestStep
+from plane.db.models import TestCase, TestCaseVersion, TestCaseWorkItemLink, TestFolder, TestStep
 from plane.testing import create_test_case, create_test_folder, link_test_case_to_work_item, publish_test_case_version
 from plane.testing.portability import export_test_library_csv, import_test_library_csv
 
@@ -58,6 +59,54 @@ class TestFolderListCreateEndpoint(BaseAPIView):
         serializer.is_valid(raise_exception=True)
         folder = create_test_folder(project_id=project_id, **serializer.validated_data)
         return Response(TestFolderSerializer(folder).data, status=status.HTTP_201_CREATED)
+
+
+class TestFolderDetailEndpoint(BaseAPIView):
+    permission_classes = [ProjectEntityPermission]
+
+    def get(self, request, slug, project_id, folder_id):
+        folder = TestFolder.objects.get(id=folder_id, workspace__slug=slug, project_id=project_id)
+        return Response(TestFolderSerializer(folder).data)
+
+    def patch(self, request, slug, project_id, folder_id):
+        folder = TestFolder.objects.get(id=folder_id, workspace__slug=slug, project_id=project_id)
+        serializer = TestFolderWriteSerializer(
+            data={
+                "name": request.data.get("name", folder.name),
+                "parent_id": request.data.get("parent_id", folder.parent_id),
+                "sort_order": request.data.get("sort_order", folder.sort_order),
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+        parent_id = serializer.validated_data["parent_id"]
+        parent = (
+            TestFolder.objects.get(id=parent_id, workspace__slug=slug, project_id=project_id)
+            if parent_id
+            else None
+        )
+        ancestor = parent
+        visited = set()
+        while ancestor is not None and ancestor.id not in visited:
+            if ancestor.id == folder.id:
+                raise ValidationError({"parent_id": "A test folder cannot be moved below itself or its descendants."})
+            visited.add(ancestor.id)
+            ancestor = ancestor.parent
+        folder.name = serializer.validated_data["name"]
+        folder.parent = parent
+        folder.sort_order = serializer.validated_data["sort_order"]
+        folder.full_clean(exclude=("created_by", "updated_by"))
+        folder.save(update_fields=["name", "parent", "sort_order", "updated_at", "updated_by"])
+        return Response(TestFolderSerializer(folder).data)
+
+    def delete(self, request, slug, project_id, folder_id):
+        folder = TestFolder.objects.get(id=folder_id, workspace__slug=slug, project_id=project_id)
+        if folder.children.exists() or folder.test_cases.filter(archived_at__isnull=True).exists():
+            return Response(
+                {"error": "Only an empty test folder can be deleted."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        folder.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TestCaseListCreateEndpoint(BaseAPIView):
@@ -163,6 +212,14 @@ class TestCaseVersionDetailEndpoint(BaseAPIView):
 class TestCaseWorkItemLinkEndpoint(BaseAPIView):
     permission_classes = [ProjectEntityPermission]
 
+    def get(self, request, slug, project_id, test_case_id):
+        links = TestCaseWorkItemLink.objects.filter(
+            workspace__slug=slug,
+            project_id=project_id,
+            test_case_id=test_case_id,
+        ).order_by("created_at")
+        return Response(TestCaseWorkItemLinkSerializer(links, many=True).data)
+
     def post(self, request, slug, project_id, test_case_id):
         serializer = TestCaseWorkItemLinkWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -172,6 +229,22 @@ class TestCaseWorkItemLinkEndpoint(BaseAPIView):
             **serializer.validated_data,
         )
         return Response(TestCaseWorkItemLinkSerializer(link).data, status=status.HTTP_201_CREATED)
+
+
+class TestCaseWorkItemLinkDetailEndpoint(BaseAPIView):
+    permission_classes = [ProjectEntityPermission]
+
+    def delete(self, request, slug, project_id, test_case_id, issue_id):
+        link = TestCaseWorkItemLink.objects.filter(
+            workspace__slug=slug,
+            project_id=project_id,
+            test_case_id=test_case_id,
+            issue_id=issue_id,
+        ).first()
+        if link is None:
+            return Response({"error": "Test case work item link not found."}, status=status.HTTP_404_NOT_FOUND)
+        link.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TestLibraryCSVEndpoint(BaseAPIView):

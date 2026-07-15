@@ -7,6 +7,8 @@
   "repository": "https://github.com/makeplane/plane.git",
   "scripts": {
     "build": "turbo run build",
+    "build:qa-tools": "pnpm --filter @plane/qa-sdk build && pnpm --filter @plane/qa-cli build && pnpm --filter @plane/qa-mcp build",
+    "check:qa-tools": "pnpm --filter @plane/qa-sdk check:types && pnpm --filter @plane/qa-sdk test && pnpm --filter @plane/qa-sdk build && pnpm --filter @plane/qa-cli check:types && pnpm --filter @plane/qa-cli test && pnpm --filter @plane/qa-mcp check:types && pnpm --filter @plane/qa-mcp test",
     "dev": "turbo run dev --concurrency=18",
     "start": "turbo run start",
     "clean": "turbo run clean && rm -rf .turbo && rm -rf .next && rm -rf node_modules && rm -rf dist",

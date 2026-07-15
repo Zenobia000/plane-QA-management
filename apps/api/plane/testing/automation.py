@@ -22,6 +22,20 @@ class IdempotencyConflict(Exception):
     pass
 
 
+def serialize_ingestion_response(ingestion, replayed):
+    run = ingestion.test_run
+    counts = {"passed": 0, "failed": 0, "blocked": 0, "skipped": 0, "open": 0}
+    for run_case in run.run_cases.all():
+        counts[run_case.latest_status] += 1
+    return {
+        "id": str(ingestion.id),
+        "idempotency_key": ingestion.idempotency_key,
+        "replayed": replayed,
+        "test_run": {"id": str(run.id), "name": run.name, "status": run.status, **counts},
+        "diagnostics": ingestion.diagnostics,
+    }
+
+
 def parse_junit_xml(xml_text):
     if len(xml_text.encode("utf-8")) > 5 * 1024 * 1024:
         raise ValidationError("JUnit XML exceeds the 5 MiB ingestion limit.")

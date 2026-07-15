@@ -1,0 +1,32 @@
+{
+  "name": "@plane/qa-cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Command-line interface for integrated Plane project and QA management",
+  "license": "AGPL-3.0",
+  "bin": {
+    "plane-qa": "./dist/cli.mjs"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "start": "node ./dist/cli.mjs",
+    "test": "vitest run",
+    "check:lint": "oxlint --max-warnings=0 .",
+    "check:types": "tsc --noEmit",
+    "check:format": "oxfmt --check src package.json tsconfig.json tsdown.config.ts",
+    "fix:lint": "oxlint --fix .",
+    "fix:format": "oxfmt src package.json tsconfig.json tsdown.config.ts",
+    "clean": "rm -rf .turbo node_modules dist"
+  },
+  "dependencies": {
+    "@plane/qa-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@plane/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

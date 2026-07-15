@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plane QA"
+  short_description: "Manage Plane projects and QA through MCP"
+  default_prompt: "Use $plane-qa to inspect and safely update this Plane QA project."

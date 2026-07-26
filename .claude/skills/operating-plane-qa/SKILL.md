@@ -19,7 +19,7 @@ Both URL trees serve the same handler classes — this is by design, not a bug. 
 
 ## Route by role first
 
-When the task is phrased as a job to be done rather than an API call, start from [role-playbooks.md](references/role-playbooks.md):
+When the task is phrased as a job to be done rather than an API call, start from [role-playbooks.md](../../../.agents/skills/plane-qa/references/role-playbooks.md):
 
 - **PM work** — sprints (cycles), epics (modules), creating/scheduling/assigning work items, Definition-of-Ready checks, release decisions.
 - **QA work** — test library design, requirement traceability, run planning per sprint/build, execute→defect→retest, CI automation lane.
@@ -34,7 +34,7 @@ The playbooks encode the PM↔QA handshakes (requirement needs linked acceptance
 | Writing shell automation / CI steps     | `plane-qa` CLI (`node apps/plane-qa-cli/dist/cli.mjs`)       |
 | Writing TypeScript code                 | `PlaneQAClient` from `@plane/qa-sdk`                         |
 | Anything else (curl, Python)            | REST `/api/v1/workspaces/{slug}/projects/{uuid}/testing/...` |
-| Modifying the platform itself           | [codebase-map.md](references/codebase-map.md)                |
+| Modifying the platform itself           | [codebase-map.md](../../../.agents/skills/plane-qa/references/codebase-map.md)                |
 
 ## Setup
 
@@ -66,7 +66,9 @@ Token travels only as `X-API-Key`. Never print, paste, or commit `PLANE_API_KEY`
 
 ## References
 
-- [api-reference.md](references/api-reference.md) — domain model, every REST endpoint, auth, error envelope, automation payloads.
-- [tooling.md](references/tooling.md) — SDK methods, CLI commands + exit codes, MCP tools, build/run.
-- [workflows.md](references/workflows.md) — canonical end-to-end flows (case→run→defect→retest, CI ingestion, release gate).
-- [codebase-map.md](references/codebase-map.md) — where every layer lives; invariants to preserve when changing code.
+Shared with the cross-tool skill at `.agents/skills/plane-qa/` — that directory is the single source of truth; edit reference docs there, never recreate copies under this skill.
+
+- [api-reference.md](../../../.agents/skills/plane-qa/references/api-reference.md) — domain model, every REST endpoint, auth, error envelope, automation payloads.
+- [tooling.md](../../../.agents/skills/plane-qa/references/tooling.md) — SDK methods, CLI commands + exit codes, MCP tools, build/run.
+- [workflows.md](../../../.agents/skills/plane-qa/references/workflows.md) — canonical end-to-end flows (case→run→defect→retest, CI ingestion, release gate).
+- [codebase-map.md](../../../.agents/skills/plane-qa/references/codebase-map.md) — where every layer lives; invariants to preserve when changing code.

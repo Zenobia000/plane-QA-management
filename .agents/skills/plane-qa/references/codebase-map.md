@@ -50,7 +50,8 @@ Each has vitest specs beside the source (`client.spec.ts`, `run.spec.ts`, `creat
 - `docs/api/testing-management.md`, `docs/api/testing-automation.md` — API contracts.
 - `docs/architecture/decisions/0001..0004` — ADRs (case aggregate/versioning, immutable execution, automation ingestion, milestones/fork boundaries).
 - `docs/operations/plane-qa-agent-tooling.md` — runbook, troubleshooting.
-- `.agents/skills/plane-qa/` — cross-agent (Codex/OpenAI) policy skill for the same system.
+- `.agents/skills/plane-qa/` — cross-agent skill (Codex entry via `agents/openai.yaml`) and the single source of truth for all shared reference docs, including this file.
+- `.claude/skills/operating-plane-qa/` — Claude Code entry point; thin SKILL.md that links into `.agents/skills/plane-qa/references/`.
 
 ## Invariants to preserve when changing code
 

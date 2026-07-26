@@ -26,6 +26,8 @@ Use one project scope for both delivery work and test evidence. Prefer MCP tools
 ## Choose a workflow
 
 - For issue lifecycle, failed-test defect/retest, release checks, or CI triage, read [workflows.md](references/workflows.md).
-- For exact MCP and CLI mappings, inputs, and safety classes, read [tool-reference.md](references/tool-reference.md).
+- For exact MCP tool and CLI command mappings, inputs, exit codes, and safety classes, read [tooling.md](references/tooling.md).
+- For PM/QA job-to-be-done playbooks (sprint planning, test library design, run execution), read [role-playbooks.md](references/role-playbooks.md).
+- For raw REST endpoints and payloads, read [api-reference.md](references/api-reference.md); for modifying the platform itself, read [codebase-map.md](references/codebase-map.md).
 
 If a write fails, report the stable error category and request identifier. Re-read state before retrying conflicts; do not broaden permissions or bypass confirmation.

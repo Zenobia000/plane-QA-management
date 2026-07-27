@@ -65,3 +65,6 @@ from .invite import WorkspaceInviteSerializer
 from .member import ProjectMemberSerializer
 from .sticky import StickySerializer
 from .testing import AutomationIngestionSerializer, AutomationResultSerializer
+from .work_item_type import ProjectWorkItemTypeSerializer, WorkItemTypeSerializer
+from .work_item_property import WorkItemPropertySerializer, WorkItemPropertyValueSerializer
+from .portfolio import InitiativeSerializer, MilestoneSerializer

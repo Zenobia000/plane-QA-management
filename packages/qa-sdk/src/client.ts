@@ -2,6 +2,7 @@ import { errorKindForStatus, PlaneQAError } from "./errors";
 import { paginatedSchema, parsePlaneResponse, projectSchema, testingCapabilitiesSchema } from "./schemas";
 import type {
   JsonObject,
+  JsonValue,
   PaginatedResponse,
   PlaneQAClientOptions,
   Project,
@@ -15,6 +16,10 @@ import type {
   TestRun,
   TestingCapabilities,
   WorkItem,
+  WorkItemProperty,
+  WorkItemType,
+  Initiative,
+  Milestone,
 } from "./types";
 
 const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
@@ -197,6 +202,91 @@ export class PlaneQAClient {
 
   createIssue(workspace: string, projectId: string, input: Record<string, unknown>): Promise<WorkItem> {
     return this.request("POST", this.projectPath(workspace, projectId, "/work-items/"), { body: input });
+  }
+
+  listWorkItemTypes(workspace: string): Promise<PaginatedResponse<WorkItemType>> {
+    return this.request("GET", this.apiPath(workspace, "/work-item-types/"), { query: { per_page: 100 } });
+  }
+
+  createWorkItemType(workspace: string, input: Record<string, unknown>): Promise<WorkItemType> {
+    return this.request("POST", this.apiPath(workspace, "/work-item-types/"), { body: input });
+  }
+
+  enableWorkItemType(
+    workspace: string,
+    projectId: string,
+    input: { type_id: string; level?: number; is_default?: boolean }
+  ): Promise<Record<string, unknown>> {
+    return this.request("POST", this.projectPath(workspace, projectId, "/work-item-types/"), { body: input });
+  }
+
+  async createProjectWorkItemType(
+    workspace: string,
+    projectId: string,
+    input: Record<string, unknown>
+  ): Promise<WorkItemType> {
+    const workItemType = await this.createWorkItemType(workspace, input);
+    try {
+      await this.enableWorkItemType(workspace, projectId, {
+        type_id: workItemType.id,
+        level: typeof input.level === "number" ? input.level : undefined,
+        is_default: input.is_default === true,
+      });
+      return workItemType;
+    } catch (error) {
+      await this.request("DELETE", this.apiPath(workspace, `/work-item-types/${encodePath(workItemType.id)}/`)).catch(
+        () => undefined
+      );
+      throw error;
+    }
+  }
+
+  listWorkItemProperties(workspace: string, projectId: string): Promise<PaginatedResponse<WorkItemProperty>> {
+    return this.request("GET", this.projectPath(workspace, projectId, "/work-item-properties/"), {
+      query: { per_page: 100 },
+    });
+  }
+
+  createWorkItemProperty(
+    workspace: string,
+    projectId: string,
+    input: Record<string, unknown>
+  ): Promise<WorkItemProperty> {
+    return this.request("POST", this.projectPath(workspace, projectId, "/work-item-properties/"), { body: input });
+  }
+
+  setWorkItemPropertyValue(
+    workspace: string,
+    projectId: string,
+    issueId: string,
+    propertyId: string,
+    value: JsonValue
+  ): Promise<Record<string, unknown>> {
+    return this.request(
+      "PUT",
+      this.projectPath(
+        workspace,
+        projectId,
+        `/work-items/${encodePath(issueId)}/properties/${encodePath(propertyId)}/`
+      ),
+      { body: { value } }
+    );
+  }
+
+  listMilestones(workspace: string, projectId: string): Promise<PaginatedResponse<Milestone>> {
+    return this.request("GET", this.projectPath(workspace, projectId, "/milestones/"), { query: { per_page: 100 } });
+  }
+
+  createMilestone(workspace: string, projectId: string, input: Record<string, unknown>): Promise<Milestone> {
+    return this.request("POST", this.projectPath(workspace, projectId, "/milestones/"), { body: input });
+  }
+
+  listInitiatives(workspace: string): Promise<PaginatedResponse<Initiative>> {
+    return this.request("GET", this.apiPath(workspace, "/initiatives/"), { query: { per_page: 100 } });
+  }
+
+  createInitiative(workspace: string, input: Record<string, unknown>): Promise<Initiative> {
+    return this.request("POST", this.apiPath(workspace, "/initiatives/"), { body: input });
   }
 
   updateIssue(

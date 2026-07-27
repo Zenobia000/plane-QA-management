@@ -149,4 +149,23 @@ describe("plane-qa CLI", () => {
     expect(code).toBe(2);
     expect(output.stderr.join("")).not.toContain(environment.PLANE_API_KEY);
   });
+
+  it("creates a project milestone through the extension client contract", async () => {
+    const output = capture();
+    const createMilestone = vi.fn().mockResolvedValue({ id: "milestone-1", name: "MVP" });
+    const client = {
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+      createMilestone,
+    } as unknown as PlaneQAClient;
+
+    const code = await runCLI({
+      argv: ["milestone", "create", "--name", "MVP"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(code).toBe(0);
+    expect(createMilestone).toHaveBeenCalledWith("sunny", "p1", { name: "MVP" });
+  });
 });

@@ -62,7 +62,91 @@ export const executeCommand = async (
     }
   }
 
+  if (group === "initiative") {
+    if (action === "list") return client.listInitiatives(config.workspace);
+    if (action === "create") {
+      return client.createInitiative(
+        config.workspace,
+        compact({
+          name: requiredOption(args.options, "name"),
+          description: optionString(args.options, "description"),
+          target_date: optionString(args.options, "target_date"),
+          status: optionString(args.options, "status"),
+          sort_order: numberOption(args.options, "sort_order"),
+          project_ids: commaListOption(args.options, "project_ids"),
+          ...jsonOption(args.options, "body", {}),
+        })
+      );
+    }
+  }
+
   const project = await projectFor(client, config);
+
+  if (group === "type") {
+    if (action === "list") return client.listWorkItemTypes(config.workspace);
+    if (action === "create") {
+      return client.createProjectWorkItemType(
+        config.workspace,
+        project.id,
+        compact({
+          name: requiredOption(args.options, "name"),
+          description: optionString(args.options, "description"),
+          is_epic: args.options.is_epic === true ? true : undefined,
+          is_default: args.options.is_default === true ? true : undefined,
+          level: numberOption(args.options, "level"),
+          ...jsonOption(args.options, "body", {}),
+        })
+      );
+    }
+  }
+
+  if (group === "property") {
+    if (action === "list") return client.listWorkItemProperties(config.workspace, project.id);
+    if (action === "create") {
+      return client.createWorkItemProperty(
+        config.workspace,
+        project.id,
+        compact({
+          name: requiredOption(args.options, "name"),
+          kind: requiredOption(args.options, "kind"),
+          description: optionString(args.options, "description"),
+          is_required: args.options.is_required === true ? true : undefined,
+          sort_order: numberOption(args.options, "sort_order"),
+          default_value: jsonOption(args.options, "default_value", undefined),
+          options: jsonOption(args.options, "options", undefined),
+          ...jsonOption(args.options, "body", {}),
+        })
+      );
+    }
+    if (action === "set") {
+      const issue = await issueFor(client, config, project, requiredOption(args.options, "issue"));
+      return client.setWorkItemPropertyValue(
+        config.workspace,
+        project.id,
+        issue.id,
+        requiredOption(args.options, "property_id"),
+        jsonOption(args.options, "value", null)
+      );
+    }
+  }
+
+  if (group === "milestone") {
+    if (action === "list") return client.listMilestones(config.workspace, project.id);
+    if (action === "create") {
+      return client.createMilestone(
+        config.workspace,
+        project.id,
+        compact({
+          name: requiredOption(args.options, "name"),
+          description: optionString(args.options, "description"),
+          target_date: optionString(args.options, "target_date"),
+          status: optionString(args.options, "status"),
+          sort_order: numberOption(args.options, "sort_order"),
+          ...jsonOption(args.options, "body", {}),
+        })
+      );
+    }
+  }
 
   if (group === "issue") {
     if (action === "list") {

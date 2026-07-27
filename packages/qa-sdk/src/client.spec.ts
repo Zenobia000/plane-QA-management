@@ -133,4 +133,58 @@ describe("PlaneQAClient", () => {
     );
     expect(String(fetcher.mock.calls[1]?.[0])).toContain("/workspaces/sunny/work-items/QA-42/");
   });
+
+  it("targets the CE work-item extension endpoints", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            id: "11111111-1111-4111-8111-111111111111",
+            name: "Test case",
+            description: "",
+            is_epic: false,
+            is_default: false,
+            is_active: true,
+            level: 0,
+          },
+          201
+        )
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            id: "22222222-2222-4222-8222-222222222222",
+            name: "MVP",
+            description: "",
+            target_date: null,
+            status: "planned",
+            sort_order: 65535,
+          },
+          201
+        )
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            id: "33333333-3333-4333-8333-333333333333",
+            name: "Quality foundation",
+            description: "",
+            target_date: null,
+            status: "planned",
+            projects: [],
+          },
+          201
+        )
+      );
+    const client = new PlaneQAClient({ baseUrl: "http://plane.local", apiKey: "token", fetch: fetcher });
+
+    await client.createWorkItemType("sunny", { name: "Test case" });
+    await client.createMilestone("sunny", "project-id", { name: "MVP" });
+    await client.createInitiative("sunny", { name: "Quality foundation" });
+
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain("/workspaces/sunny/work-item-types/");
+    expect(String(fetcher.mock.calls[1]?.[0])).toContain("/projects/project-id/milestones/");
+    expect(String(fetcher.mock.calls[2]?.[0])).toContain("/workspaces/sunny/initiatives/");
+  });
 });

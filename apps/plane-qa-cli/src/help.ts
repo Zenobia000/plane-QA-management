@@ -11,6 +11,10 @@ Configuration:
 
 Commands:
   project list|get|update|states
+  initiative list|create
+  type list|create
+  property list|create|set
+  milestone list|create
   issue list|get|create|update|transition|comment|archive
   folder list|get|create|update|delete
   case list|get|create|update|version|archive|link-issue|unlink-issue

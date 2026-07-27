@@ -48,6 +48,10 @@ describe("Plane QA MCP server", () => {
         "test_result_create_defect",
         "quality_release_gate",
         "automation_upload_junit",
+        "create_work_item_type",
+        "create_work_item_property",
+        "create_milestone",
+        "create_initiative",
       ])
     );
     expect(response.tools.find((tool) => tool.name === "test_folder_delete")?.annotations).toMatchObject({

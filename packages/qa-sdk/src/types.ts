@@ -42,6 +42,57 @@ export interface WorkItem {
   [key: string]: unknown;
 }
 
+export interface WorkItemType {
+  id: string;
+  name: string;
+  description: string;
+  is_epic: boolean;
+  is_default: boolean;
+  is_active: boolean;
+  level: number;
+  [key: string]: unknown;
+}
+
+export interface WorkItemPropertyOption {
+  id: string;
+  label: string;
+  value: string;
+  sort_order: number;
+}
+
+export interface WorkItemProperty {
+  id: string;
+  name: string;
+  description: string;
+  kind: "text" | "number" | "date" | "boolean" | "select" | "multi_select" | "url";
+  is_required: boolean;
+  is_active: boolean;
+  sort_order: number;
+  default_value: JsonValue | null;
+  options: WorkItemPropertyOption[];
+  [key: string]: unknown;
+}
+
+export interface Milestone {
+  id: string;
+  name: string;
+  description: string;
+  target_date: string | null;
+  status: "planned" | "in_progress" | "completed" | "cancelled";
+  sort_order: number;
+  [key: string]: unknown;
+}
+
+export interface Initiative {
+  id: string;
+  name: string;
+  description: string;
+  target_date: string | null;
+  status: "planned" | "in_progress" | "completed" | "cancelled";
+  projects: Array<{ id: string; name: string; identifier: string }>;
+  [key: string]: unknown;
+}
+
 export interface TestingCapabilities {
   enabled: boolean;
   stage: string;

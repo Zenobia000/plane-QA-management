@@ -64,3 +64,21 @@ from .invite import WorkspaceInvitationsViewset
 
 from .sticky import StickyViewSet
 from .testing import AutomationIngestionEndpoint
+from .work_item_type import (
+    ProjectWorkItemTypeDetailAPIEndpoint,
+    ProjectWorkItemTypeListCreateAPIEndpoint,
+    WorkItemTypeDetailAPIEndpoint,
+    WorkItemTypeListCreateAPIEndpoint,
+)
+from .work_item_property import (
+    WorkItemPropertyDetailAPIEndpoint,
+    WorkItemPropertyListCreateAPIEndpoint,
+    WorkItemPropertyValueDetailAPIEndpoint,
+    WorkItemPropertyValueListAPIEndpoint,
+)
+from .portfolio import (
+    InitiativeDetailAPIEndpoint,
+    InitiativeListCreateAPIEndpoint,
+    MilestoneDetailAPIEndpoint,
+    MilestoneListCreateAPIEndpoint,
+)

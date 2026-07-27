@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { JsonObject, PlaneQAClient } from "@plane/qa-sdk";
+import type { JsonObject, JsonValue, PlaneQAClient } from "@plane/qa-sdk";
 import { z } from "zod";
 
 import { safely, toolResult } from "./results";
@@ -105,6 +105,120 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
       const project = await resolveProject(client, workspace, reference);
       return toolResult(await client.updateProject(workspace, project.id, input));
     })
+  );
+
+  server.registerTool(
+    "create_work_item_type",
+    {
+      description:
+        "Create a workspace work-item type and enable it for the selected project. Use this before creating work items of a new type.",
+      inputSchema: z.object({
+        ...scope,
+        name: z.string().min(1).max(255),
+        description: z.string().optional(),
+        is_epic: z.boolean().optional(),
+        is_default: z.boolean().optional(),
+        level: z.number().nonnegative().optional(),
+        logo_props: z.record(z.unknown()).optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, project: reference, ...input }) => {
+      const project = await resolveProject(client, workspace, reference);
+      return toolResult(await client.createProjectWorkItemType(workspace, project.id, input));
+    })
+  );
+
+  server.registerTool(
+    "create_work_item_property",
+    {
+      description:
+        "Create a project-scoped custom work-item property. Select and multi-select properties require an options array.",
+      inputSchema: z.object({
+        ...scope,
+        name: z.string().min(1).max(255),
+        kind: z.enum(["text", "number", "date", "boolean", "select", "multi_select", "url"]),
+        description: z.string().optional(),
+        is_required: z.boolean().optional(),
+        default_value: z.unknown().optional(),
+        sort_order: z.number().optional(),
+        options: z
+          .array(
+            z.object({
+              label: z.string().min(1).max(255),
+              value: z.string().min(1).max(255),
+              sort_order: z.number().optional(),
+            })
+          )
+          .optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, project: reference, ...input }) => {
+      const project = await resolveProject(client, workspace, reference);
+      return toolResult(await client.createWorkItemProperty(workspace, project.id, input));
+    })
+  );
+
+  server.registerTool(
+    "set_work_item_property_value",
+    {
+      description:
+        "Set one custom-property value on a work item using IDs obtained from the project and work-item APIs.",
+      inputSchema: z.object({
+        ...scope,
+        issue: z.string().min(1),
+        property_id: z.string().uuid(),
+        value: z.unknown(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, project: reference, issue: issueReference, property_id, value }) => {
+      const project = await resolveProject(client, workspace, reference);
+      const issue = await resolveIssue(client, workspace, project.id, issueReference);
+      return toolResult(
+        await client.setWorkItemPropertyValue(workspace, project.id, issue.id, property_id, value as JsonValue)
+      );
+    })
+  );
+
+  server.registerTool(
+    "create_milestone",
+    {
+      description: "Create a project milestone that can subsequently be assigned to work items.",
+      inputSchema: z.object({
+        ...scope,
+        name: z.string().min(1).max(255),
+        description: z.string().optional(),
+        target_date: z.string().date().optional(),
+        status: z.enum(["planned", "in_progress", "completed", "cancelled"]).optional(),
+        sort_order: z.number().optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, project: reference, ...input }) => {
+      const project = await resolveProject(client, workspace, reference);
+      return toolResult(await client.createMilestone(workspace, project.id, input));
+    })
+  );
+
+  server.registerTool(
+    "create_initiative",
+    {
+      description:
+        "Create a workspace-level initiative. Pass only project UUIDs from this workspace in project_ids; they are optional.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        name: z.string().min(1).max(255),
+        description: z.string().optional(),
+        target_date: z.string().date().optional(),
+        status: z.enum(["planned", "in_progress", "completed", "cancelled"]).optional(),
+        sort_order: z.number().optional(),
+        project_ids: z.array(z.string().uuid()).optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, ...input }) => toolResult(await client.createInitiative(workspace, input)))
   );
 
   server.registerTool(

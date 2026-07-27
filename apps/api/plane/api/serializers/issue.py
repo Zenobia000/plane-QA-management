@@ -5,7 +5,7 @@
 # Django imports
 from django.utils import timezone
 from lxml import html
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 
 #  Third party imports
 from rest_framework import serializers
@@ -26,7 +26,11 @@ from plane.db.models import (
     State,
     User,
     EstimatePoint,
+    Milestone,
+    WorkItemProperty,
+    WorkItemPropertyValue,
 )
+from plane.api.serializers.work_item_property import validate_property_value
 from plane.utils.content_validator import (
     validate_html_content,
     validate_binary_data,
@@ -66,6 +70,8 @@ class IssueSerializer(BaseSerializer):
     type_id = serializers.PrimaryKeyRelatedField(
         source="type", queryset=IssueType.objects.all(), required=False, allow_null=True
     )
+    properties = serializers.DictField(write_only=True, required=False)
+    custom_properties = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Issue
@@ -146,11 +152,70 @@ class IssueSerializer(BaseSerializer):
         ):
             raise serializers.ValidationError("Estimate point is not valid please pass a valid estimate_point_id")
 
+        if data.get("type") and not data["type"].is_active:
+            raise serializers.ValidationError("Work item type is inactive")
+
+        if data.get("type") and not data["type"].project_issue_types.filter(
+            project_id=self.context.get("project_id"), deleted_at__isnull=True
+        ).exists():
+            raise serializers.ValidationError("Work item type is not enabled for this project")
+
+        if data.get("milestone") and not Milestone.objects.filter(
+            project_id=self.context.get("project_id"), pk=data["milestone"].id, deleted_at__isnull=True
+        ).exists():
+            raise serializers.ValidationError("Milestone is not valid for this project")
+
+        if "properties" in data:
+            self._validate_properties(data["properties"])
+        elif self.instance is None:
+            missing = WorkItemProperty.objects.filter(
+                project_id=self.context.get("project_id"),
+                is_active=True,
+                is_required=True,
+                default_value__isnull=True,
+            )
+            if missing.exists():
+                raise serializers.ValidationError(
+                    {"properties": f"Missing required work item properties: {', '.join(missing.values_list('name', flat=True))}"}
+                )
+
         return data
+
+    def _validate_properties(self, values):
+        if not isinstance(values, dict):
+            raise serializers.ValidationError({"properties": "Expected an object keyed by property ID."})
+        property_definitions = list(
+            WorkItemProperty.objects.prefetch_related("options").filter(
+                project_id=self.context.get("project_id"), is_active=True, deleted_at__isnull=True
+            )
+        )
+        by_id = {str(property_definition.id): property_definition for property_definition in property_definitions}
+        unknown = set(values) - set(by_id)
+        if unknown:
+            raise serializers.ValidationError({"properties": "One or more property IDs are not available in this project."})
+        for property_id, value in values.items():
+            validate_property_value(by_id[property_id], value)
+        if self.instance is None:
+            missing = [
+                property_definition.name
+                for property_definition in property_definitions
+                if property_definition.is_required
+                and str(property_definition.id) not in values
+                and property_definition.default_value is None
+            ]
+            if missing:
+                raise serializers.ValidationError({"properties": f"Missing required work item properties: {', '.join(missing)}"})
+
+    def get_custom_properties(self, instance):
+        return {
+            str(property_value.property_id): property_value.value
+            for property_value in instance.property_values.filter(deleted_at__isnull=True).select_related("property")
+        }
 
     def create(self, validated_data):
         assignees = validated_data.pop("assignees", None)
         labels = validated_data.pop("labels", None)
+        properties = validated_data.pop("properties", {})
 
         project_id = self.context["project_id"]
         workspace_id = self.context["workspace_id"]
@@ -163,7 +228,9 @@ class IssueSerializer(BaseSerializer):
             issue_type = IssueType.objects.filter(project_issue_types__project_id=project_id, is_default=True).first()
             issue_type = issue_type
 
-        issue = Issue.objects.create(**validated_data, project_id=project_id, type=issue_type)
+        with transaction.atomic():
+            issue = Issue.objects.create(**validated_data, project_id=project_id, type=issue_type)
+            self._set_property_values(issue, properties, include_defaults=True)
 
         # Issue Audit Users
         created_by_id = issue.created_by_id
@@ -234,6 +301,7 @@ class IssueSerializer(BaseSerializer):
     def update(self, instance, validated_data):
         assignees = validated_data.pop("assignees", None)
         labels = validated_data.pop("labels", None)
+        properties = validated_data.pop("properties", None)
 
         # Related models
         project_id = instance.project_id
@@ -285,7 +353,39 @@ class IssueSerializer(BaseSerializer):
 
         # Time updation occues even when other related models are updated
         instance.updated_at = timezone.now()
-        return super().update(instance, validated_data)
+        with transaction.atomic():
+            issue = super().update(instance, validated_data)
+            if properties is not None:
+                self._set_property_values(issue, properties, include_defaults=False)
+        return issue
+
+    @staticmethod
+    def _set_property_values(issue, values, include_defaults):
+        property_definitions = WorkItemProperty.objects.filter(
+            project=issue.project, is_active=True, deleted_at__isnull=True
+        )
+        if include_defaults:
+            values = {
+                **{
+                    str(property_definition.id): property_definition.default_value
+                    for property_definition in property_definitions
+                    if property_definition.default_value is not None
+                },
+                **values,
+            }
+        definitions_by_id = {str(property_definition.id): property_definition for property_definition in property_definitions}
+        for property_id, value in values.items():
+            property_definition = definitions_by_id[property_id]
+            if value is None:
+                WorkItemPropertyValue.objects.filter(
+                    issue=issue, property=property_definition, deleted_at__isnull=True
+                ).delete()
+                continue
+            WorkItemPropertyValue.objects.update_or_create(
+                issue=issue,
+                property=property_definition,
+                defaults={"project": issue.project, "workspace": issue.workspace, "value": value},
+            )
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

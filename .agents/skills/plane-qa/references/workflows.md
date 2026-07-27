@@ -71,6 +71,23 @@ plane-qa issue transition --issue QA-34 --state-id <state_uuid>   # state UUID f
 plane-qa issue comment --issue QA-34 --body "<p>Deployed to staging</p>"
 ```
 
+## 6. Configure custom delivery structure
+
+Create configuration before creating dependent Work Items. A type is workspace-wide but must be enabled for the current project; properties and milestones are project-scoped; initiatives are workspace-scoped.
+
+```bash
+plane-qa type create --name "Test case" --description "A testable requirement"
+plane-qa property create --name "Browser" --kind select \
+  --options '[{"label":"Chrome","value":"chrome"},{"label":"Firefox","value":"firefox"}]'
+plane-qa property create --name "Build" --kind text --is-required
+plane-qa milestone create --name "MVP" --target-date 2026-09-01
+plane-qa initiative create --name "Quality foundation" --project-ids <project_uuid>
+plane-qa issue create --name "Validate checkout" \
+  --body '{"properties":{"<browser-property-uuid>":"chrome","<build-property-uuid>":"2026.7.27"}}'
+```
+
+For MCP, use `create_work_item_type`, `create_work_item_property`, `create_milestone`, and `create_initiative`. To set a value after issue creation, use `set_work_item_property_value`. Never pass a type, property, milestone, or project UUID across project/workspace boundaries; the API rejects it.
+
 ## Failure handling
 
 | Symptom          | Meaning                                                                                            | Action                                                                             |

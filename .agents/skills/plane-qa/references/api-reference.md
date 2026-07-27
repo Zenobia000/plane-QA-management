@@ -66,6 +66,35 @@ Relative to `/api/v1/workspaces/{slug}/projects/{project_uuid}/` (outside `testi
 | GET/POST · DELETE           | `modules/{module_uuid}/module-issues/` · `.../{issue_uuid}/` | Add work items to a module                                                                                                     |
 | GET/POST                    | `work-items/`, `labels/`, `states/`, `members/`              | Work items (fields incl. `start_date` ≤ `target_date`, `assignees` must be project members, `labels`), plus supporting lookups |
 
+## CE work-item extensions
+
+These are native to this fork's `/api/v1/` tree; do not call Plane commercial endpoints for them.
+
+| Method                      | Path                                                                                          | Scope and purpose                                                                                      |
+| --------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------ | ---- | ------- | ------ | ------------ | ------------------------------------------- |
+| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/work-item-types/` · `.../work-item-types/{type_uuid}/`                    | Workspace type definitions. POST/PATCH/DELETE requires an active workspace Admin or Member.            |
+| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/projects/{project_uuid}/work-item-types/` · `.../{project_type_uuid}/`    | Enable/order/default a workspace type in one project. A Work Item may use only an enabled active type. |
+| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/projects/{project_uuid}/work-item-properties/` · `.../{property_uuid}/`   | Project custom-property definitions. `kind` is `text                                                   | number | date | boolean | select | multi_select | url`; options require unique stable values. |
+| GET · PUT/DELETE            | `.../work-items/{issue_uuid}/properties/` · `.../properties/{property_uuid}/`                 | Read, set, or clear a typed custom value. Property and work item must be in the same project.          |
+| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/projects/{project_uuid}/milestones/` · `.../milestones/{milestone_uuid}/` | Project delivery checkpoints. A Work Item `milestone` must be from its own project.                    |
+| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/initiatives/` · `.../initiatives/{initiative_uuid}/`                      | Workspace strategic outcomes, with optional same-workspace `project_ids`.                              |
+
+Create or update a Work Item with custom values using `properties`, keyed by property UUID:
+
+```json
+{
+  "name": "Validate checkout on Chrome",
+  "type_id": "<enabled-work-item-type-uuid>",
+  "milestone": "<same-project-milestone-uuid>",
+  "properties": {
+    "<browser-property-uuid>": "chrome",
+    "<build-property-uuid>": "2026.7.27"
+  }
+}
+```
+
+Required active properties with no default must be present on Work Item creation. `select` accepts one option value; `multi_select` accepts a unique list of option values. Use `null` only for non-required properties.
+
 ## Automation ingestion
 
 ```

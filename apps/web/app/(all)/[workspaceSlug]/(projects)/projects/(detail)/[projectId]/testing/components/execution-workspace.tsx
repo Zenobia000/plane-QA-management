@@ -11,6 +11,9 @@ import type { TTestResultInput, TTestResultStatus, TTestRun } from "@plane/types
 
 type Props = {
   run: TTestRun;
+  /** Absent means "no case addressed yet" -- the first open one is shown. */
+  selectedRunCaseId?: string;
+  onSelectRunCase: (runCaseId: string, options?: { replace?: boolean }) => void;
   onBack: () => void;
   onResult: (runCaseId: string, input: TTestResultInput) => Promise<void>;
   onClose: () => Promise<void>;
@@ -30,13 +33,23 @@ const documentText = (document: Record<string, unknown>) => {
   return typeof value === "string" ? value : Object.keys(document).length ? JSON.stringify(document) : "—";
 };
 
-export function ExecutionWorkspace({ run, onBack, onResult, onClose, onCreateDefect }: Props) {
-  const firstOpen = run.run_cases.find((item) => item.latest_status === "open")?.id ?? run.run_cases[0]?.id;
-  const [selectedId, setSelectedId] = useState(firstOpen);
+export function ExecutionWorkspace({
+  run,
+  selectedRunCaseId,
+  onSelectRunCase,
+  onBack,
+  onResult,
+  onClose,
+  onCreateDefect,
+}: Props) {
   const [actual, setActual] = useState("");
   const [saving, setSaving] = useState(false);
   const [creatingDefect, setCreatingDefect] = useState(false);
-  const selected = useMemo(() => run.run_cases.find((item) => item.id === selectedId), [run.run_cases, selectedId]);
+  const selected = useMemo(() => {
+    const addressed = selectedRunCaseId && run.run_cases.find((item) => item.id === selectedRunCaseId);
+    if (addressed) return addressed;
+    return run.run_cases.find((item) => item.latest_status === "open") ?? run.run_cases[0];
+  }, [run.run_cases, selectedRunCaseId]);
   const latestResult = selected?.results.at(-1);
   const readyForRetest =
     !!latestResult?.defects.length &&
@@ -60,7 +73,9 @@ export function ExecutionWorkspace({ run, onBack, onResult, onClose, onCreateDef
       await onResult(selected.id, { status, actual_result: actual ? { text: actual } : {} });
       setActual("");
       const next = run.run_cases.find((item) => item.position > selected.position && item.latest_status === "open");
-      if (next) setSelectedId(next.id);
+      // Advancing replaces rather than pushes: results are append-only, so a
+      // history entry per recorded result would offer a Back that undoes nothing.
+      if (next) onSelectRunCase(next.id, { replace: true });
     } finally {
       setSaving(false);
     }
@@ -84,7 +99,7 @@ export function ExecutionWorkspace({ run, onBack, onResult, onClose, onCreateDef
           <button
             type="button"
             key={runCase.id}
-            onClick={() => setSelectedId(runCase.id)}
+            onClick={() => onSelectRunCase(runCase.id)}
             className={`flex w-full items-center gap-2 border-b border-subtle px-3 py-3 text-left ${
               selected.id === runCase.id ? "bg-surface-1" : "hover:bg-layer-1"
             }`}

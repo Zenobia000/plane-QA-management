@@ -216,12 +216,42 @@ export const coreRoutes: RouteConfigEntry[] = [
               "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/intake/page.tsx"
             ),
           ]),
-          // Testing
+          // Testing - every entity is addressable so work items, defects and
+          // runs can link straight at the thing they are talking about
           layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/layout.tsx", [
-            route(
-              ":workspaceSlug/projects/:projectId/testing",
-              "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/page.tsx"
-            ),
+            layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/page.tsx", [
+              route(
+                ":workspaceSlug/projects/:projectId/testing",
+                "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/routes/index.tsx"
+              ),
+              route(
+                ":workspaceSlug/projects/:projectId/testing/overview",
+                "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/routes/overview.tsx"
+              ),
+              route(
+                ":workspaceSlug/projects/:projectId/testing/cases",
+                "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/routes/cases.tsx"
+              ),
+              route(
+                ":workspaceSlug/projects/:projectId/testing/cases/:sequence",
+                "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/routes/cases.tsx",
+                { id: "testing-case-detail" }
+              ),
+              route(
+                ":workspaceSlug/projects/:projectId/testing/runs",
+                "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/routes/runs.tsx"
+              ),
+              route(
+                ":workspaceSlug/projects/:projectId/testing/runs/:runId",
+                "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/routes/runs.tsx",
+                { id: "testing-run-detail" }
+              ),
+              route(
+                ":workspaceSlug/projects/:projectId/testing/runs/:runId/:runCaseId",
+                "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/routes/runs.tsx",
+                { id: "testing-run-case" }
+              ),
+            ]),
           ]),
         ]),
 

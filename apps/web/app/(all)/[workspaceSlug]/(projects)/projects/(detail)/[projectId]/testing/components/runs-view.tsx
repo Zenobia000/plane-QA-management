@@ -8,9 +8,11 @@ import { useState } from "react";
 import { orderBy } from "lodash-es";
 import { Play, Plus } from "lucide-react";
 import { observer } from "mobx-react";
+import { useNavigate, useParams } from "react-router";
 import { Button } from "@plane/propel/button";
 import type { TTestResultInput, TTestRunInput } from "@plane/types";
 import { useTesting } from "@/hooks/store/use-testing";
+import { testingPath } from "../helpers";
 import { ExecutionWorkspace } from "./execution-workspace";
 import { TestRunBuilder } from "./run-builder";
 
@@ -18,24 +20,44 @@ type Props = { workspaceSlug: string; projectId: string };
 
 export const TestRunsView = observer(function TestRunsView({ workspaceSlug, projectId }: Props) {
   const { cases, runs, createRun, recordResult, closeRun, createDefect } = useTesting();
+  const { runId, runCaseId } = useParams();
+  const navigate = useNavigate();
   const [building, setBuilding] = useState(false);
-  const [selectedRunId, setSelectedRunId] = useState<string>();
-  const selectedRun = selectedRunId ? runs[selectedRunId] : undefined;
+  const selectedRun = runId ? runs[runId] : undefined;
   const testCases = orderBy(Object.values(cases), ["sequence"], ["asc"]);
   const testRuns = orderBy(Object.values(runs), ["created_at"], ["desc"]);
+
+  const goToRun = (id: string, options?: { replace?: boolean }) =>
+    navigate(testingPath({ workspaceSlug, projectId, tab: "runs", runId: id }), options);
+
+  if (runId && !selectedRun) {
+    return (
+      <section className="flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-subtle bg-surface-1 p-8">
+        <p className="text-13 text-secondary">This test run does not exist in this project.</p>
+        <Button variant="secondary" onClick={() => navigate(testingPath({ workspaceSlug, projectId, tab: "runs" }))}>
+          Back to all runs
+        </Button>
+      </section>
+    );
+  }
 
   if (selectedRun) {
     return (
       <ExecutionWorkspace
         run={selectedRun}
-        onBack={() => setSelectedRunId(undefined)}
-        onResult={(runCaseId: string, input: TTestResultInput) =>
-          recordResult(workspaceSlug, projectId, selectedRun.id, runCaseId, input)
+        selectedRunCaseId={runCaseId}
+        onSelectRunCase={(id, options) =>
+          navigate(
+            testingPath({ workspaceSlug, projectId, tab: "runs", runId: selectedRun.id, runCaseId: id }),
+            options
+          )
+        }
+        onBack={() => navigate(testingPath({ workspaceSlug, projectId, tab: "runs" }))}
+        onResult={(id: string, input: TTestResultInput) =>
+          recordResult(workspaceSlug, projectId, selectedRun.id, id, input)
         }
         onClose={() => closeRun(workspaceSlug, projectId, selectedRun.id)}
-        onCreateDefect={(runCaseId, resultId) =>
-          createDefect(workspaceSlug, projectId, selectedRun.id, runCaseId, resultId)
-        }
+        onCreateDefect={(id, resultId) => createDefect(workspaceSlug, projectId, selectedRun.id, id, resultId)}
       />
     );
   }
@@ -48,7 +70,7 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
         onCreate={async (input: TTestRunInput) => {
           const created = await createRun(workspaceSlug, projectId, input);
           setBuilding(false);
-          setSelectedRunId(created.id);
+          goToRun(created.id);
         }}
       />
     );
@@ -70,7 +92,7 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
           <button
             type="button"
             key={run.id}
-            onClick={() => setSelectedRunId(run.id)}
+            onClick={() => goToRun(run.id)}
             className="grid w-full grid-cols-[1fr_8rem_8rem_3rem] items-center gap-4 border-b border-subtle px-4 py-3 text-left last:border-b-0 hover:bg-surface-2"
           >
             <span>

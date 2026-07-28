@@ -9,6 +9,7 @@ import { orderBy } from "lodash-es";
 import { Download, Link2, Plus, Save, Upload } from "lucide-react";
 import { observer } from "mobx-react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import type { TTestCase, TTestCaseInput } from "@plane/types";
 import { useTesting } from "@/hooks/store/use-testing";
@@ -21,6 +22,7 @@ const textValue = (value: Record<string, unknown>) =>
   typeof value.text === "string" ? value.text : Object.keys(value).length ? JSON.stringify(value) : "";
 
 export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug, projectId }: Props) {
+  const { t } = useTranslation();
   const {
     cases,
     folders,
@@ -102,7 +104,11 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
   };
 
   if (loading)
-    return <div className="flex flex-1 items-center justify-center text-13 text-secondary">Loading test library…</div>;
+    return (
+      <div className="flex flex-1 items-center justify-center text-13 text-secondary">
+        {t("testing.loading_library")}
+      </div>
+    );
 
   return (
     <section className="flex min-h-0 flex-1 overflow-hidden rounded-lg border border-subtle bg-surface-1">
@@ -125,8 +131,8 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
       <div className="w-80 shrink-0 overflow-y-auto border-r border-subtle">
         <div className="flex items-center justify-between border-b border-subtle p-3">
           <div>
-            <h1 className="text-14 font-semibold text-primary">Test cases</h1>
-            <p className="text-11 text-secondary">{testCases.length} cases</p>
+            <h1 className="text-14 font-semibold text-primary">{t("testing.cases.heading")}</h1>
+            <p className="text-11 text-secondary">{t("testing.cases.count", { count: testCases.length })}</p>
           </div>
           <div className="flex gap-1">
             <Button
@@ -140,13 +146,13 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
                 anchor.click();
                 URL.revokeObjectURL(url);
               }}
-              aria-label="Export test library as CSV"
+              aria-label={t("testing.cases.export")}
             >
               <Download className="size-4" />
             </Button>
             <label
               className="flex h-8 cursor-pointer items-center rounded border border-subtle px-2 text-secondary hover:bg-layer-1"
-              aria-label="Import test library CSV"
+              aria-label={t("testing.cases.import")}
             >
               <Upload className="size-4" />
               <input
@@ -161,7 +167,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
               />
             </label>
             <Button variant="primary" onClick={() => setCreating(true)}>
-              <Plus className="size-4" /> Add
+              <Plus className="size-4" /> {t("testing.cases.add")}
             </Button>
           </div>
         </div>
@@ -176,15 +182,15 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="Test case title"
+              placeholder={t("testing.cases.create_placeholder")}
               className="h-9 w-full rounded border border-subtle bg-surface-1 px-2 text-13 text-primary outline-none"
             />
             <div className="mt-2 flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setCreating(false)}>
-                Cancel
+                {t("testing.cases.cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={!title.trim() || saving}>
-                Create
+                {t("testing.cases.create")}
               </Button>
             </div>
           </form>
@@ -210,16 +216,16 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
           <div className="flex h-full flex-col items-center justify-center gap-2 text-13 text-secondary">
             {sequence ? (
               <>
-                <p>TC-{sequence} does not exist in this project.</p>
+                <p>{t("testing.cases.not_found", { sequence })}</p>
                 <Button
                   variant="secondary"
                   onClick={() => navigate(testingPath({ workspaceSlug, projectId, tab: "cases" }))}
                 >
-                  Back to all test cases
+                  {t("testing.cases.back_to_list")}
                 </Button>
               </>
             ) : (
-              <p>Select a case to inspect or edit it.</p>
+              <p>{t("testing.cases.select_prompt")}</p>
             )}
           </div>
         ) : (
@@ -238,16 +244,19 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
             <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="text-11 text-tertiary">
-                  TC-{selected.sequence} · editing creates v{selected.current_version + 1}
+                  {t("testing.cases.editing_publishes", {
+                    sequence: selected.sequence,
+                    version: selected.current_version + 1,
+                  })}
                 </span>
-                <h2 className="mt-1 text-18 font-semibold text-primary">Case detail</h2>
+                <h2 className="mt-1 text-18 font-semibold text-primary">{t("testing.cases.detail_heading")}</h2>
               </div>
               <Button type="submit" variant="primary" disabled={saving}>
-                <Save className="size-4" /> Save new version
+                <Save className="size-4" /> {t("testing.cases.save_version")}
               </Button>
             </div>
             <label className="block text-12 font-medium text-secondary">
-              Title
+              {t("testing.cases.title_label")}
               <input
                 value={draft.title}
                 onChange={(event) => setDraft({ ...draft, title: event.target.value })}
@@ -256,13 +265,13 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="text-12 font-medium text-secondary">
-                Folder
+                {t("testing.cases.suite_label")}
                 <select
                   value={draft.folder_id ?? ""}
                   onChange={(event) => setDraft({ ...draft, folder_id: event.target.value || null })}
                   className="mt-1 h-10 w-full rounded border border-subtle bg-surface-1 px-2 text-13 text-primary"
                 >
-                  <option value="">Unfiled</option>
+                  <option value="">{t("testing.cases.unfiled")}</option>
                   {testFolders.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
@@ -271,7 +280,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
                 </select>
               </label>
               <label className="text-12 font-medium text-secondary">
-                Priority
+                {t("testing.cases.priority_label")}
                 <select
                   value={draft.priority}
                   onChange={(event) =>
@@ -286,7 +295,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
               </label>
             </div>
             <label className="block text-12 font-medium text-secondary">
-              Preconditions
+              {t("testing.cases.given_label")}
               <textarea
                 value={textValue(draft.preconditions ?? {})}
                 onChange={(event) => setDraft({ ...draft, preconditions: { text: event.target.value } })}
@@ -294,7 +303,8 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
               />
             </label>
             <label className="block text-12 font-medium text-secondary">
-              Steps <span className="font-normal text-tertiary">(one per line: action | expected)</span>
+              {t("testing.cases.steps_label")}{" "}
+              <span className="font-normal text-tertiary">({t("testing.cases.steps_hint")})</span>
               <textarea
                 value={stepText}
                 onChange={(event) =>
@@ -313,17 +323,17 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
               />
             </label>
             <div className="rounded border border-subtle p-3">
-              <p className="text-12 font-medium text-secondary">Requirement links</p>
+              <p className="text-12 font-medium text-secondary">{t("testing.cases.traceability")}</p>
               <p className="mt-1 text-11 text-tertiary">
                 {selected.work_item_ids.length
-                  ? `${selected.work_item_ids.length} linked work item(s)`
-                  : "No linked work items"}
+                  ? t("testing.cases.linked_count", { count: selected.work_item_ids.length })
+                  : t("testing.cases.no_links")}
               </p>
               <div className="mt-2 flex gap-2">
                 <input
                   value={issueId}
                   onChange={(event) => setIssueId(event.target.value)}
-                  placeholder="Plane work item UUID"
+                  placeholder={t("testing.cases.link_placeholder")}
                   className="h-9 min-w-0 flex-1 rounded border border-subtle bg-surface-1 px-2 text-12 text-primary outline-none"
                 />
                 <Button
@@ -335,7 +345,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
                     setIssueId("");
                   }}
                 >
-                  <Link2 className="size-4" /> Link
+                  <Link2 className="size-4" /> {t("testing.cases.link")}
                 </Button>
               </div>
             </div>

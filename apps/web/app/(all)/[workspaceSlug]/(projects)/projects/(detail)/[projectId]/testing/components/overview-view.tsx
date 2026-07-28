@@ -5,13 +5,17 @@
 
 import { AlertTriangle, CheckCircle2, Link2, PlayCircle, ShieldAlert } from "lucide-react";
 import { observer } from "mobx-react";
+import { useTranslation } from "@plane/i18n";
 import { useTesting } from "@/hooks/store/use-testing";
 
 export const TestingOverviewView = observer(function TestingOverviewView() {
+  const { t } = useTranslation();
   const { overview, requirementCoverage } = useTesting();
   if (!overview)
     return (
-      <div className="flex flex-1 items-center justify-center text-13 text-secondary">Loading quality overview…</div>
+      <div className="flex flex-1 items-center justify-center text-13 text-secondary">
+        {t("testing.loading_overview")}
+      </div>
     );
   // Requirement coverage and library hygiene are different questions. The first
   // decides whether the work is verified; the second only says how tidy the case
@@ -19,29 +23,37 @@ export const TestingOverviewView = observer(function TestingOverviewView() {
   // fully-linked library read as fully-covered delivery.
   const cards = [
     {
-      label: "Requirement coverage",
+      label: t("testing.overview.requirement_coverage"),
       value: `${overview.requirements.coverage_percent}%`,
-      detail: `${overview.requirements.covered}/${overview.requirements.total} scheduled requirements verified`,
+      detail: t("testing.overview.requirement_coverage_detail", {
+        covered: overview.requirements.covered,
+        total: overview.requirements.total,
+      }),
       icon: Link2,
     },
     {
-      label: "Unverified requirements",
+      label: t("testing.overview.unverified"),
       value: overview.requirements.uncovered,
-      detail: "Scheduled with no acceptance contract",
+      detail: t("testing.overview.unverified_detail"),
       icon: ShieldAlert,
     },
     {
-      label: "Active test runs",
+      label: t("testing.overview.active_runs"),
       value: overview.runs.active,
-      detail: `${overview.runs.total} total runs`,
+      detail: t("testing.overview.active_runs_detail", { total: overview.runs.total }),
       icon: PlayCircle,
     },
-    { label: "Open defects", value: overview.open_defects, detail: "Created from test evidence", icon: AlertTriangle },
+    {
+      label: t("testing.overview.open_defects"),
+      value: overview.open_defects,
+      detail: t("testing.overview.open_defects_detail"),
+      icon: AlertTriangle,
+    },
   ];
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-20 font-semibold text-primary">Quality overview</h1>
+        <h1 className="text-20 font-semibold text-primary">{t("testing.overview.heading")}</h1>
         <p className="mt-1 text-13 text-secondary">
           Requirement coverage, latest execution evidence, and an explainable release gate.
         </p>

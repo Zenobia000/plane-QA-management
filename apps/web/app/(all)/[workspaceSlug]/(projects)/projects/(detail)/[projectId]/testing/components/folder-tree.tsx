@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { Check, FlaskConical, Folder, FolderPlus, Pencil, Trash2, X } from "lucide-react";
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import type { TTestFolder } from "@plane/types";
 import { AlertModalCore } from "@plane/ui";
@@ -34,6 +35,7 @@ const iconButtonClass =
   "rounded p-1 text-tertiary opacity-0 hover:bg-layer-2 hover:text-primary group-hover:opacity-100 focus-visible:opacity-100";
 
 export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRename, onDelete }: Props) {
+  const { t } = useTranslation();
   const [folderName, setFolderName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -56,7 +58,7 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
       setFolderName("");
       setError(null);
     } catch (createError) {
-      setError(errorMessage(createError, "Unable to create this folder."));
+      setError(errorMessage(createError, t("testing.suites.create_failed")));
     } finally {
       setSubmitting(false);
     }
@@ -71,7 +73,7 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
       setRenamingId(null);
       setError(null);
     } catch (renameError) {
-      setError(errorMessage(renameError, "Unable to rename this folder."));
+      setError(errorMessage(renameError, t("testing.suites.rename_failed")));
     } finally {
       setSubmitting(false);
     }
@@ -85,7 +87,7 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
       setPendingDelete(null);
       setError(null);
     } catch (deleteError) {
-      setError(errorMessage(deleteError, "Only an empty test folder can be deleted."));
+      setError(errorMessage(deleteError, t("testing.suites.delete_conflict")));
       setPendingDelete(null);
     } finally {
       setSubmitting(false);
@@ -95,7 +97,7 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
   return (
     <aside className="w-56 shrink-0 overflow-y-auto border-r border-subtle bg-surface-2 p-3">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-11 font-semibold text-secondary uppercase">Folders</span>
+        <span className="text-11 font-semibold text-secondary uppercase">{t("testing.suites.label")}</span>
         <FolderPlus className="size-4 text-tertiary" />
       </div>
       <button
@@ -103,7 +105,7 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
         onClick={() => onSelect(null)}
         className={`flex w-full items-center gap-2 rounded px-2 py-2 text-12 ${!selectedFolder ? "bg-layer-2 text-primary" : "text-secondary hover:bg-layer-1"}`}
       >
-        <FlaskConical className="size-4" /> All test cases
+        <FlaskConical className="size-4" /> {t("testing.suites.all_cases")}
       </button>
       {folders.map((folder) =>
         renamingId === folder.id ? (
@@ -118,12 +120,12 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
             <input
               value={renameValue}
               onChange={(event) => setRenameValue(event.target.value)}
-              aria-label={`New name for ${folder.name}`}
+              aria-label={t("testing.suites.rename_label", { name: folder.name })}
               className="h-8 min-w-0 flex-1 rounded border border-subtle bg-surface-1 px-2 text-12 text-primary outline-none"
             />
             <button
               type="submit"
-              aria-label={`Save ${folder.name}`}
+              aria-label={t("testing.suites.save", { name: folder.name })}
               disabled={submitting || !renameValue.trim()}
               className="rounded p-1 text-tertiary hover:bg-layer-2 hover:text-primary disabled:opacity-50"
             >
@@ -131,7 +133,7 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
             </button>
             <button
               type="button"
-              aria-label={`Cancel renaming ${folder.name}`}
+              aria-label={t("testing.suites.cancel_rename", { name: folder.name })}
               onClick={() => setRenamingId(null)}
               className="rounded p-1 text-tertiary hover:bg-layer-2 hover:text-primary"
             >
@@ -149,7 +151,7 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
             </button>
             <button
               type="button"
-              aria-label={`Rename ${folder.name}`}
+              aria-label={t("testing.suites.rename", { name: folder.name })}
               onClick={() => beginRename(folder)}
               className={iconButtonClass}
             >
@@ -157,7 +159,7 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
             </button>
             <button
               type="button"
-              aria-label={`Delete ${folder.name}`}
+              aria-label={t("testing.suites.delete", { name: folder.name })}
               onClick={() => {
                 setError(null);
                 setPendingDelete(folder);
@@ -184,8 +186,8 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
         <input
           value={folderName}
           onChange={(event) => setFolderName(event.target.value)}
-          placeholder="New folder"
-          aria-label="New folder name"
+          placeholder={t("testing.suites.new_placeholder")}
+          aria-label={t("testing.suites.new_name_label")}
           className="h-8 min-w-0 flex-1 rounded border border-subtle bg-surface-1 px-2 text-12 text-primary outline-none"
         />
         <Button type="submit" variant="secondary" disabled={!folderName.trim() || submitting}>
@@ -196,12 +198,15 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
         <AlertModalCore
           isOpen
           variant="danger"
-          title="Delete test folder"
-          content={`Delete "${pendingDelete.name}"? Only an empty folder can be deleted — move its test cases and subfolders out first.`}
+          title={t("testing.suites.delete_title")}
+          content={t("testing.suites.delete_content", { name: pendingDelete.name })}
           isSubmitting={submitting}
           handleClose={() => setPendingDelete(null)}
           handleSubmit={() => void confirmDelete()}
-          primaryButtonText={{ default: "Delete", loading: "Deleting" }}
+          primaryButtonText={{
+            default: t("testing.suites.delete_confirm"),
+            loading: t("testing.suites.delete_submitting"),
+          }}
         />
       )}
     </aside>

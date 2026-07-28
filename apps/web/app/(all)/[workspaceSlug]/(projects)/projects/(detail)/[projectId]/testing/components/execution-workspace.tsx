@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Bug, Check, CircleSlash, Lock, SkipForward, X } from "lucide-react";
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import type { TTestResultInput, TTestResultStatus, TTestRun } from "@plane/types";
 
@@ -42,6 +43,7 @@ export function ExecutionWorkspace({
   onClose,
   onCreateDefect,
 }: Props) {
+  const { t } = useTranslation();
   const [actual, setActual] = useState("");
   const [saving, setSaving] = useState(false);
   const [creatingDefect, setCreatingDefect] = useState(false);
@@ -88,11 +90,11 @@ export function ExecutionWorkspace({
       <aside className="w-72 shrink-0 overflow-y-auto border-r border-subtle bg-surface-2">
         <div className="border-b border-subtle p-3">
           <button type="button" onClick={onBack} className="text-12 font-medium text-accent-primary hover:underline">
-            ← All runs
+            ← {t("testing.runs.all_runs")}
           </button>
           <h2 className="mt-2 text-14 font-semibold text-primary">{run.name}</h2>
           <p className="mt-1 text-11 text-secondary">
-            {run.progress.total - run.progress.open}/{run.progress.total} executed
+            {t("testing.runs.executed", { done: run.progress.total - run.progress.open, total: run.progress.total })}
           </p>
         </div>
         {run.run_cases.map((runCase) => (
@@ -117,28 +119,31 @@ export function ExecutionWorkspace({
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-11 text-tertiary">
-              Case {selected.position} · v{selected.test_case_version.version}
+              {t("testing.execution.case_position", {
+                position: selected.position,
+                version: selected.test_case_version.version,
+              })}
             </div>
             <h3 className="mt-1 text-20 font-semibold text-primary">{selected.test_case_version.title}</h3>
           </div>
           {run.status === "completed" ? (
             <span className="flex items-center gap-1 rounded bg-layer-2 px-2 py-1 text-11 text-secondary">
-              <Lock className="size-3" /> Closed
+              <Lock className="size-3" /> {t("testing.execution.closed")}
             </span>
           ) : (
             <Button variant="secondary" onClick={() => void onClose()}>
-              Close run
+              {t("testing.execution.close_run")}
             </Button>
           )}
         </div>
 
         <div className="mt-6 space-y-5">
           <div>
-            <h4 className="text-12 font-semibold text-secondary uppercase">Preconditions</h4>
+            <h4 className="text-12 font-semibold text-secondary uppercase">{t("testing.execution.given")}</h4>
             <p className="mt-2 text-14 text-primary">{documentText(selected.test_case_version.preconditions)}</p>
           </div>
           <div>
-            <h4 className="text-12 font-semibold text-secondary uppercase">Steps</h4>
+            <h4 className="text-12 font-semibold text-secondary uppercase">{t("testing.execution.steps")}</h4>
             <ol className="mt-2 space-y-2">
               {selected.test_case_version.steps.map((step) => (
                 <li
@@ -147,34 +152,36 @@ export function ExecutionWorkspace({
                 >
                   <span className="text-secondary">{step.position}</span>
                   <span className="text-primary">{documentText(step.action)}</span>
-                  <span className="text-secondary">Expected: {documentText(step.expected_result)}</span>
+                  <span className="text-secondary">
+                    {t("testing.execution.expected", { expected: documentText(step.expected_result) })}
+                  </span>
                 </li>
               ))}
               {!selected.test_case_version.steps.length && (
-                <li className="text-13 text-secondary">No structured steps.</li>
+                <li className="text-13 text-secondary">{t("testing.execution.no_steps")}</li>
               )}
             </ol>
           </div>
           <label className="block text-12 font-semibold text-secondary uppercase">
-            Actual result
+            {t("testing.execution.actual")}
             <textarea
               value={actual}
               onChange={(event) => setActual(event.target.value)}
               className="font-normal mt-2 min-h-24 w-full resize-y rounded-md border border-subtle bg-surface-1 p-3 text-14 text-primary outline-none focus:border-accent-strong"
-              placeholder="Capture observations, especially for failures or blockers."
+              placeholder={t("testing.execution.actual_placeholder")}
             />
           </label>
           {latestResult && (latestResult.status === "failed" || latestResult.status === "blocked") && (
             <div className="rounded-md border border-danger-subtle bg-danger-subtle/20 p-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-12 font-semibold text-primary">Defect tracking</p>
+                  <p className="text-12 font-semibold text-primary">{t("testing.execution.defect_heading")}</p>
                   <p className="mt-1 text-11 text-secondary">
                     {latestResult.defects.length
                       ? latestResult.defects
                           .map((defect) => `#${defect.sequence_id} ${defect.name} (${defect.state_group ?? "open"})`)
                           .join(", ")
-                      : "Create a Plane work item with the run, build, steps, and actual result attached."}
+                      : t("testing.execution.defect_hint")}
                   </p>
                 </div>
                 {!latestResult.defects.length && (
@@ -190,12 +197,12 @@ export function ExecutionWorkspace({
                       }
                     }}
                   >
-                    <Bug className="size-4" /> Create defect
+                    <Bug className="size-4" /> {t("testing.execution.create_defect")}
                   </Button>
                 )}
                 {readyForRetest && (
                   <span className="rounded bg-success-subtle px-2 py-1 text-11 font-medium text-success-primary">
-                    Ready for retest · record a new result below
+                    {t("testing.execution.ready_for_retest")}
                   </span>
                 )}
               </div>
@@ -206,16 +213,16 @@ export function ExecutionWorkspace({
         {run.status !== "completed" && (
           <div className="sticky bottom-0 mt-auto flex flex-wrap justify-end gap-2 border-t border-subtle bg-surface-1 pt-4">
             <Button variant="secondary" disabled={saving} onClick={() => void submit("skipped")}>
-              <SkipForward className="size-4" /> Skip (S)
+              <SkipForward className="size-4" /> {t("testing.execution.skip")}
             </Button>
             <Button variant="secondary" disabled={saving} onClick={() => void submit("blocked")}>
-              <CircleSlash className="size-4" /> Block (B)
+              <CircleSlash className="size-4" /> {t("testing.execution.block")}
             </Button>
             <Button variant="error-outline" disabled={saving} onClick={() => void submit("failed")}>
-              <X className="size-4" /> Fail (F)
+              <X className="size-4" /> {t("testing.execution.fail")}
             </Button>
             <Button variant="primary" disabled={saving} onClick={() => void submit("passed")}>
-              <Check className="size-4" /> Pass (P)
+              <Check className="size-4" /> {t("testing.execution.pass")}
             </Button>
           </div>
         )}

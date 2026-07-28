@@ -246,13 +246,14 @@ class Command(BaseCommand):
                 "started",
                 parent=feature_ng,
             ),
-            # Deliberately left without any acceptance contract: this is the
-            # Definition-of-Ready gap the release gate currently fails to catch.
+            # Scheduled into the sprint with no acceptance contract at all. That is
+            # the Definition-of-Ready violation the release gate has to catch:
+            # a backlog item nobody has committed to yet would not be one.
             "story_review": item(
                 "主管審核修正紀錄",
-                "刻意未建立驗收契約,示範 Definition of Ready 缺口。",
+                "已排入 sprint 卻未建立任何驗收契約,示範 Definition of Ready 違規。",
                 "Story",
-                "backlog",
+                "unstarted",
                 parent=feature_ng,
                 priority="medium",
             ),
@@ -485,7 +486,7 @@ class Command(BaseCommand):
         write("  #14  the epic and both features read as uncovered although 8 contracts sit beneath them,")
         write("       the untyped defect is listed as a requirement, and coverage_percent reports the")
         write("       share of cases that are linked rather than the share of requirements covered")
-        write("  #18  release_gate.ready comes back true while a story holds no acceptance contract")
+        write("  #18  a scheduled story with no acceptance contract now blocks the release gate")
         write("  #17  the threshold case carries a structured expectation the UI renders as plain text")
         write("")
         write(f"  overview  {base}/overview")

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { AlertTriangle, CheckCircle2, Link2, PlayCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Link2, PlayCircle, ShieldAlert } from "lucide-react";
 import { observer } from "mobx-react";
 import { useTesting } from "@/hooks/store/use-testing";
 
@@ -13,12 +13,22 @@ export const TestingOverviewView = observer(function TestingOverviewView() {
     return (
       <div className="flex flex-1 items-center justify-center text-13 text-secondary">Loading quality overview…</div>
     );
+  // Requirement coverage and library hygiene are different questions. The first
+  // decides whether the work is verified; the second only says how tidy the case
+  // library is. Showing the second under the first one's name is what made a
+  // fully-linked library read as fully-covered delivery.
   const cards = [
     {
       label: "Requirement coverage",
-      value: `${overview.library.coverage_percent}%`,
-      detail: `${overview.library.requirement_linked}/${overview.library.total} cases linked`,
+      value: `${overview.requirements.coverage_percent}%`,
+      detail: `${overview.requirements.covered}/${overview.requirements.total} scheduled requirements verified`,
       icon: Link2,
+    },
+    {
+      label: "Unverified requirements",
+      value: overview.requirements.uncovered,
+      detail: "Scheduled with no acceptance contract",
+      icon: ShieldAlert,
     },
     {
       label: "Active test runs",
@@ -36,7 +46,7 @@ export const TestingOverviewView = observer(function TestingOverviewView() {
           Requirement coverage, latest execution evidence, and an explainable release gate.
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map(({ label, value, detail, icon: Icon }) => (
           <div key={label} className="rounded-lg border border-subtle bg-surface-1 p-4">
             <div className="flex items-center gap-2 text-12 text-secondary">

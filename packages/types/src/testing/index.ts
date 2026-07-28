@@ -70,7 +70,10 @@ export type TTestingCapabilities = {
 };
 
 export type TTestingOverview = {
-  library: { total: number; requirement_linked: number; coverage_percent: number };
+  /** Library hygiene: how many cases answer for a requirement. */
+  library: { total: number; requirement_linked: number; linked_percent: number };
+  /** Delivery confidence: how many scheduled requirements a contract verifies. */
+  requirements: { total: number; covered: number; uncovered: number; coverage_percent: number };
   runs: { total: number; active: number };
   latest_run:
     | ({
@@ -96,12 +99,21 @@ export type TTestingRequirementCoverage = {
   total: number;
   covered: number;
   uncovered: number;
+  /** Requirements a contract is expected for -- backlog and cancelled excluded. */
+  in_scope: number;
+  uncovered_in_scope: number;
   work_items: Array<{
     work_item_id: string;
     sequence_id: number;
     name: string;
     state_group: string | null;
+    parent_id: string | null;
+    /** True when this item or anything beneath it carries a contract. */
     covered: boolean;
+    covered_directly: boolean;
+    requires_contract: boolean;
+    own_test_case_ids: string[];
+    /** Own contracts plus every contract inherited from descendants. */
     test_case_ids: string[];
     latest_status: TTestRunCaseStatus | null;
   }>;

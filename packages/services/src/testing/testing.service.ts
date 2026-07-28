@@ -164,6 +164,16 @@ export class TestingService extends APIService {
       });
   }
 
+  async unlinkWorkItem(workspaceSlug: string, projectId: string, testCaseId: string, issueId: string): Promise<void> {
+    return this.delete(
+      `/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/test-cases/${testCaseId}/work-items/${issueId}/`
+    )
+      .then(() => undefined)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
   async linkWorkItem(workspaceSlug: string, projectId: string, testCaseId: string, issueId: string): Promise<void> {
     return this.post(
       `/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/test-cases/${testCaseId}/work-items/`,

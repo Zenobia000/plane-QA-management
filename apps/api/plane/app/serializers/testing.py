@@ -56,6 +56,8 @@ class TestFolderSerializer(BaseSerializer):
 class TestCaseSerializer(BaseSerializer):
     current = serializers.SerializerMethodField()
     work_item_ids = serializers.SerializerMethodField()
+    work_items = serializers.SerializerMethodField()
+    executions = serializers.SerializerMethodField()
     latest_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -70,6 +72,8 @@ class TestCaseSerializer(BaseSerializer):
             "updated_at",
             "current",
             "work_item_ids",
+            "work_items",
+            "executions",
             "latest_status",
         ]
         read_only_fields = fields
@@ -81,6 +85,47 @@ class TestCaseSerializer(BaseSerializer):
 
     def get_work_item_ids(self, instance):
         return [str(link.issue_id) for link in instance.work_item_links.all()]
+
+    def get_work_items(self, instance):
+        """Identifier, name and state of each linked requirement.
+
+        `work_item_ids` alone leaves the UI unable to say more than "1 linked
+        item", which is why the traceability panel showed a bare count.
+        """
+        return [
+            {
+                "id": str(link.issue_id),
+                "sequence_id": link.issue.sequence_id,
+                "name": link.issue.name,
+                "state_group": link.issue.state.group if link.issue.state else None,
+            }
+            for link in instance.work_item_links.all()
+        ]
+
+    def get_executions(self, instance):
+        """Every run this case has appeared in, newest first.
+
+        The case knew its latest status but not where that came from, so a
+        failure could not be traced back to the run that produced it.
+        """
+        run_cases = sorted(
+            instance.run_cases.all(),
+            key=lambda item: item.test_run.created_at,
+            reverse=True,
+        )
+        return [
+            {
+                "run_id": str(run_case.test_run_id),
+                "run_case_id": str(run_case.id),
+                "run_name": run_case.test_run.name,
+                "build": run_case.test_run.build,
+                "run_status": run_case.test_run.status,
+                "pinned_version": run_case.test_case_version.version,
+                "latest_status": run_case.latest_status,
+                "executed_at": run_case.test_run.created_at,
+            }
+            for run_case in run_cases
+        ]
 
     def get_latest_status(self, instance):
         latest = max(instance.run_cases.all(), key=lambda item: item.test_run.created_at, default=None)

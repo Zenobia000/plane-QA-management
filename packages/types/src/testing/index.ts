@@ -36,6 +36,19 @@ export type TTestCase = {
   updated_at: string;
   current: TTestCaseVersion;
   work_item_ids: string[];
+  /** Linked requirements with enough detail to render and navigate to. */
+  work_items: Array<{ id: string; sequence_id: number; name: string; state_group: string | null }>;
+  /** Every run this case appeared in, newest first. */
+  executions: Array<{
+    run_id: string;
+    run_case_id: string;
+    run_name: string;
+    build: string;
+    run_status: "draft" | "active" | "completed";
+    pinned_version: number;
+    latest_status: TTestRunCaseStatus;
+    executed_at: string;
+  }>;
   latest_status: TTestRunCaseStatus | null;
 };
 

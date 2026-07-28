@@ -29,6 +29,8 @@ const testCase = {
   updated_at: "",
   current: version,
   work_item_ids: [],
+  work_items: [],
+  executions: [],
   latest_status: null,
 } satisfies TTestCase;
 

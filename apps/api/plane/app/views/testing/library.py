@@ -42,8 +42,8 @@ def _case_queryset(*, slug, project_id):
                 ),
             )
         )
-        .prefetch_related("work_item_links")
-        .prefetch_related("run_cases__test_run")
+        .prefetch_related("work_item_links__issue__state")
+        .prefetch_related("run_cases__test_run", "run_cases__test_case_version")
     )
 
 

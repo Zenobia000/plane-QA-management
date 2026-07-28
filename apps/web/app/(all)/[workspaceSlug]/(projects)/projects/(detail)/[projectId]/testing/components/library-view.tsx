@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { orderBy } from "lodash-es";
-import { Download, Link2, Plus, Save, Upload } from "lucide-react";
+import { Download, Link2, Plus, Save, Upload, X } from "lucide-react";
 import { observer } from "mobx-react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "@plane/i18n";
@@ -44,6 +44,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
     renameFolder,
     deleteFolder,
     linkWorkItem,
+    unlinkWorkItem,
     exportLibraryCSV,
     importLibraryCSV,
   } = useTesting();
@@ -349,11 +350,33 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
             </label>
             <div className="rounded border border-subtle p-3">
               <p className="text-12 font-medium text-secondary">{t("testing.cases.traceability")}</p>
-              <p className="mt-1 text-11 text-tertiary">
-                {selected.work_item_ids.length
-                  ? t("testing.cases.linked_count", { count: selected.work_item_ids.length })
-                  : t("testing.cases.no_links")}
-              </p>
+              {selected.work_items.length ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {selected.work_items.map((item) => (
+                    <span
+                      key={item.id}
+                      className="inline-flex items-center gap-1.5 rounded border border-subtle bg-surface-2 py-1 pr-1 pl-2 text-11"
+                    >
+                      <a
+                        href={`/${workspaceSlug}/projects/${projectId}/issues/${item.id}`}
+                        className="text-accent-primary hover:underline"
+                      >
+                        #{item.sequence_id} {item.name}
+                      </a>
+                      <button
+                        type="button"
+                        aria-label={t("testing.cases.unlink", { name: item.name })}
+                        onClick={() => void unlinkWorkItem(workspaceSlug, projectId, selected.id, item.id)}
+                        className="rounded p-0.5 text-tertiary hover:bg-layer-2 hover:text-primary"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-11 text-tertiary">{t("testing.cases.traceability_empty")}</p>
+              )}
               <div className="mt-2 flex gap-2">
                 <input
                   value={issueId}
@@ -373,6 +396,45 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
                   <Link2 className="size-4" /> {t("testing.cases.link")}
                 </Button>
               </div>
+            </div>
+            <div className="rounded border border-subtle p-3">
+              <p className="text-12 font-medium text-secondary">{t("testing.cases.executions")}</p>
+              {selected.executions.length ? (
+                <ul className="mt-2 space-y-1">
+                  {selected.executions.map((execution) => (
+                    <li key={execution.run_case_id} className="flex items-center gap-2 text-11">
+                      <span
+                        className={`w-14 shrink-0 rounded px-1.5 py-0.5 text-center text-10 font-medium ${
+                          execution.latest_status === "failed" || execution.latest_status === "blocked"
+                            ? "bg-danger-subtle text-danger-primary"
+                            : execution.latest_status === "passed"
+                              ? "bg-success-subtle text-success-primary"
+                              : "bg-layer-2 text-secondary"
+                        }`}
+                      >
+                        {t(`testing.status.${execution.latest_status}`)}
+                      </span>
+                      <a
+                        href={testingPath({
+                          workspaceSlug,
+                          projectId,
+                          tab: "runs",
+                          runId: execution.run_id,
+                          runCaseId: execution.run_case_id,
+                        })}
+                        className="min-w-0 flex-1 truncate text-accent-primary hover:underline"
+                      >
+                        {execution.run_name}
+                      </a>
+                      <span className="shrink-0 text-tertiary">
+                        {execution.build || "—"} · {t("testing.cases.pinned", { version: execution.pinned_version })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-11 text-tertiary">{t("testing.cases.executions_empty")}</p>
+              )}
             </div>
           </form>
         )}

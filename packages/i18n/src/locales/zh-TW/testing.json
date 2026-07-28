@@ -62,7 +62,12 @@
         "heading": "{count} 個自動建立的案例待歸檔",
         "detail": "CI 從未映射的結果建立了它們。請歸入套件並連結需求,否則它們永遠在覆蓋率之外。",
         "show": "顯示這些案例"
-      }
+      },
+      "traceability_empty": "尚未連結需求 —— 未連結的案例不會出現在覆蓋率中",
+      "unlink": "解除連結 {name}",
+      "executions": "執行歷史",
+      "executions_empty": "尚未被任何一輪驗證納入。",
+      "pinned": "釘住 v{version}"
     },
     "runs": {
       "heading": "測試執行",

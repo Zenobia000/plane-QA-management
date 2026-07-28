@@ -46,6 +46,7 @@ export interface ITestingStore {
   renameFolder: (workspaceSlug: string, projectId: string, folderId: string, name: string) => Promise<TTestFolder>;
   deleteFolder: (workspaceSlug: string, projectId: string, folderId: string) => Promise<void>;
   linkWorkItem: (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => Promise<void>;
+  unlinkWorkItem: (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => Promise<void>;
   exportLibraryCSV: (workspaceSlug: string, projectId: string) => Promise<string>;
   importLibraryCSV: (workspaceSlug: string, projectId: string, csvText: string) => Promise<number>;
   createRun: (workspaceSlug: string, projectId: string, input: TTestRunInput) => Promise<TTestRun>;
@@ -95,6 +96,7 @@ export class TestingStore implements ITestingStore {
       renameFolder: action,
       deleteFolder: action,
       linkWorkItem: action,
+      unlinkWorkItem: action,
       importLibraryCSV: action,
       createRun: action,
       recordResult: action,
@@ -182,6 +184,16 @@ export class TestingStore implements ITestingStore {
     runInAction(() => {
       const testCase = this.cases[caseId];
       if (testCase && !testCase.work_item_ids.includes(issueId)) testCase.work_item_ids.push(issueId);
+    });
+  };
+
+  unlinkWorkItem = async (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => {
+    await this.service.unlinkWorkItem(workspaceSlug, projectId, caseId, issueId);
+    runInAction(() => {
+      const testCase = this.cases[caseId];
+      if (!testCase) return;
+      testCase.work_item_ids = testCase.work_item_ids.filter((id) => id !== issueId);
+      testCase.work_items = testCase.work_items.filter((item) => item.id !== issueId);
     });
   };
 

@@ -18,6 +18,17 @@ import { FolderTree } from "./folder-tree";
 
 type Props = { workspaceSlug: string; projectId: string };
 
+/** CI tags what it creates, so the source is already on the case. */
+const sourceOf = (testCase: TTestCase) => (testCase.current.tags.includes("automated") ? "automated" : "manual");
+
+/**
+ * A case CI created from an unmapped result arrives with no suite and no
+ * requirement. Nothing surfaced them before, so they accumulated outside
+ * coverage without ever being wrong enough to notice.
+ */
+const isUnfiled = (testCase: TTestCase) =>
+  sourceOf(testCase) === "automated" && !testCase.folder_id && testCase.work_item_ids.length === 0;
+
 const textValue = (value: Record<string, unknown>) =>
   typeof value.text === "string" ? value.text : Object.keys(value).length ? JSON.stringify(value) : "";
 
@@ -52,6 +63,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
     ["asc"]
   );
   const selected = findCaseBySequence(cases, sequence);
+  const unfiled = Object.values(cases).filter(isUnfiled);
 
   const openCase = (testCase: TTestCase) =>
     navigate(
@@ -171,6 +183,14 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
             </Button>
           </div>
         </div>
+        {unfiled.length > 0 && !selectedFolder && (
+          <div className="border-b border-subtle bg-warning-subtle/40 p-3">
+            <p className="text-12 font-medium text-primary">
+              {t("testing.cases.orphans.heading", { count: unfiled.length })}
+            </p>
+            <p className="mt-1 text-11 text-secondary">{t("testing.cases.orphans.detail")}</p>
+          </div>
+        )}
         {creating && (
           <form
             className="border-b border-subtle p-3"
@@ -206,7 +226,12 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
               TC-{testCase.sequence} · v{testCase.current_version}
             </span>
             <span className="mt-1 block text-13 font-medium text-primary">{testCase.current.title}</span>
-            <span className="mt-1 block text-11 text-secondary capitalize">{testCase.current.priority}</span>
+            <span className="mt-1 flex items-center gap-2 text-11 text-secondary">
+              <span className="capitalize">{testCase.current.priority}</span>
+              <span className="rounded border border-subtle px-1.5 py-0.5 text-10 text-tertiary">
+                {t(`testing.cases.source.${sourceOf(testCase)}`)}
+              </span>
+            </span>
           </button>
         ))}
       </div>

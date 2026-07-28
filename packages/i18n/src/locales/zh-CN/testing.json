@@ -53,7 +53,16 @@
       "linked_count": "已关联 {count} 個需求",
       "no_links": "尚未关联需求 —— 未关联的案例不會出現在覆盖率中",
       "link_placeholder": "Plane 工作项目 UUID",
-      "link": "关联"
+      "link": "关联",
+      "source": {
+        "manual": "手动",
+        "automated": "自动"
+      },
+      "orphans": {
+        "heading": "{count} 个自动创建的案例待归档",
+        "detail": "CI 从未映射的结果创建了它们。请归入套件并关联需求,否则它们永远在覆盖率之外。",
+        "show": "显示这些案例"
+      }
     },
     "runs": {
       "heading": "测试执行",
@@ -107,6 +116,21 @@
       "release_gate": "发布门槛",
       "ready": "可以发布",
       "not_ready": "尚不可发布"
+    },
+    "work_item": {
+      "heading": "验证状态",
+      "open_testing": "打开测试",
+      "summary": "{total} 个契约 · {failed} 个失败 · {unexecuted} 个未执行 · {passed} 个通过",
+      "empty": "尚未创建任何验收契约。需求一旦排期,未验证就会挡住发布门槛。",
+      "create_contract": "创建测试用例"
+    },
+    "status": {
+      "passed": "通过",
+      "failed": "失败",
+      "blocked": "受阻",
+      "skipped": "跳过",
+      "open": "未执行",
+      "not_run": "尚未执行"
     }
   }
 }

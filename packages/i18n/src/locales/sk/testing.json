@@ -53,7 +53,16 @@
       "linked_count": "{count} linked requirement(s)",
       "no_links": "No linked requirements — an unlinked case never appears in coverage",
       "link_placeholder": "Plane work item UUID",
-      "link": "Link"
+      "link": "Link",
+      "source": {
+        "manual": "Manual",
+        "automated": "Automated"
+      },
+      "orphans": {
+        "heading": "{count} automated case(s) need filing",
+        "detail": "CI created them from unmapped results. File them into a suite and link a requirement, or they stay outside coverage.",
+        "show": "Show them"
+      }
     },
     "runs": {
       "heading": "Test runs",
@@ -107,6 +116,21 @@
       "release_gate": "Release gate",
       "ready": "Ready to release",
       "not_ready": "Not ready to release"
+    },
+    "work_item": {
+      "heading": "Testing coverage",
+      "open_testing": "Open Testing",
+      "summary": "{total} contract(s) · {failed} failing · {unexecuted} unexecuted · {passed} passed",
+      "empty": "No acceptance contract yet. An unverified requirement blocks the release gate once it is scheduled.",
+      "create_contract": "Create a test case"
+    },
+    "status": {
+      "passed": "Passed",
+      "failed": "Failed",
+      "blocked": "Blocked",
+      "skipped": "Skipped",
+      "open": "Not executed",
+      "not_run": "Not run"
     }
   }
 }

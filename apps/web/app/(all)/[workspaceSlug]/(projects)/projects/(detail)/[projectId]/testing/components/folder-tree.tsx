@@ -31,6 +31,44 @@ const errorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+/**
+ * Flattens the suites into render order while keeping depth, so nesting shows up
+ * in the sidebar. `TestFolder.parent` has always nested; only the rendering was
+ * flat, which made a suite tree look like a pile of sibling folders.
+ */
+const inRenderOrder = (folders: TTestFolder[]) => {
+  const byParent = new Map<string | null, TTestFolder[]>();
+  for (const folder of folders) {
+    const siblings = byParent.get(folder.parent_id) ?? [];
+    siblings.push(folder);
+    byParent.set(folder.parent_id, siblings);
+  }
+  const known = new Set(folders.map((folder) => folder.id));
+  const ordered: Array<{ folder: TTestFolder; depth: number }> = [];
+  const walk = (parentId: string | null, depth: number, seen: Set<string>) => {
+    for (const folder of byParent.get(parentId) ?? []) {
+      if (seen.has(folder.id)) continue;
+      seen.add(folder.id);
+      ordered.push({ folder, depth });
+      walk(folder.id, depth + 1, seen);
+    }
+  };
+  const seen = new Set<string>();
+  walk(null, 0, seen);
+  // A suite whose parent is missing from this page would otherwise vanish.
+  for (const folder of folders) {
+    if (!seen.has(folder.id) && (folder.parent_id === null || !known.has(folder.parent_id))) {
+      seen.add(folder.id);
+      ordered.push({ folder, depth: 0 });
+      walk(folder.id, 1, seen);
+    }
+  }
+  for (const folder of folders) {
+    if (!seen.has(folder.id)) ordered.push({ folder, depth: 0 });
+  }
+  return ordered;
+};
+
 const iconButtonClass =
   "rounded p-1 text-tertiary opacity-0 hover:bg-layer-2 hover:text-primary group-hover:opacity-100 focus-visible:opacity-100";
 
@@ -42,6 +80,7 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
   const [pendingDelete, setPendingDelete] = useState<TTestFolder | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const rows = inRenderOrder(folders);
 
   const beginRename = (folder: TTestFolder) => {
     setError(null);
@@ -107,11 +146,12 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
       >
         <FlaskConical className="size-4" /> {t("testing.suites.all_cases")}
       </button>
-      {folders.map((folder) =>
+      {rows.map(({ folder, depth }) =>
         renamingId === folder.id ? (
           <form
             key={folder.id}
             className="mt-1 flex items-center gap-1"
+            style={{ paddingLeft: depth * 12 }}
             onSubmit={(event) => {
               event.preventDefault();
               void submitRename(folder.id);
@@ -141,7 +181,7 @@ export function FolderTree({ folders, selectedFolder, onSelect, onCreate, onRena
             </button>
           </form>
         ) : (
-          <div key={folder.id} className="group flex items-center gap-1">
+          <div key={folder.id} className="group flex items-center gap-1" style={{ paddingLeft: depth * 12 }}>
             <button
               type="button"
               onClick={() => onSelect(folder.id)}

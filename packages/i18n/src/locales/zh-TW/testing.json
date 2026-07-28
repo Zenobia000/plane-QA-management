@@ -53,7 +53,16 @@
       "linked_count": "已連結 {count} 個需求",
       "no_links": "尚未連結需求 —— 未連結的案例不會出現在覆蓋率中",
       "link_placeholder": "Plane 工作項目 UUID",
-      "link": "連結"
+      "link": "連結",
+      "source": {
+        "manual": "手動",
+        "automated": "自動"
+      },
+      "orphans": {
+        "heading": "{count} 個自動建立的案例待歸檔",
+        "detail": "CI 從未映射的結果建立了它們。請歸入套件並連結需求,否則它們永遠在覆蓋率之外。",
+        "show": "顯示這些案例"
+      }
     },
     "runs": {
       "heading": "測試執行",
@@ -107,6 +116,21 @@
       "release_gate": "發布門檻",
       "ready": "可以發布",
       "not_ready": "尚不可發布"
+    },
+    "work_item": {
+      "heading": "驗證狀態",
+      "open_testing": "開啟測試",
+      "summary": "{total} 個契約 · {failed} 個失敗 · {unexecuted} 個未執行 · {passed} 個通過",
+      "empty": "尚未建立任何驗收契約。需求一旦排程,未驗證就會擋住發布門檻。",
+      "create_contract": "建立測試案例"
+    },
+    "status": {
+      "passed": "通過",
+      "failed": "失敗",
+      "blocked": "受阻",
+      "skipped": "略過",
+      "open": "未執行",
+      "not_run": "尚未執行"
     }
   }
 }

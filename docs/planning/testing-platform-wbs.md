@@ -89,13 +89,13 @@ progress serialization, store transitions and execution component states pass th
 
 ## 5. Reporting and release readiness
 
-| WBS | Work package              | Depends on | Deliverable / acceptance                                                                                                     | Tests                                                  | Status  |
-| --- | ------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------- |
-| 5.1 | Reporting query contracts | 3.8, 4.5   | Exact definitions of coverage, latest result and readiness                                                                   | Golden-data tests                                      | DONE    |
-| 5.2 | Testing overview          | 5.1        | Active run, failures, blockers, uncovered work and retests                                                                   | Query/UI tests                                         | DONE    |
-| 5.3 | Requirement coverage      | 2.9, 5.1   | Covered/uncovered and execution state by work item                                                                           | Query/contract tests                                   | DONE    |
-| 5.4 | Run scorecard             | 5.1        | Comparable status/configuration summaries                                                                                    | Golden-data tests                                      | DONE    |
-| 5.5 | Release gate view         | 5.2–5.4    | Ready/not-ready ships, but **blockers omit coverage: a requirement with no acceptance contract does not stop `ready: true`** | Manual rehearsal; contradicted by the DEMO measurement | PARTIAL |
+| WBS | Work package              | Depends on | Deliverable / acceptance                                                                                                                               | Tests                            | Status |
+| --- | ------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- | ------ |
+| 5.1 | Reporting query contracts | 3.8, 4.5   | Exact definitions of coverage, latest result and readiness                                                                                             | Golden-data tests                | DONE   |
+| 5.2 | Testing overview          | 5.1        | Active run, failures, blockers, uncovered work and retests                                                                                             | Query/UI tests                   | DONE   |
+| 5.3 | Requirement coverage      | 2.9, 5.1   | Covered/uncovered and execution state by work item, rolled up the parent hierarchy with defects excluded                                               | Query/contract tests             | DONE   |
+| 5.4 | Run scorecard             | 5.1        | Comparable status/configuration summaries                                                                                                              | Golden-data tests                | DONE   |
+| 5.5 | Release gate view         | 5.2–5.4    | Ready/not-ready with explainable blockers: failures, blocks, open defects, unexecuted cases, and scheduled requirements holding no acceptance contract | Contract tests; DEMO measurement | DONE   |
 
 ## 6. Automation ingestion
 
@@ -140,6 +140,10 @@ absent until 2026-07-28, and no test caught it.
 
 **`5.5` claimed explainable blockers.** Seeding the DEMO project produced `release_gate.ready = true` while a story held
 no acceptance contract at all, so the blocker set is incomplete. Tracked as #18 in the product definition.
+**Closed on 2026-07-28** by `9ed58492d`: a scheduled requirement with no contract is now a blocker, `backlog` and
+`cancelled` state groups are exempt, and four contract tests in `test_testing_runs.py` hold the behaviour. `5.3` moved
+with it — coverage now rolls up the parent hierarchy and excludes defects, and the overview reports library tidiness
+and requirement coverage as two separate figures rather than one that conflated them.
 
 **`E2E acceptance` appears as the verification method for several packages, and no end-to-end harness exists** — there
 is no Playwright or Cypress configuration anywhere in the repository. What was actually done is recorded under

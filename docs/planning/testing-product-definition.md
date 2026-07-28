@@ -561,7 +561,13 @@ Epic     生產履歷與異常追溯能力
 
 ### 重建方式
 
-種子腳本透過 `plane.testing.services` 建立所有測試資產,因此版本不可變、run 釘版本、結果僅追加、缺陷僅能從 failed/blocked 產生這些不變量都會被實際強制,不會產生繞過服務層的髒資料。
+```bash
+python manage.py seed_testing_demo --workspace <slug> [--identifier DEMO] [--owner <email>] [--force]
+```
+
+同識別碼的專案已存在時會拒絕執行,必須明確加上 `--force` 才會取代 —— 它會連同該專案的所有 work item、測試契約、執行與結果一併刪除。整個 seeding 在單一 transaction 內完成。
+
+所有測試資產皆透過 `plane.testing.services` 建立,因此版本不可變、run 釘版本、結果僅追加、缺陷僅能從 failed/blocked 產生這些不變量都會被實際強制,不會產生繞過服務層的髒資料。
 
 ---
 

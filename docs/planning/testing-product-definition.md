@@ -535,36 +535,54 @@ Then      P95  <  2,000 ms          ← 結構化欄位,非自由文字
 
 ## 附錄 D · DEMO 範例專案
 
-`DEMO / Traceability Demo` 是依第 5 節結構建立的示範專案,同時**刻意重現 backlog 上的缺口**,讓它們可被觀察而非只能被論述。
+`DEMO / Shop-floor Quality Platform` 依第 5 節的結構建立,取材自產線品質場景(工單 / 序號履歷、AI 誤判修正、廠區權限)。它的用途不只是有資料可看,而是**讓三個軸各自獨立可見**。
 
-結構:
+### 三個軸交叉,而非巢套
+
+| 軸           | 承載方式                        | 值                                        |
+| ------------ | ------------------------------- | ----------------------------------------- |
+| **工作拆解** | work item type + `Issue.parent` | Epic → Feature → Story                    |
+| **需求性質** | work item property(select)      | Functional / Non-functional               |
+| **時間箱**   | Cycle                           | Sprint 2026-07B(已交付)/ 2026-08A(進行中) |
+
+三者互不決定彼此,實測輸出可見:
 
 ```
-Epic     生產履歷與異常追溯能力
-├── Feature  工單與序號生產履歷查詢
-│   ├── Story  IE 以工單編號查詢生產履歷        3 個契約
-│   ├── Story  IE 以產品序號查詢生產履歷        1 個契約
-│   └── 品質需求  履歷查詢 P95 < 2s            1 個門檻契約
-└── Feature  NG 事件修正與審核
-    ├── Story  IE 修正 AI 誤判結果             2 個契約(1 失敗 → 缺陷 → 重驗)
-    └── Story  主管審核修正紀錄                 0 個契約 ← 刻意留白
+#    LEVEL    KIND            SPRINT            STATE
+1    Epic     functional      —                 started
+2    Epic     non_functional  —                 started     ← Epic 也可以是 NFR
+5    Feature  non_functional  —                 started     ← Feature 層的品質約束
+8    Story    non_functional  Sprint 2026-07B   completed
+12   Story    functional      Sprint 2026-08A   unstarted   ← 零契約,擋住門檻
+16   —        —               —                 completed   ← 缺陷,三軸皆空
 ```
 
-一輪驗證釘住 8 個契約版本,產生 9 筆結果(含 1 筆重驗追加)。
+**先前版本把「品質需求」做成與 Story 同層的 work item type**,等於把性質軸折進拆解軸 —— 正是第 5 節警告的那種塌陷。改用 property 之後,一個 Epic、一個 Feature、一個 Story 都能各自是 FR 或 NFR。
+
+缺陷三個欄位皆空是刻意的:它不是需求,不屬於任何一軸,而覆蓋率報表必須自己排除它。
+
+### 系統層 NFR 不是 test case
+
+依第 5 節的四形態,DEMO 把 NFR 分成兩種落點:
+
+- **可執行的**(P95 門檻、失敗率門檻、廠區權限)→ test case,有 `case_type` 與結構化門檻
+- **系統層的**(可用性、DR 演練、相依稽核、TLS 基線、架構簽核)→ **release evidence**,不是 case
+
+門檻案例各有兩次量測(前後兩個 sprint),所以趨勢存在而非單點讀數。
+
+### 敏捷節奏
+
+兩個 sprint 各有一輪驗證,綁定各自的 cycle 與 build。其中一個 Story(履歷匯出)自 07B 順延到 08A,示範跨 sprint 的結轉。TC-1 在 07B 執行後被編輯發布 v2,而**已關閉的 sprint 仍釘住它當初執行的 v1** —— 不可變性在畫面上看得見。
 
 ### 它證實了什麼
 
-執行 `requirement-coverage` 與 `overview` 後的實際輸出:
-
-| 觀察                                                                                                                           | 缺口                             | 現況                                                                                            |
-| ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Epic 與兩個 Feature 皆顯示 **UNCOVERED**,儘管其下共有 8 個契約                                                                 | #14 無階層 roll-up               | ✅ 沿 `parent` roll-up,含環狀防護                                                               |
-| service 建立的缺陷(未標型別)也被列為待覆蓋的需求                                                                               | #14 無型別過濾                   | ✅ 缺陷在計數前排除                                                                             |
-| `coverage_percent` 回報 **100%**,同時有 4 個 work item 未覆蓋 —— 它算的是「已連結需求的 case 佔比」,不是「已被覆蓋的需求佔比」 | #14 指標方向相反                 | ✅ 拆成 `library.linked_percent` 與 `requirements.coverage_percent`,DEMO 上分別為 100% 與 88.9% |
-| `release_gate.ready = true`,儘管有一個 Story 零驗收契約                                                                        | #18 gate 不看覆蓋率,DoR 未被強制 | ✅ 已排程但零契約的需求成為 blocker                                                             |
-| 門檻契約帶著結構化的 `{metric, operator, threshold, unit}` 與量測值 `{measured: 1840, unit: "ms"}`,UI 只當純文字顯示           | #17 缺 type 與門檻渲染           | ⏳ 未修                                                                                         |
-
-**#14 與 #18 的嚴重度是依這份實測結果訂的,不是推估。** 兩者已於 commit `9ed58492d` 修復,由四個契約測試守住:roll-up、缺陷排除、backlog 豁免與已排程項的攔截、兩個指標維持區分。`backlog` 與 `cancelled` 狀態群組不要求契約,其餘皆在範圍內。
+| 觀察                                                                | 對應             |
+| ------------------------------------------------------------------- | ---------------- |
+| Epic #1 繼承 10 個契約、Feature #3 繼承 6 個                        | #14 階層 roll-up |
+| 兩個缺陷完全不在覆蓋率清單裡                                        | #14 型別過濾     |
+| `requirements.coverage_percent` 93.3%,`library.linked_percent` 100% | #14 指標分離     |
+| 門檻同時被「1 個需求無契約」與「可用性未達標」擋下                  | #18 + #15        |
+| TC-1 在 08A 釘 v2、在 07B 仍釘 v1                                   | 版本不可變       |
 
 ### 重建方式
 

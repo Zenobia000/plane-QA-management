@@ -588,5 +588,6 @@ python manage.py seed_testing_demo --workspace <slug> [--identifier DEMO] [--own
 
 每一項各自走一輪 spec → plan → 實作。
 
-視覺版(含 JTBD 地圖、斷點標示、介面線框與 NFR 四形態):<https://claude.ai/code/artifact/2ae97264-65a4-4a77-b111-24bc7cbc6ea4>
-本檔為單一真相源;視覺版內容變更時需同步回此處。
+視覺版(含 JTBD 地圖、斷點標示、介面線框、NFR 四形態與 DEMO 結構):<https://claude.ai/code/artifact/2ae97264-65a4-4a77-b111-24bc7cbc6ea4>
+
+**本檔為唯一真相源。** 視覺版依需要重新產生,不做逐次同步 —— 逐次手工同步兩份內容已證實會累積落差。

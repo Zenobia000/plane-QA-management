@@ -12,6 +12,7 @@ import type {
   TTestDefectInput,
   TTestFolder,
   TTestResult,
+  TTestResultAttachment,
   TTestResultInput,
   TTestingCapabilities,
   TTestingOverview,
@@ -20,10 +21,85 @@ import type {
   TTestRunInput,
 } from "@plane/types";
 import { APIService } from "../api.service";
+import { FileUploadService } from "../file/file-upload.service";
+import { generateFileUploadPayload, getFileMetaDataForUpload } from "../file/helper";
 
 export class TestingService extends APIService {
+  private fileUploadService: FileUploadService;
+
   constructor(BASE_URL?: string) {
     super(BASE_URL || API_BASE_URL);
+    this.fileUploadService = new FileUploadService();
+  }
+
+  private resultAttachmentsUrl(
+    workspaceSlug: string,
+    projectId: string,
+    testRunId: string,
+    runCaseId: string,
+    resultId: string
+  ) {
+    return (
+      `/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/test-runs/${testRunId}` +
+      `/cases/${runCaseId}/results/${resultId}/attachments/`
+    );
+  }
+
+  async getResultAttachments(
+    workspaceSlug: string,
+    projectId: string,
+    testRunId: string,
+    runCaseId: string,
+    resultId: string
+  ): Promise<TTestResultAttachment[]> {
+    return this.get(this.resultAttachmentsUrl(workspaceSlug, projectId, testRunId, runCaseId, resultId))
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Four steps, the same as a work-item attachment: ask for a presigned target,
+   * put the bytes there, then confirm so nothing is listed that never arrived.
+   */
+  async uploadResultAttachment(
+    workspaceSlug: string,
+    projectId: string,
+    testRunId: string,
+    runCaseId: string,
+    resultId: string,
+    file: File
+  ): Promise<TTestResultAttachment> {
+    const url = this.resultAttachmentsUrl(workspaceSlug, projectId, testRunId, runCaseId, resultId);
+    const metadata = await getFileMetaDataForUpload(file);
+    const response = await this.post(url, metadata).catch((error) => {
+      throw error?.response?.data;
+    });
+    const signed = response.data;
+    await this.fileUploadService.uploadFile(signed.upload_data.url, generateFileUploadPayload(signed, file));
+    return this.patch(`${url}${signed.asset_id}/`)
+      .then((confirmed) => confirmed.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteResultAttachment(
+    workspaceSlug: string,
+    projectId: string,
+    testRunId: string,
+    runCaseId: string,
+    resultId: string,
+    assetId: string
+  ): Promise<void> {
+    return this.delete(
+      `${this.resultAttachmentsUrl(workspaceSlug, projectId, testRunId, runCaseId, resultId)}${assetId}/`
+    )
+      .then(() => undefined)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
   }
 
   async getCapabilities(workspaceSlug: string, projectId: string): Promise<TTestingCapabilities> {

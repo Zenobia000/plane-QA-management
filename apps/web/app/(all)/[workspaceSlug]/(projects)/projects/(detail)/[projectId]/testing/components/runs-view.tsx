@@ -21,7 +21,18 @@ type Props = { workspaceSlug: string; projectId: string };
 
 export const TestRunsView = observer(function TestRunsView({ workspaceSlug, projectId }: Props) {
   const { t } = useTranslation();
-  const { cases, folders, runs, createRun, recordResult, closeRun, createDefect } = useTesting();
+  const {
+    cases,
+    folders,
+    runs,
+    createRun,
+    recordResult,
+    closeRun,
+    createDefect,
+    listResultAttachments,
+    attachResultFile,
+    detachResultFile,
+  } = useTesting();
   const { runId, runCaseId } = useParams();
   const navigate = useNavigate();
   const [building, setBuilding] = useState(false);
@@ -60,6 +71,15 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
         }
         onClose={() => closeRun(workspaceSlug, projectId, selectedRun.id)}
         onCreateDefect={(id, resultId) => createDefect(workspaceSlug, projectId, selectedRun.id, id, resultId)}
+        onListAttachments={(id, resultId) =>
+          listResultAttachments(workspaceSlug, projectId, selectedRun.id, id, resultId)
+        }
+        onAttach={(id, resultId, file) =>
+          attachResultFile(workspaceSlug, projectId, selectedRun.id, id, resultId, file)
+        }
+        onDetach={(id, resultId, assetId) =>
+          detachResultFile(workspaceSlug, projectId, selectedRun.id, id, resultId, assetId)
+        }
       />
     );
   }

@@ -5,10 +5,10 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Bug, Check, CircleSlash, Lock, SkipForward, X } from "lucide-react";
+import { Bug, Check, CircleSlash, Lock, Paperclip, SkipForward, X } from "lucide-react";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
-import type { TTestResultInput, TTestResultStatus, TTestRun } from "@plane/types";
+import type { TTestResultAttachment, TTestResultInput, TTestResultStatus, TTestRun } from "@plane/types";
 
 type Props = {
   run: TTestRun;
@@ -19,6 +19,9 @@ type Props = {
   onResult: (runCaseId: string, input: TTestResultInput) => Promise<void>;
   onClose: () => Promise<void>;
   onCreateDefect: (runCaseId: string, resultId: string) => Promise<unknown>;
+  onListAttachments: (runCaseId: string, resultId: string) => Promise<TTestResultAttachment[]>;
+  onAttach: (runCaseId: string, resultId: string, file: File) => Promise<TTestResultAttachment>;
+  onDetach: (runCaseId: string, resultId: string, assetId: string) => Promise<void>;
 };
 
 const statusStyle: Record<string, string> = {
@@ -42,11 +45,17 @@ export function ExecutionWorkspace({
   onResult,
   onClose,
   onCreateDefect,
+  onListAttachments,
+  onAttach,
+  onDetach,
 }: Props) {
   const { t } = useTranslation();
   const [actual, setActual] = useState("");
   const [saving, setSaving] = useState(false);
   const [creatingDefect, setCreatingDefect] = useState(false);
+  const [attachments, setAttachments] = useState<TTestResultAttachment[]>([]);
+  const [attaching, setAttaching] = useState(false);
+  const [attachError, setAttachError] = useState<string | null>(null);
   const selected = useMemo(() => {
     const addressed = selectedRunCaseId && run.run_cases.find((item) => item.id === selectedRunCaseId);
     if (addressed) return addressed;
@@ -56,6 +65,25 @@ export function ExecutionWorkspace({
   const readyForRetest =
     !!latestResult?.defects.length &&
     latestResult.defects.every((defect) => defect.state_group === "completed" || defect.state_group === "cancelled");
+
+  // Attachments belong to a specific result, so they reload whenever the addressed
+  // result changes rather than being held per run case.
+  useEffect(() => {
+    let active = true;
+    if (!latestResult) {
+      setAttachments([]);
+      return undefined;
+    }
+    void onListAttachments(selected!.id, latestResult.id)
+      .then((items) => active && setAttachments(items))
+      .catch(() => active && setAttachments([]));
+    return () => {
+      active = false;
+    };
+    // Keyed on the result identity alone: depending on the whole object would
+    // reload the list on every unrelated store mutation.
+    // oxlint-disable-next-line exhaustive-deps
+  }, [latestResult?.id]);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -171,6 +199,77 @@ export function ExecutionWorkspace({
               placeholder={t("testing.execution.actual_placeholder")}
             />
           </label>
+          {latestResult && (
+            <div>
+              <div className="flex items-center justify-between">
+                <h4 className="text-12 font-semibold text-secondary uppercase">{t("testing.execution.evidence")}</h4>
+                <label className="flex cursor-pointer items-center gap-1 text-11 text-accent-primary">
+                  <Paperclip className="size-3.5" />
+                  {attaching ? t("testing.execution.uploading") : t("testing.execution.attach")}
+                  <input
+                    type="file"
+                    className="hidden"
+                    disabled={attaching || run.status === "completed"}
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (!file) return;
+                      setAttaching(true);
+                      setAttachError(null);
+                      try {
+                        const created = await onAttach(selected.id, latestResult.id, file);
+                        setAttachments((current) => [...current, created]);
+                      } catch {
+                        setAttachError(t("testing.execution.attach_failed"));
+                      } finally {
+                        setAttaching(false);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+              <p className="mt-1 text-11 text-tertiary">{t("testing.execution.evidence_hint")}</p>
+              {attachments.length ? (
+                <ul className="mt-2 space-y-1">
+                  {attachments.map((item) => (
+                    <li key={item.id} className="flex items-center gap-2 text-12">
+                      <Paperclip className="size-3.5 shrink-0 text-tertiary" />
+                      {item.asset_url ? (
+                        <a
+                          href={item.asset_url}
+                          className="min-w-0 flex-1 truncate text-accent-primary hover:underline"
+                        >
+                          {item.name}
+                        </a>
+                      ) : (
+                        <span className="min-w-0 flex-1 truncate text-primary">{item.name}</span>
+                      )}
+                      {run.status !== "completed" && (
+                        <button
+                          type="button"
+                          aria-label={t("testing.execution.remove", { name: item.name })}
+                          onClick={async () => {
+                            await onDetach(selected.id, latestResult.id, item.id);
+                            setAttachments((current) => current.filter((asset) => asset.id !== item.id));
+                          }}
+                          className="rounded p-0.5 text-tertiary hover:bg-layer-2 hover:text-primary"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-11 text-tertiary">{t("testing.execution.no_evidence")}</p>
+              )}
+              {attachError && (
+                <p role="alert" className="mt-1 text-11 text-danger-primary">
+                  {attachError}
+                </p>
+              )}
+            </div>
+          )}
           {latestResult && (latestResult.status === "failed" || latestResult.status === "blocked") && (
             <div className="rounded-md border border-danger-subtle bg-danger-subtle/20 p-3">
               <div className="flex items-center justify-between gap-3">

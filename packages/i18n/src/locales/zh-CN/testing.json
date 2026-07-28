@@ -130,7 +130,14 @@
       "skip": "跳过 (S)",
       "block": "受阻 (B)",
       "fail": "失败 (F)",
-      "pass": "通过 (P)"
+      "pass": "通过 (P)",
+      "evidence": "证据",
+      "evidence_hint": "截图与日志会随结果一并带进缺陷。",
+      "attach": "附加文件",
+      "uploading": "上传中…",
+      "remove": "移除 {name}",
+      "no_evidence": "尚未附加文件",
+      "attach_failed": "上传失败。"
     },
     "overview": {
       "heading": "品質总览",

@@ -17,6 +17,16 @@ export type TTestThreshold = {
 };
 
 /** The measurement a threshold case produced. */
+/** Evidence attached to an execution result. */
+export type TTestResultAttachment = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  asset_url: string | null;
+  created_at: string;
+};
+
 export type TTestMeasurement = { measured?: number; unit?: string; metric?: string; source?: string };
 
 export type TTestStep = {

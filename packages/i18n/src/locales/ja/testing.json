@@ -130,7 +130,14 @@
       "skip": "Skip (S)",
       "block": "Block (B)",
       "fail": "Fail (F)",
-      "pass": "Pass (P)"
+      "pass": "Pass (P)",
+      "evidence": "Evidence",
+      "evidence_hint": "Screenshots and logs travel with the result into the defect.",
+      "attach": "Attach a file",
+      "uploading": "Uploading…",
+      "remove": "Remove {name}",
+      "no_evidence": "No file attached",
+      "attach_failed": "Upload failed."
     },
     "overview": {
       "heading": "Quality overview",

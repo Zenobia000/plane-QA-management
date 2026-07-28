@@ -130,7 +130,14 @@
       "skip": "略過 (S)",
       "block": "受阻 (B)",
       "fail": "失敗 (F)",
-      "pass": "通過 (P)"
+      "pass": "通過 (P)",
+      "evidence": "證據",
+      "evidence_hint": "截圖與日誌會隨結果一併帶進缺陷。",
+      "attach": "附加檔案",
+      "uploading": "上傳中…",
+      "remove": "移除 {name}",
+      "no_evidence": "尚未附加檔案",
+      "attach_failed": "上傳失敗。"
     },
     "overview": {
       "heading": "品質總覽",

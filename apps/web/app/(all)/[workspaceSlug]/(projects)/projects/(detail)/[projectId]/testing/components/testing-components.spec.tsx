@@ -143,6 +143,9 @@ describe("Testing components", () => {
         onResult={vi.fn()}
         onClose={vi.fn()}
         onCreateDefect={vi.fn()}
+        onListAttachments={vi.fn().mockResolvedValue([])}
+        onAttach={vi.fn()}
+        onDetach={vi.fn()}
       />
     );
     expect(html).toContain("Ready for retest");
@@ -168,6 +171,9 @@ describe("Testing components", () => {
         onResult={vi.fn()}
         onClose={vi.fn()}
         onCreateDefect={vi.fn()}
+        onListAttachments={vi.fn().mockResolvedValue([])}
+        onAttach={vi.fn()}
+        onDetach={vi.fn()}
       />
     );
     // The defect panel renders only for the addressed case, so its presence is
@@ -191,6 +197,9 @@ describe("Testing components", () => {
         onResult={vi.fn()}
         onClose={vi.fn()}
         onCreateDefect={vi.fn()}
+        onListAttachments={vi.fn().mockResolvedValue([])}
+        onAttach={vi.fn()}
+        onDetach={vi.fn()}
       />
     );
     expect(html).not.toContain("Checkout defect (completed)");
@@ -205,6 +214,9 @@ describe("Testing components", () => {
         onResult={vi.fn()}
         onClose={vi.fn()}
         onCreateDefect={vi.fn()}
+        onListAttachments={vi.fn().mockResolvedValue([])}
+        onAttach={vi.fn()}
+        onDetach={vi.fn()}
       />
     );
     expect(html).toContain("Closed");

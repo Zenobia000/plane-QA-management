@@ -12,6 +12,7 @@ import type {
   TTestDefect,
   TTestDefectInput,
   TTestFolder,
+  TTestResultAttachment,
   TTestResultInput,
   TTestingCapabilities,
   TTestingOverview,
@@ -58,6 +59,29 @@ export interface ITestingStore {
     input: TTestResultInput
   ) => Promise<void>;
   closeRun: (workspaceSlug: string, projectId: string, runId: string) => Promise<void>;
+  listResultAttachments: (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string
+  ) => Promise<TTestResultAttachment[]>;
+  attachResultFile: (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string,
+    file: File
+  ) => Promise<TTestResultAttachment>;
+  detachResultFile: (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string,
+    assetId: string
+  ) => Promise<void>;
   createDefect: (
     workspaceSlug: string,
     projectId: string,
@@ -252,6 +276,32 @@ export class TestingStore implements ITestingStore {
       } as TTestRun["progress"];
     });
   };
+
+  listResultAttachments = (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string
+  ) => this.service.getResultAttachments(workspaceSlug, projectId, runId, runCaseId, resultId);
+
+  attachResultFile = (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string,
+    file: File
+  ) => this.service.uploadResultAttachment(workspaceSlug, projectId, runId, runCaseId, resultId, file);
+
+  detachResultFile = (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string,
+    assetId: string
+  ) => this.service.deleteResultAttachment(workspaceSlug, projectId, runId, runCaseId, resultId, assetId);
 
   closeRun = async (workspaceSlug: string, projectId: string, runId: string) => {
     const updated = await this.service.closeTestRun(workspaceSlug, projectId, runId);

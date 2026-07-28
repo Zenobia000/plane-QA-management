@@ -73,6 +73,17 @@ class TestCaseVersion(ProjectBaseModel):
         ("low", "Low"),
         ("none", "None"),
     )
+    # How the contract is verified, not what kind of requirement it answers for.
+    # A functional requirement can carry a performance threshold among its
+    # acceptance conditions, so this never doubles as an FR/NFR classification --
+    # that lives on the work item.
+    CASE_TYPE_CHOICES = (
+        ("functional", "Functional"),
+        ("performance", "Performance"),
+        ("security", "Security"),
+        ("reliability", "Reliability"),
+        ("compliance", "Compliance"),
+    )
 
     test_case = models.ForeignKey(TestCase, on_delete=models.CASCADE, related_name="versions")
     version = models.PositiveIntegerField()
@@ -80,6 +91,7 @@ class TestCaseVersion(ProjectBaseModel):
     description = models.JSONField(default=dict, blank=True)
     preconditions = models.JSONField(default=dict, blank=True)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="none")
+    case_type = models.CharField(max_length=20, choices=CASE_TYPE_CHOICES, default="functional")
     tags = models.JSONField(default=list, blank=True)
 
     class Meta:
@@ -255,6 +267,45 @@ class TestResultIssueLink(ProjectBaseModel):
     def clean(self):
         if self.test_result.project_id != self.project_id or self.issue.project_id != self.project_id:
             raise ValidationError("Test result and defect links must stay within one project.")
+
+
+class ReleaseEvidence(ProjectBaseModel):
+    """Evidence for a release decision that testing cannot produce.
+
+    Availability is last month's measurement and a recovery objective is proved
+    by a drill; neither can be executed before shipping, so forcing them into a
+    test case yields a case that runs daily while representing no test. They are
+    recorded here instead and consulted by the release gate alongside run results.
+    """
+
+    KIND_CHOICES = (
+        ("slo", "Service level objective"),
+        ("scan", "Security or compliance scan"),
+        ("review", "Review or sign-off"),
+        ("other", "Other"),
+    )
+    STATUS_CHOICES = (("passing", "Passing"), ("failing", "Failing"), ("pending", "Pending"))
+
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES)
+    # Stable per project, so a repeated submission updates the same row rather
+    # than accumulating a history of duplicates in the gate.
+    key = models.CharField(max_length=120)
+    name = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    detail = models.CharField(max_length=500, blank=True, default="")
+    source_url = models.URLField(max_length=800, blank=True, default="")
+    recorded_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "test_release_evidence"
+        ordering = ("kind", "name")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "key"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_active_release_evidence_key",
+            )
+        ]
 
 
 class TestCaseAutomationLink(ProjectBaseModel):

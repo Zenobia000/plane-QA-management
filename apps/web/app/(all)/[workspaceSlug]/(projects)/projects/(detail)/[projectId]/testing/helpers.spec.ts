@@ -18,12 +18,15 @@ const makeCase = (id: string, sequence: number) =>
       description: {},
       preconditions: {},
       priority: "none",
+      case_type: "functional",
       tags: [],
       steps: [],
       created_at: "",
       created_by_id: null,
     },
     work_item_ids: [],
+    work_items: [],
+    executions: [],
     latest_status: null,
   }) satisfies TTestCase;
 

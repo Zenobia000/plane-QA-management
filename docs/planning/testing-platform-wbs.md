@@ -7,6 +7,7 @@ Architecture contract: `docs/architecture/testing-platform-workflow.md`
 ## Status legend
 
 - `DONE`: implemented and verified
+- `PARTIAL`: some of the stated deliverable ships; the shortfall is named in the row
 - `ACTIVE`: currently being implemented
 - `READY`: dependencies satisfied
 - `BLOCKED`: missing prerequisite or decision
@@ -43,35 +44,35 @@ source-built API/Web containers return HTTP 200 in the isolated localhost rehear
 
 ## 2. Test Case Library MVP
 
-| WBS  | Work package                  | Depends on | Deliverable / acceptance                                    | Tests                                  | Status |
-| ---- | ----------------------------- | ---------- | ----------------------------------------------------------- | -------------------------------------- | ------ |
-| 2.1  | ADR: TestCase aggregate       | 0.5        | Ownership, identity and work-item link decision accepted    | ADR review                             | DONE   |
-| 2.2  | TestFolder model              | 2.1        | Project-scoped nested folders with ordering and soft delete | Model constraints; cross-project tests | DONE   |
-| 2.3  | TestCase model                | 2.1        | Stable case identity, folder, lifecycle and sequence        | Model/unit tests                       | DONE   |
-| 2.4  | TestCaseVersion and steps     | 2.3        | Immutable versions and ordered structured steps             | Concurrency/invariant tests            | DONE   |
-| 2.5  | Library application services  | 2.2–2.4    | Create, edit-as-new-version, move and archive transactions  | Service tests                          | DONE   |
-| 2.6  | App API                       | 2.5        | CRUD, search, filtering and cursor pagination               | Contract/auth tests                    | DONE   |
-| 2.7  | Typed services and MobX store | 2.6        | Normalized state with request deduplication and rollback    | Store/service unit tests               | DONE   |
-| 2.8  | Folder/list/detail UI         | 2.7        | Folder tree, case list and peek/detail editor               | Component states; accessibility        | DONE   |
-| 2.9  | Requirement links             | 2.5        | Typed links between TestCase and Plane Work Item            | Cross-project and API tests            | DONE   |
-| 2.10 | Library acceptance journey    | 2.8, 2.9   | Create, edit, preserve old version, link requirement        | E2E acceptance                         | DONE   |
+| WBS  | Work package                  | Depends on | Deliverable / acceptance                                                                                                                                            | Tests                                                          | Status  |
+| ---- | ----------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------- |
+| 2.1  | ADR: TestCase aggregate       | 0.5        | Ownership, identity and work-item link decision accepted                                                                                                            | ADR review                                                     | DONE    |
+| 2.2  | TestFolder model              | 2.1        | Project-scoped nested folders with ordering and soft delete                                                                                                         | Model constraints; cross-project tests                         | DONE    |
+| 2.3  | TestCase model                | 2.1        | Stable case identity, folder, lifecycle and sequence                                                                                                                | Model/unit tests                                               | DONE    |
+| 2.4  | TestCaseVersion and steps     | 2.3        | Immutable versions and ordered structured steps                                                                                                                     | Concurrency/invariant tests                                    | DONE    |
+| 2.5  | Library application services  | 2.2–2.4    | Create, edit-as-new-version, move and archive transactions                                                                                                          | Service tests                                                  | DONE    |
+| 2.6  | App API                       | 2.5        | CRUD, search, filtering and cursor pagination                                                                                                                       | Contract/auth tests                                            | DONE    |
+| 2.7  | Typed services and MobX store | 2.6        | Normalized state with request deduplication and rollback                                                                                                            | Store/service unit tests                                       | DONE    |
+| 2.8  | Folder/list/detail UI         | 2.7        | Case list and detail editor ship. **Folders render as a flat list although `TestFolder.parent` nests, and the detail editor is a third column, not a peek overlay** | Static-render component tests; no accessibility audit recorded | PARTIAL |
+| 2.9  | Requirement links             | 2.5        | Typed links between TestCase and Plane Work Item                                                                                                                    | Cross-project and API tests                                    | DONE    |
+| 2.10 | Library acceptance journey    | 2.8, 2.9   | Create, edit, preserve old version, link requirement                                                                                                                | Manual rehearsal, 2026-07-14                                   | DONE    |
 
 Exit evidence: model, contract, CSV round-trip and PostgreSQL concurrency tests pass; MobX deduplication/rollback and
 component acceptance tests pass; the Testing Library is included in the production Web image.
 
 ## 3. Test Run and manual execution MVP
 
-| WBS | Work package                 | Depends on | Deliverable / acceptance                                         | Tests                         | Status |
-| --- | ---------------------------- | ---------- | ---------------------------------------------------------------- | ----------------------------- | ------ |
-| 3.1 | ADR: immutable execution     | 2.1        | Version pinning, result append and close semantics accepted      | ADR review                    | DONE   |
-| 3.2 | TestRun models               | 2.4, 3.1   | Draft/active/completed run scoped to project/build/cycle/module  | Model tests                   | DONE   |
-| 3.3 | Fixed selection builder      | 3.2        | Resolve selection and pin case versions atomically               | Transaction/concurrency tests | DONE   |
-| 3.4 | Result state machine         | 3.2        | Open/pass/fail/block/skip and append-only retest                 | Unit/model tests              | DONE   |
-| 3.5 | Run APIs and client state    | 3.3, 3.4   | List, create, execute, close and filter endpoints                | API/store tests               | DONE   |
-| 3.6 | Run builder UI               | 3.5        | Details, selection, configuration, preview, create               | Component/E2E tests           | DONE   |
-| 3.7 | Execution workspace          | 3.5        | Case queue, pinned detail, sticky result actions, next-case flow | Keyboard/accessibility/E2E    | DONE   |
-| 3.8 | Progress summaries           | 3.4        | Transactionally correct status counts and latest result          | Query/service tests           | DONE   |
-| 3.9 | Execution acceptance journey | 3.6–3.8    | Build fixed run, mutate library, execute without history drift   | E2E acceptance                | DONE   |
+| WBS | Work package                 | Depends on | Deliverable / acceptance                                         | Tests                                         | Status |
+| --- | ---------------------------- | ---------- | ---------------------------------------------------------------- | --------------------------------------------- | ------ |
+| 3.1 | ADR: immutable execution     | 2.1        | Version pinning, result append and close semantics accepted      | ADR review                                    | DONE   |
+| 3.2 | TestRun models               | 2.4, 3.1   | Draft/active/completed run scoped to project/build/cycle/module  | Model tests                                   | DONE   |
+| 3.3 | Fixed selection builder      | 3.2        | Resolve selection and pin case versions atomically               | Transaction/concurrency tests                 | DONE   |
+| 3.4 | Result state machine         | 3.2        | Open/pass/fail/block/skip and append-only retest                 | Unit/model tests                              | DONE   |
+| 3.5 | Run APIs and client state    | 3.3, 3.4   | List, create, execute, close and filter endpoints                | API/store tests                               | DONE   |
+| 3.6 | Run builder UI               | 3.5        | Details, selection, configuration, preview, create               | Static-render component tests                 | DONE   |
+| 3.7 | Execution workspace          | 3.5        | Case queue, pinned detail, sticky result actions, next-case flow | Static-render tests; keyboard flow unverified | DONE   |
+| 3.8 | Progress summaries           | 3.4        | Transactionally correct status counts and latest result          | Query/service tests                           | DONE   |
+| 3.9 | Execution acceptance journey | 3.6–3.8    | Build fixed run, mutate library, execute without history drift   | Manual rehearsal, 2026-07-14                  | DONE   |
 
 Exit evidence: fixed selection/version pinning, concurrent result sequencing, append-only retest, close protection,
 progress serialization, store transitions and execution component states pass their automated gates.
@@ -82,30 +83,30 @@ progress serialization, store transitions and execution component states pass th
 | --- | ----------------------- | ---------- | ------------------------------------------------------ | ----------------------- | ------ |
 | 4.1 | Result–Issue link model | 3.4        | Typed defect relation in the same project              | Constraint/auth tests   | DONE   |
 | 4.2 | Create defect command   | 4.1        | Issue and link created atomically from failed evidence | Service/API tests       | DONE   |
-| 4.3 | Prefilled defect UX     | 4.2        | Environment, steps, expected, actual and source links  | Component/E2E           | DONE   |
+| 4.3 | Prefilled defect UX     | 4.2        | Environment, steps, expected, actual and source links  | Static-render tests     | DONE   |
 | 4.4 | Ready-for-retest state  | 4.1        | Resolved defect is visible from execution context      | Query/integration tests | DONE   |
 | 4.5 | Retest workflow         | 4.4        | New result retained beside original failure            | State/E2E tests         | DONE   |
 
 ## 5. Reporting and release readiness
 
-| WBS | Work package              | Depends on | Deliverable / acceptance                                   | Tests                | Status |
-| --- | ------------------------- | ---------- | ---------------------------------------------------------- | -------------------- | ------ |
-| 5.1 | Reporting query contracts | 3.8, 4.5   | Exact definitions of coverage, latest result and readiness | Golden-data tests    | DONE   |
-| 5.2 | Testing overview          | 5.1        | Active run, failures, blockers, uncovered work and retests | Query/UI tests       | DONE   |
-| 5.3 | Requirement coverage      | 2.9, 5.1   | Covered/uncovered and execution state by work item         | Query/contract tests | DONE   |
-| 5.4 | Run scorecard             | 5.1        | Comparable status/configuration summaries                  | Golden-data tests    | DONE   |
-| 5.5 | Release gate view         | 5.2–5.4    | Evidence-based ready/not-ready with explainable blockers   | E2E acceptance       | DONE   |
+| WBS | Work package              | Depends on | Deliverable / acceptance                                                                                                                               | Tests                            | Status |
+| --- | ------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- | ------ |
+| 5.1 | Reporting query contracts | 3.8, 4.5   | Exact definitions of coverage, latest result and readiness                                                                                             | Golden-data tests                | DONE   |
+| 5.2 | Testing overview          | 5.1        | Active run, failures, blockers, uncovered work and retests                                                                                             | Query/UI tests                   | DONE   |
+| 5.3 | Requirement coverage      | 2.9, 5.1   | Covered/uncovered and execution state by work item, rolled up the parent hierarchy with defects excluded                                               | Query/contract tests             | DONE   |
+| 5.4 | Run scorecard             | 5.1        | Comparable status/configuration summaries                                                                                                              | Golden-data tests                | DONE   |
+| 5.5 | Release gate view         | 5.2–5.4    | Ready/not-ready with explainable blockers: failures, blocks, open defects, unexecuted cases, and scheduled requirements holding no acceptance contract | Contract tests; DEMO measurement | DONE   |
 
 ## 6. Automation ingestion
 
-| WBS | Work package                | Depends on | Deliverable / acceptance                               | Tests                  | Status |
-| --- | --------------------------- | ---------- | ------------------------------------------------------ | ---------------------- | ------ |
-| 6.1 | Public API ADR and schema   | 3.4        | Auth, identifiers, idempotency and partial errors      | OpenAPI/ADR review     | DONE   |
-| 6.2 | Shared application services | 6.1        | App and public adapters share transitions and policies | Parity contract tests  | DONE   |
-| 6.3 | Idempotent ingestion        | 6.2        | Repeated upload cannot duplicate run/results           | Concurrency/API tests  | DONE   |
-| 6.4 | Artifact processing         | 6.3        | After-commit Celery upload to MinIO with diagnostics   | Task/integration tests | DONE   |
-| 6.5 | JUnit adapter               | 6.3        | Documented mapping and actionable unmapped results     | Fixture/import tests   | DONE   |
-| 6.6 | CI acceptance               | 6.4, 6.5   | Upload, retry and report visible in release view       | End-to-end test        | DONE   |
+| WBS | Work package                | Depends on | Deliverable / acceptance                               | Tests                        | Status |
+| --- | --------------------------- | ---------- | ------------------------------------------------------ | ---------------------------- | ------ |
+| 6.1 | Public API ADR and schema   | 3.4        | Auth, identifiers, idempotency and partial errors      | OpenAPI/ADR review           | DONE   |
+| 6.2 | Shared application services | 6.1        | App and public adapters share transitions and policies | Parity contract tests        | DONE   |
+| 6.3 | Idempotent ingestion        | 6.2        | Repeated upload cannot duplicate run/results           | Concurrency/API tests        | DONE   |
+| 6.4 | Artifact processing         | 6.3        | After-commit Celery upload to MinIO with diagnostics   | Task/integration tests       | DONE   |
+| 6.5 | JUnit adapter               | 6.3        | Documented mapping and actionable unmapped results     | Fixture/import tests         | DONE   |
+| 6.6 | CI acceptance               | 6.4, 6.5   | Upload, retry and report visible in release view       | Manual rehearsal, 2026-07-14 | DONE   |
 
 ## 7. Data portability and operations
 
@@ -126,6 +127,31 @@ and `git diff --check` passes. Source Web/API images build, a new PostgreSQL dat
 `docs/operations/rehearsals/2026-07-14-localhost-source-smoke.md`. Restore, current-copy schema-upgrade, and isolated
 upstream-merge drills are recorded alongside it. The complete authenticated browser, CSV, JUnit retry, and artifact
 journeys are recorded in `docs/operations/rehearsals/2026-07-14-authenticated-browser-acceptance.md`.
+
+## Accuracy audit (2026-07-28)
+
+Every package here read `DONE`. Two rows did not survive checking against the tree, and one verification method was
+recorded that the repository does not possess.
+
+**`2.8` claimed a folder tree and a peek editor; neither exists.** Folders render as a flat list even though
+`TestFolder.parent` nests them, and the detail editor is the third column of the library view. The peek overlay is
+specified in section 4 of `testing-product-definition.md` and has not been built. Folder delete and rename were also
+absent until 2026-07-28, and no test caught it.
+
+**`5.5` claimed explainable blockers.** Seeding the DEMO project produced `release_gate.ready = true` while a story held
+no acceptance contract at all, so the blocker set is incomplete. Tracked as #18 in the product definition.
+**Closed on 2026-07-28** by `9ed58492d`: a scheduled requirement with no contract is now a blocker, `backlog` and
+`cancelled` state groups are exempt, and four contract tests in `test_testing_runs.py` hold the behaviour. `5.3` moved
+with it — coverage now rolls up the parent hierarchy and excludes defects, and the overview reports library tidiness
+and requirement coverage as two separate figures rather than one that conflated them.
+
+**`E2E acceptance` appears as the verification method for several packages, and no end-to-end harness exists** — there
+is no Playwright or Cypress configuration anywhere in the repository. What was actually done is recorded under
+`docs/operations/rehearsals/`: five dated manual runs from 2026-07-14. Those are real evidence that the journey worked
+once; they are not a gate that stops it breaking. The affected rows now name the method genuinely used.
+
+The distinction matters because this document's own change-control rule requires listed acceptance evidence before a
+package moves to `DONE`. Where the listed evidence is a harness that does not exist, the rule cannot bind.
 
 ## Milestones
 

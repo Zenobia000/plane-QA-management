@@ -9,6 +9,7 @@ import { orderBy } from "lodash-es";
 import { Play, Plus } from "lucide-react";
 import { observer } from "mobx-react";
 import { useNavigate, useParams } from "react-router";
+import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import type { TTestResultInput, TTestRunInput } from "@plane/types";
 import { useTesting } from "@/hooks/store/use-testing";
@@ -19,7 +20,19 @@ import { TestRunBuilder } from "./run-builder";
 type Props = { workspaceSlug: string; projectId: string };
 
 export const TestRunsView = observer(function TestRunsView({ workspaceSlug, projectId }: Props) {
-  const { cases, runs, createRun, recordResult, closeRun, createDefect } = useTesting();
+  const { t } = useTranslation();
+  const {
+    cases,
+    folders,
+    runs,
+    createRun,
+    recordResult,
+    closeRun,
+    createDefect,
+    listResultAttachments,
+    attachResultFile,
+    detachResultFile,
+  } = useTesting();
   const { runId, runCaseId } = useParams();
   const navigate = useNavigate();
   const [building, setBuilding] = useState(false);
@@ -33,9 +46,9 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
   if (runId && !selectedRun) {
     return (
       <section className="flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-subtle bg-surface-1 p-8">
-        <p className="text-13 text-secondary">This test run does not exist in this project.</p>
+        <p className="text-13 text-secondary">{t("testing.runs.not_found")}</p>
         <Button variant="secondary" onClick={() => navigate(testingPath({ workspaceSlug, projectId, tab: "runs" }))}>
-          Back to all runs
+          {t("testing.runs.back_to_runs")}
         </Button>
       </section>
     );
@@ -58,6 +71,15 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
         }
         onClose={() => closeRun(workspaceSlug, projectId, selectedRun.id)}
         onCreateDefect={(id, resultId) => createDefect(workspaceSlug, projectId, selectedRun.id, id, resultId)}
+        onListAttachments={(id, resultId) =>
+          listResultAttachments(workspaceSlug, projectId, selectedRun.id, id, resultId)
+        }
+        onAttach={(id, resultId, file) =>
+          attachResultFile(workspaceSlug, projectId, selectedRun.id, id, resultId, file)
+        }
+        onDetach={(id, resultId, assetId) =>
+          detachResultFile(workspaceSlug, projectId, selectedRun.id, id, resultId, assetId)
+        }
       />
     );
   }
@@ -65,7 +87,10 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
   if (building) {
     return (
       <TestRunBuilder
+        workspaceSlug={workspaceSlug}
+        projectId={projectId}
         testCases={testCases}
+        folders={Object.values(folders)}
         onCancel={() => setBuilding(false)}
         onCreate={async (input: TTestRunInput) => {
           const created = await createRun(workspaceSlug, projectId, input);
@@ -80,11 +105,11 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
     <>
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-20 font-semibold text-primary">Test runs</h1>
-          <p className="mt-1 text-13 text-secondary">Execute pinned test case versions and retain every result.</p>
+          <h1 className="text-20 font-semibold text-primary">{t("testing.runs.heading")}</h1>
+          <p className="mt-1 text-13 text-secondary">{t("testing.runs.subheading")}</p>
         </div>
         <Button variant="primary" size="lg" onClick={() => setBuilding(true)} disabled={!testCases.length}>
-          <Plus className="size-4" /> Create run
+          <Plus className="size-4" /> {t("testing.runs.create")}
         </Button>
       </div>
       <section className="overflow-hidden rounded-lg border border-subtle bg-surface-1">
@@ -97,7 +122,7 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
           >
             <span>
               <span className="block text-13 font-medium text-primary">{run.name}</span>
-              <span className="text-11 text-tertiary">{run.build || "No build"}</span>
+              <span className="text-11 text-tertiary">{run.build || t("testing.runs.no_build")}</span>
             </span>
             <span className="text-12 text-secondary capitalize">{run.status}</span>
             <span className="text-12 text-secondary">
@@ -106,11 +131,7 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
             <Play className="size-4 text-tertiary" />
           </button>
         ))}
-        {!testRuns.length && (
-          <p className="p-8 text-center text-13 text-secondary">
-            No test runs yet. Select cases and create a fixed run.
-          </p>
-        )}
+        {!testRuns.length && <p className="p-8 text-center text-13 text-secondary">{t("testing.runs.empty")}</p>}
       </section>
     </>
   );

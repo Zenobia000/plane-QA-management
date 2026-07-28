@@ -9,10 +9,12 @@ const capability = {
   capabilities: { test_cases: true, test_runs: true, reports: true, automation_ingestion: true },
 };
 const overview = {
-  library: { total: 0, requirement_linked: 0, coverage_percent: 0 },
+  library: { total: 0, requirement_linked: 0, linked_percent: 0 },
+  requirements: { total: 0, covered: 0, uncovered: 0, coverage_percent: 0 },
   runs: { total: 0, active: 0 },
   latest_run: null,
   open_defects: 0,
+  release_evidence: [],
   release_gate: { ready: false, blockers: [] },
   scorecards: [],
 };

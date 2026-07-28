@@ -99,6 +99,7 @@ from .testing import (
     TestCase,
     TestCaseVersion,
     TestCaseWorkItemLink,
+    ReleaseEvidence,
     TestCaseAutomationLink,
     TestResult,
     TestResultIssueLink,

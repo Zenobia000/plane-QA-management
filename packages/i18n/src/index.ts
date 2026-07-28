@@ -19,5 +19,9 @@ export type { TNamespace } from "./constants/namespaces";
 // Utilities
 export { setLanguage } from "./core/set-language";
 
+// Exposed so tests can await resource loading before asserting on rendered copy;
+// without it a static render sees keys, or values with unresolved placeholders.
+export { i18nInstance, initPromise } from "./core/instance";
+
 // Constants
 export { FALLBACK_LANGUAGE, SUPPORTED_LANGUAGES, LANGUAGE_STORAGE_KEY } from "./constants/language";

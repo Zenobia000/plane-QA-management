@@ -6,7 +6,16 @@ import pytest
 from django.utils import timezone
 from rest_framework import status
 
-from plane.db.models import Issue, Project, ProjectMember, TestCase, TestResult, TestResultIssueLink, TestRun
+from plane.db.models import (
+    Issue,
+    Project,
+    ProjectMember,
+    State,
+    TestCase,
+    TestResult,
+    TestResultIssueLink,
+    TestRun,
+)
 from plane.testing import create_test_case, link_test_case_to_work_item, publish_test_case_version
 
 
@@ -151,9 +160,12 @@ class TestTestingRunsAPI:
         assert "HTTP 500" in issue.description_html
         assert f'/{workspace.slug}/projects/{testing_project.id}/testing' in issue.description_html
         assert issue.description_json["environment"] == {"browser": "Chromium", "region": "local"}
+        # The defect points at the execution that produced it, not at the tab in
+        # general -- reproducing starts from the exact run case.
         assert issue.description_json["source_url"].endswith(
-            f"/{workspace.slug}/projects/{testing_project.id}/testing"
+            f"/testing/runs/{run['id']}/{run_case['id']}"
         )
+        assert issue.description_json["case_url"].endswith("/testing/cases/1")
         assert TestResultIssueLink.objects.filter(test_result_id=result["id"], issue_id=defect["id"]).exists()
         detail = session_client.get(f"{_runs_url(workspace, testing_project)}{run['id']}/").json()
         assert detail["run_cases"][0]["results"][0]["defects"][0]["id"] == defect["id"]
@@ -212,3 +224,222 @@ class TestTestingRunsAPI:
         ).json()
         assert coverage["covered"] == 0
         assert coverage["uncovered"] == 2
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+class TestTestingCoverageRollup:
+    """Coverage answers a delivery question, so it has to follow the work breakdown."""
+
+    def _state(self, workspace, project, name, group):
+        return State.objects.create(
+            workspace=workspace, project=project, name=name, group=group, sequence=1000
+        )
+
+    def test_coverage_rolls_up_from_stories_to_features_and_epics(
+        self, session_client, workspace, testing_project
+    ):
+        started = self._state(workspace, testing_project, "In Progress", "started")
+        epic = Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Epic", state=started
+        )
+        feature = Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Feature", state=started, parent=epic
+        )
+        story = Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Story", state=started, parent=feature
+        )
+        test_case = create_test_case(project_id=testing_project.id, title="Story contract")
+        link_test_case_to_work_item(
+            test_case_id=test_case.id, issue_id=story.id, project_id=testing_project.id
+        )
+
+        coverage = session_client.get(
+            f"/api/workspaces/{workspace.slug}/projects/{testing_project.id}/testing/requirement-coverage/"
+        ).json()
+        rows = {row["work_item_id"]: row for row in coverage["work_items"]}
+
+        # The contract sits on the story, yet the feature and epic it delivers are covered.
+        assert rows[str(story.id)]["covered"] is True
+        assert rows[str(story.id)]["covered_directly"] is True
+        assert rows[str(feature.id)]["covered"] is True
+        assert rows[str(feature.id)]["covered_directly"] is False
+        assert rows[str(epic.id)]["covered"] is True
+        assert rows[str(epic.id)]["test_case_ids"] == [str(test_case.id)]
+        assert rows[str(epic.id)]["own_test_case_ids"] == []
+        assert coverage["uncovered"] == 0
+
+    def test_defects_are_not_reported_as_untested_requirements(
+        self, session_client, workspace, testing_project
+    ):
+        started = self._state(workspace, testing_project, "In Progress", "started")
+        requirement = Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Requirement", state=started
+        )
+        test_case = create_test_case(project_id=testing_project.id, title="Contract")
+        link_test_case_to_work_item(
+            test_case_id=test_case.id, issue_id=requirement.id, project_id=testing_project.id
+        )
+        run = session_client.post(
+            _runs_url(workspace, testing_project),
+            {"name": "Run", "test_case_ids": [str(test_case.id)]},
+            format="json",
+        ).json()
+        result = session_client.post(
+            f"{_runs_url(workspace, testing_project)}{run['id']}/cases/{run['run_cases'][0]['id']}/results/",
+            {"status": "failed"},
+            format="json",
+        ).json()
+        defect = session_client.post(
+            f"{_runs_url(workspace, testing_project)}{run['id']}/cases/{run['run_cases'][0]['id']}"
+            f"/results/{result['id']}/defects/",
+            {},
+            format="json",
+        ).json()
+
+        coverage = session_client.get(
+            f"/api/workspaces/{workspace.slug}/projects/{testing_project.id}/testing/requirement-coverage/"
+        ).json()
+        ids = {row["work_item_id"] for row in coverage["work_items"]}
+
+        assert str(requirement.id) in ids
+        assert str(defect["id"]) not in ids, "a defect is evidence, not an untested requirement"
+
+    def test_backlog_items_are_out_of_scope_but_scheduled_ones_gate_the_release(
+        self, session_client, workspace, testing_project
+    ):
+        backlog = self._state(workspace, testing_project, "Backlog", "backlog")
+        started = self._state(workspace, testing_project, "In Progress", "started")
+        Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Not scheduled yet", state=backlog
+        )
+        covered = Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Covered", state=started
+        )
+        test_case = create_test_case(project_id=testing_project.id, title="Contract")
+        link_test_case_to_work_item(
+            test_case_id=test_case.id, issue_id=covered.id, project_id=testing_project.id
+        )
+        run = session_client.post(
+            _runs_url(workspace, testing_project),
+            {"name": "Run", "test_case_ids": [str(test_case.id)]},
+            format="json",
+        ).json()
+        session_client.post(
+            f"{_runs_url(workspace, testing_project)}{run['id']}/cases/{run['run_cases'][0]['id']}/results/",
+            {"status": "passed"},
+            format="json",
+        )
+        overview_url = f"/api/workspaces/{workspace.slug}/projects/{testing_project.id}/testing/overview/"
+
+        overview = session_client.get(overview_url).json()
+        assert overview["requirements"] == {
+            "total": 1,
+            "covered": 1,
+            "uncovered": 0,
+            "coverage_percent": 100.0,
+        }
+        assert overview["release_gate"]["ready"] is True
+
+        # Scheduling a requirement without an acceptance contract has to stop the gate;
+        # that is the failure Definition of Ready exists to prevent.
+        Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Scheduled, unverified", state=started
+        )
+        overview = session_client.get(overview_url).json()
+        assert overview["requirements"]["uncovered"] == 1
+        assert overview["release_gate"]["ready"] is False
+        assert "no acceptance contract" in overview["release_gate"]["blockers"][-1]
+
+    def test_library_metric_reports_linked_cases_not_requirement_coverage(
+        self, session_client, workspace, testing_project
+    ):
+        started = self._state(workspace, testing_project, "In Progress", "started")
+        Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Uncovered", state=started
+        )
+        covered = Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Covered", state=started
+        )
+        test_case = create_test_case(project_id=testing_project.id, title="Contract")
+        link_test_case_to_work_item(
+            test_case_id=test_case.id, issue_id=covered.id, project_id=testing_project.id
+        )
+
+        overview = session_client.get(
+            f"/api/workspaces/{workspace.slug}/projects/{testing_project.id}/testing/overview/"
+        ).json()
+
+        # Every case is linked, so the library is tidy -- but only half the
+        # requirements are verified. The two numbers must not be confused.
+        assert overview["library"]["linked_percent"] == 100.0
+        assert overview["requirements"]["coverage_percent"] == 50.0
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+class TestReleaseEvidence:
+    """A release decision rests on evidence testing cannot produce."""
+
+    def _url(self, workspace, project):
+        return f"/api/workspaces/{workspace.slug}/projects/{project.id}/testing/release-evidence/"
+
+    def test_failing_and_pending_evidence_blocks_the_gate(self, session_client, workspace, testing_project):
+        test_case = create_test_case(project_id=testing_project.id, title="Contract")
+        run = session_client.post(
+            _runs_url(workspace, testing_project),
+            {"name": "Release candidate", "test_case_ids": [str(test_case.id)]},
+            format="json",
+        ).json()
+        session_client.post(
+            f"{_runs_url(workspace, testing_project)}{run['id']}/cases/{run['run_cases'][0]['id']}/results/",
+            {"status": "passed"},
+            format="json",
+        )
+        overview_url = f"/api/workspaces/{workspace.slug}/projects/{testing_project.id}/testing/overview/"
+        assert session_client.get(overview_url).json()["release_gate"]["ready"] is True
+
+        # An availability objective is measured in production and can never be a
+        # test case, but shipping below it is still a release decision.
+        session_client.put(
+            self._url(workspace, testing_project),
+            {"kind": "slo", "key": "availability", "name": "Availability", "status": "failing"},
+            format="json",
+        )
+        gate = session_client.get(overview_url).json()["release_gate"]
+        assert gate["ready"] is False
+        assert "Availability is failing" in gate["blockers"]
+
+        # Recording it as met clears the blocker without touching any test result.
+        session_client.put(
+            self._url(workspace, testing_project),
+            {"kind": "slo", "key": "availability", "name": "Availability", "status": "passing"},
+            format="json",
+        )
+        assert session_client.get(overview_url).json()["release_gate"]["ready"] is True
+
+        # Evidence that was never recorded is not the same as evidence that passed.
+        session_client.put(
+            self._url(workspace, testing_project),
+            {"kind": "review", "key": "signoff", "name": "Architecture sign-off", "status": "pending"},
+            format="json",
+        )
+        gate = session_client.get(overview_url).json()["release_gate"]
+        assert gate["ready"] is False
+        assert "Architecture sign-off has not been recorded yet" in gate["blockers"]
+
+    def test_repeated_submission_updates_one_row(self, session_client, workspace, testing_project):
+        url = self._url(workspace, testing_project)
+        for status_value in ("failing", "passing", "passing"):
+            session_client.put(
+                url,
+                {"kind": "scan", "key": "trivy", "name": "Security scan", "status": status_value},
+                format="json",
+            )
+
+        evidence = session_client.get(url).json()
+
+        # A pipeline reporting the same check every run must not grow the gate a
+        # duplicate each time.
+        assert len(evidence) == 1
+        assert evidence[0]["status"] == "passing"

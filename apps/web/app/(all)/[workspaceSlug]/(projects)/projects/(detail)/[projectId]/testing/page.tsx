@@ -8,18 +8,16 @@ import { useEffect } from "react";
 import { observer } from "mobx-react";
 import { AlertTriangle } from "lucide-react";
 import { NavLink, Outlet, useParams } from "react-router";
+import { useTranslation } from "@plane/i18n";
 import { PageHead } from "@/components/core/page-title";
 import { useTesting } from "@/hooks/store/use-testing";
 import type { TTestingTab } from "./helpers";
 import { testingPath } from "./helpers";
 
-const TABS: Array<{ key: TTestingTab; label: string }> = [
-  { key: "overview", label: "Overview" },
-  { key: "cases", label: "Test cases" },
-  { key: "runs", label: "Test runs" },
-];
+const TABS: TTestingTab[] = ["overview", "cases", "runs"];
 
 function TestingPage() {
+  const { t } = useTranslation();
   const { workspaceSlug, projectId } = useParams();
   const { error, fetchLibrary } = useTesting();
 
@@ -31,20 +29,20 @@ function TestingPage() {
 
   return (
     <>
-      <PageHead title="Testing" />
+      <PageHead title={t("testing.title")} />
       <main className="mx-auto flex h-full w-full max-w-6xl flex-col gap-5 p-6">
         <nav className="flex gap-1 border-b border-subtle" aria-label="Testing sections">
           {TABS.map((tab) => (
             <NavLink
-              key={tab.key}
-              to={testingPath({ workspaceSlug, projectId, tab: tab.key })}
+              key={tab}
+              to={testingPath({ workspaceSlug, projectId, tab })}
               className={({ isActive }) =>
                 `border-b-2 px-3 py-2 text-13 font-medium ${
                   isActive ? "border-accent-strong text-primary" : "border-transparent text-secondary"
                 }`
               }
             >
-              {tab.label}
+              {t(`testing.tabs.${tab}`)}
             </NavLink>
           ))}
         </nav>

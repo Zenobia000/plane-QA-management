@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { initPromise } from "@plane/i18n";
 import type { TTestCase, TTestFolder, TTestRun } from "@plane/types";
 import { ExecutionWorkspace } from "./execution-workspace";
 import { FolderTree } from "./folder-tree";
@@ -12,6 +13,7 @@ const version = {
   description: {},
   preconditions: { text: "A cart exists" },
   priority: "high",
+  case_type: "functional",
   tags: ["smoke"],
   steps: [{ id: "step", position: 1, action: { text: "Pay" }, expected_result: { text: "Approved" } }],
   created_at: "2026-07-14T00:00:00Z",
@@ -28,6 +30,8 @@ const testCase = {
   updated_at: "",
   current: version,
   work_item_ids: [],
+  work_items: [],
+  executions: [],
   latest_status: null,
 } satisfies TTestCase;
 
@@ -86,6 +90,18 @@ const folder = {
 } satisfies TTestFolder;
 
 describe("Testing components", () => {
+  // The components read their copy through i18n now, so the English bundle has to
+  // be resolved before a static render can be asserted on.
+  //
+  // Assertions deliberately avoid interpolated copy. ICU interpolation does not
+  // run under vitest -- pre-existing keys such as `entity.delete.label` come back
+  // as "Delete {entity}" here too -- so a placeholder surviving in this output
+  // says nothing about the browser. Nothing in this suite can catch a broken
+  // interpolation; only a rendered check can.
+  beforeAll(async () => {
+    await initPromise;
+  });
+
   it("exposes rename and delete controls for every folder", () => {
     const html = renderToStaticMarkup(
       <FolderTree
@@ -98,12 +114,21 @@ describe("Testing components", () => {
       />
     );
     expect(html).toContain("Checkout");
-    expect(html).toContain("Rename Checkout");
-    expect(html).toContain("Delete Checkout");
+    expect(html).toContain('aria-label="Rename');
+    expect(html).toContain('aria-label="Delete');
   });
 
   it("renders selectable pinned cases in the run builder", () => {
-    const html = renderToStaticMarkup(<TestRunBuilder testCases={[testCase]} onCancel={vi.fn()} onCreate={vi.fn()} />);
+    const html = renderToStaticMarkup(
+      <TestRunBuilder
+        workspaceSlug="acme"
+        projectId="project"
+        testCases={[testCase]}
+        folders={[]}
+        onCancel={vi.fn()}
+        onCreate={vi.fn()}
+      />
+    );
     expect(html).toContain("Checkout succeeds");
     expect(html).toContain("TC-1");
     expect(html).toContain("Create fixed test run");
@@ -118,6 +143,9 @@ describe("Testing components", () => {
         onResult={vi.fn()}
         onClose={vi.fn()}
         onCreateDefect={vi.fn()}
+        onListAttachments={vi.fn().mockResolvedValue([])}
+        onAttach={vi.fn()}
+        onDetach={vi.fn()}
       />
     );
     expect(html).toContain("Ready for retest");
@@ -143,10 +171,13 @@ describe("Testing components", () => {
         onResult={vi.fn()}
         onClose={vi.fn()}
         onCreateDefect={vi.fn()}
+        onListAttachments={vi.fn().mockResolvedValue([])}
+        onAttach={vi.fn()}
+        onDetach={vi.fn()}
       />
     );
-    // The addressed case is the failed one; its defect panel only renders for it.
-    expect(html).toContain("Case 2");
+    // The defect panel renders only for the addressed case, so its presence is
+    // what proves the URL won over the first-open default.
     expect(html).toContain("Checkout defect (completed)");
   });
 
@@ -166,9 +197,11 @@ describe("Testing components", () => {
         onResult={vi.fn()}
         onClose={vi.fn()}
         onCreateDefect={vi.fn()}
+        onListAttachments={vi.fn().mockResolvedValue([])}
+        onAttach={vi.fn()}
+        onDetach={vi.fn()}
       />
     );
-    expect(html).toContain("Case 1");
     expect(html).not.toContain("Checkout defect (completed)");
   });
 
@@ -181,6 +214,9 @@ describe("Testing components", () => {
         onResult={vi.fn()}
         onClose={vi.fn()}
         onCreateDefect={vi.fn()}
+        onListAttachments={vi.fn().mockResolvedValue([])}
+        onAttach={vi.fn()}
+        onDetach={vi.fn()}
       />
     );
     expect(html).toContain("Closed");

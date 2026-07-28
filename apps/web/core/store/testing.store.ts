@@ -12,6 +12,7 @@ import type {
   TTestDefect,
   TTestDefectInput,
   TTestFolder,
+  TTestResultAttachment,
   TTestResultInput,
   TTestingCapabilities,
   TTestingOverview,
@@ -46,6 +47,7 @@ export interface ITestingStore {
   renameFolder: (workspaceSlug: string, projectId: string, folderId: string, name: string) => Promise<TTestFolder>;
   deleteFolder: (workspaceSlug: string, projectId: string, folderId: string) => Promise<void>;
   linkWorkItem: (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => Promise<void>;
+  unlinkWorkItem: (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => Promise<void>;
   exportLibraryCSV: (workspaceSlug: string, projectId: string) => Promise<string>;
   importLibraryCSV: (workspaceSlug: string, projectId: string, csvText: string) => Promise<number>;
   createRun: (workspaceSlug: string, projectId: string, input: TTestRunInput) => Promise<TTestRun>;
@@ -57,6 +59,29 @@ export interface ITestingStore {
     input: TTestResultInput
   ) => Promise<void>;
   closeRun: (workspaceSlug: string, projectId: string, runId: string) => Promise<void>;
+  listResultAttachments: (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string
+  ) => Promise<TTestResultAttachment[]>;
+  attachResultFile: (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string,
+    file: File
+  ) => Promise<TTestResultAttachment>;
+  detachResultFile: (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string,
+    assetId: string
+  ) => Promise<void>;
   createDefect: (
     workspaceSlug: string,
     projectId: string,
@@ -95,6 +120,7 @@ export class TestingStore implements ITestingStore {
       renameFolder: action,
       deleteFolder: action,
       linkWorkItem: action,
+      unlinkWorkItem: action,
       importLibraryCSV: action,
       createRun: action,
       recordResult: action,
@@ -185,6 +211,16 @@ export class TestingStore implements ITestingStore {
     });
   };
 
+  unlinkWorkItem = async (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => {
+    await this.service.unlinkWorkItem(workspaceSlug, projectId, caseId, issueId);
+    runInAction(() => {
+      const testCase = this.cases[caseId];
+      if (!testCase) return;
+      testCase.work_item_ids = testCase.work_item_ids.filter((id) => id !== issueId);
+      testCase.work_items = testCase.work_items.filter((item) => item.id !== issueId);
+    });
+  };
+
   exportLibraryCSV = (workspaceSlug: string, projectId: string) =>
     this.service.exportLibraryCSV(workspaceSlug, projectId);
 
@@ -240,6 +276,32 @@ export class TestingStore implements ITestingStore {
       } as TTestRun["progress"];
     });
   };
+
+  listResultAttachments = (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string
+  ) => this.service.getResultAttachments(workspaceSlug, projectId, runId, runCaseId, resultId);
+
+  attachResultFile = (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string,
+    file: File
+  ) => this.service.uploadResultAttachment(workspaceSlug, projectId, runId, runCaseId, resultId, file);
+
+  detachResultFile = (
+    workspaceSlug: string,
+    projectId: string,
+    runId: string,
+    runCaseId: string,
+    resultId: string,
+    assetId: string
+  ) => this.service.deleteResultAttachment(workspaceSlug, projectId, runId, runCaseId, resultId, assetId);
 
   closeRun = async (workspaceSlug: string, projectId: string, runId: string) => {
     const updated = await this.service.closeTestRun(workspaceSlug, projectId, runId);

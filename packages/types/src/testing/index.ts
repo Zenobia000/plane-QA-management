@@ -6,6 +6,29 @@
 
 export type TTestingDocument = Record<string, unknown>;
 
+export type TTestCaseType = "functional" | "performance" | "security" | "reliability" | "compliance";
+
+/** A measurable expectation, structured so it can be charted and judged. */
+export type TTestThreshold = {
+  metric?: string;
+  operator?: "<" | "<=" | ">" | ">=" | "==";
+  threshold?: number;
+  unit?: string;
+};
+
+/** The measurement a threshold case produced. */
+/** Evidence attached to an execution result. */
+export type TTestResultAttachment = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  asset_url: string | null;
+  created_at: string;
+};
+
+export type TTestMeasurement = { measured?: number; unit?: string; metric?: string; source?: string };
+
 export type TTestStep = {
   id: string;
   position: number;
@@ -20,6 +43,8 @@ export type TTestCaseVersion = {
   description: TTestingDocument;
   preconditions: TTestingDocument;
   priority: "urgent" | "high" | "medium" | "low" | "none";
+  /** How the contract is verified -- not what kind of requirement it answers for. */
+  case_type: TTestCaseType;
   tags: string[];
   steps: TTestStep[];
   created_at: string;
@@ -36,6 +61,19 @@ export type TTestCase = {
   updated_at: string;
   current: TTestCaseVersion;
   work_item_ids: string[];
+  /** Linked requirements with enough detail to render and navigate to. */
+  work_items: Array<{ id: string; sequence_id: number; name: string; state_group: string | null }>;
+  /** Every run this case appeared in, newest first. */
+  executions: Array<{
+    run_id: string;
+    run_case_id: string;
+    run_name: string;
+    build: string;
+    run_status: "draft" | "active" | "completed";
+    pinned_version: number;
+    latest_status: TTestRunCaseStatus;
+    executed_at: string;
+  }>;
   latest_status: TTestRunCaseStatus | null;
 };
 
@@ -45,6 +83,7 @@ export type TTestCaseInput = {
   description?: TTestingDocument;
   preconditions?: TTestingDocument;
   priority?: TTestCaseVersion["priority"];
+  case_type?: TTestCaseType;
   tags?: string[];
   steps?: Array<Pick<TTestStep, "action" | "expected_result">>;
 };
@@ -70,7 +109,10 @@ export type TTestingCapabilities = {
 };
 
 export type TTestingOverview = {
-  library: { total: number; requirement_linked: number; coverage_percent: number };
+  /** Library hygiene: how many cases answer for a requirement. */
+  library: { total: number; requirement_linked: number; linked_percent: number };
+  /** Delivery confidence: how many scheduled requirements a contract verifies. */
+  requirements: { total: number; covered: number; uncovered: number; coverage_percent: number };
   runs: { total: number; active: number };
   latest_run:
     | ({
@@ -89,6 +131,17 @@ export type TTestingOverview = {
       status: "draft" | "active" | "completed";
     } & Record<TTestRunCaseStatus, number>
   >;
+  /** Evidence a release decision rests on that running tests cannot produce. */
+  release_evidence: Array<{
+    id: string;
+    kind: "slo" | "scan" | "review" | "other";
+    key: string;
+    name: string;
+    status: "passing" | "failing" | "pending";
+    detail: string;
+    source_url: string;
+    recorded_at: string;
+  }>;
   release_gate: { ready: boolean; blockers: string[] };
 };
 
@@ -96,12 +149,21 @@ export type TTestingRequirementCoverage = {
   total: number;
   covered: number;
   uncovered: number;
+  /** Requirements a contract is expected for -- backlog and cancelled excluded. */
+  in_scope: number;
+  uncovered_in_scope: number;
   work_items: Array<{
     work_item_id: string;
     sequence_id: number;
     name: string;
     state_group: string | null;
+    parent_id: string | null;
+    /** True when this item or anything beneath it carries a contract. */
     covered: boolean;
+    covered_directly: boolean;
+    requires_contract: boolean;
+    own_test_case_ids: string[];
+    /** Own contracts plus every contract inherited from descendants. */
     test_case_ids: string[];
     latest_status: TTestRunCaseStatus | null;
   }>;

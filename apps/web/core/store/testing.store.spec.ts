@@ -195,7 +195,9 @@ describe("TestingStore", () => {
       ],
     } satisfies TTestRun;
 
-    await store.recordResult("workspace", "project", "run", "case", { status: "passed" });
+    await expect(store.recordResult("workspace", "project", "run", "case", { status: "passed" })).resolves.toEqual(
+      result
+    );
 
     expect(store.runs.run.run_cases[0].results).toHaveLength(2);
     expect(store.runs.run.progress).toEqual({

@@ -2,7 +2,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { initPromise } from "@plane/i18n";
 import type { TTestCase, TTestFolder, TTestRun } from "@plane/types";
-import { ExecutionWorkspace } from "./execution-workspace";
+
+// react-markdown's transitive mdast packages are browser-bundled in the app but
+// expose incompatible named exports under this suite's Node-only SSR runner.
+// The workspace contract here is that result text is passed to the renderer;
+// markdown rendering itself is covered by that shared component's package.
+vi.mock("@/components/ui/markdown-to-component", () => ({
+  MarkdownRenderer: ({ markdown }: { markdown: string }) => <>{markdown}</>,
+}));
+
+import { ExecutionWorkspace, isEvidenceTypingTarget, uploadResultEvidence } from "./execution-workspace";
 import { FolderTree } from "./folder-tree";
 import { TestRunBuilder } from "./run-builder";
 
@@ -150,7 +159,8 @@ describe("Testing components", () => {
     );
     expect(html).toContain("testing.execution.ready_for_retest");
     expect(html).toContain("Checkout defect (completed)");
-    expect(html).toContain("QA notes / actual result");
+    expect(html).toContain("testing.execution.markdown_hint");
+    expect(html).toContain("testing.execution.drop_files");
     expect(html).toContain("Execution history");
     expect(html).toContain("HTTP 500");
     expect(html).toContain("testing.execution.pass");
@@ -225,5 +235,45 @@ describe("Testing components", () => {
     expect(html).toContain("testing.execution.closed");
     expect(html).not.toContain("testing.execution.pass");
     expect(html).not.toContain("testing.execution.close_run");
+  });
+
+  it("keeps append-only result shortcuts inert inside evidence editors", () => {
+    expect(isEvidenceTypingTarget({ tagName: "TEXTAREA" } as unknown as EventTarget)).toBe(true);
+    expect(
+      isEvidenceTypingTarget({
+        tagName: "DIV",
+        isContentEditable: true,
+      } as unknown as EventTarget)
+    ).toBe(true);
+    expect(
+      isEvidenceTypingTarget({
+        tagName: "SPAN",
+        closest: (selector: string) => (selector.includes("data-evidence-editor") ? {} : null),
+      } as unknown as EventTarget)
+    ).toBe(true);
+    expect(isEvidenceTypingTarget({ tagName: "BUTTON", closest: () => null } as unknown as EventTarget)).toBe(false);
+  });
+
+  it("keeps failed evidence files retryable without losing successful uploads", async () => {
+    const files = [
+      { id: "image", file: { name: "screen.png" } as File, status: "pending" },
+      { id: "log", file: { name: "console.log" } as File, status: "pending" },
+    ] as const;
+    const attached = {
+      id: "asset",
+      name: "screen.png",
+      type: "image/png",
+      size: 100,
+      asset_url: "https://example.com/screen.png",
+      created_at: "",
+    };
+
+    const outcome = await uploadResultEvidence([...files], async (item) => {
+      if (item.id === "log") throw new Error("storage unavailable");
+      return attached;
+    });
+
+    expect(outcome.uploaded).toEqual([attached]);
+    expect(outcome.failed.map((item) => item.id)).toEqual(["log"]);
   });
 });

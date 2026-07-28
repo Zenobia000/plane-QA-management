@@ -13,6 +13,7 @@ import type {
   TTestDefect,
   TTestDefectInput,
   TTestFolder,
+  TTestResult,
   TTestResultAttachment,
   TTestResultInput,
   TReleaseEvidence,
@@ -88,7 +89,7 @@ export interface ITestingStore {
     runId: string,
     runCaseId: string,
     input: TTestResultInput
-  ) => Promise<void>;
+  ) => Promise<TTestResult>;
   closeRun: (workspaceSlug: string, projectId: string, runId: string) => Promise<void>;
   listResultAttachments: (
     workspaceSlug: string,
@@ -373,6 +374,7 @@ export class TestingStore implements ITestingStore {
         ),
       } as TTestRun["progress"];
     });
+    return result;
   };
 
   listResultAttachments = (

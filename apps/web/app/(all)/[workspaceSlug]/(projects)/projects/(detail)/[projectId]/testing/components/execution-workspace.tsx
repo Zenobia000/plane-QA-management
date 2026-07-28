@@ -4,12 +4,15 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bug, Check, CircleSlash, Lock, Paperclip, SkipForward, X } from "lucide-react";
+import remarkGfm from "remark-gfm";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
-import type { TTestResultAttachment, TTestResultInput, TTestResultStatus, TTestRun } from "@plane/types";
+import type { TTestResult, TTestResultAttachment, TTestResultInput, TTestResultStatus, TTestRun } from "@plane/types";
 import { AlertModalCore } from "@plane/ui";
+import { MarkdownRenderer } from "@/components/ui/markdown-to-component";
+import { EvidenceComposer, type TResultEvidenceDraftFile } from "./evidence-composer";
 
 type Props = {
   run: TTestRun;
@@ -17,7 +20,7 @@ type Props = {
   selectedRunCaseId?: string;
   onSelectRunCase: (runCaseId: string, options?: { replace?: boolean }) => void;
   onBack: () => void;
-  onResult: (runCaseId: string, input: TTestResultInput) => Promise<void>;
+  onResult: (runCaseId: string, input: TTestResultInput) => Promise<TTestResult>;
   onClose: () => Promise<void>;
   onCreateDefect: (runCaseId: string, resultId: string) => Promise<unknown>;
   onListAttachments: (runCaseId: string, resultId: string) => Promise<TTestResultAttachment[]>;
@@ -38,6 +41,42 @@ const documentText = (document: Record<string, unknown>) => {
   return typeof value === "string" ? value : Object.keys(document).length ? JSON.stringify(document) : "—";
 };
 
+type TResultEvidenceDraft = {
+  actual: string;
+  files: TResultEvidenceDraftFile[];
+  recordedResultId?: string;
+  error?: string;
+};
+
+const emptyEvidenceDraft = (): TResultEvidenceDraft => ({ actual: "", files: [] });
+
+/**
+ * P/F/B/S are destructive shortcuts because results cannot be edited later.
+ * Keep them inert in native inputs and any present or future rich-text editor.
+ */
+export const isEvidenceTypingTarget = (target: EventTarget | null) => {
+  const element = target as HTMLElement | null;
+  const tagName = element?.tagName?.toLowerCase();
+  return (
+    tagName === "input" ||
+    tagName === "textarea" ||
+    tagName === "select" ||
+    Boolean(element?.isContentEditable) ||
+    Boolean(element?.closest?.("[contenteditable='true'], [data-evidence-editor]"))
+  );
+};
+
+export const uploadResultEvidence = async (
+  files: TResultEvidenceDraftFile[],
+  upload: (file: TResultEvidenceDraftFile) => Promise<TTestResultAttachment>
+) => {
+  const settled = await Promise.allSettled(files.map(upload));
+  return {
+    uploaded: settled.flatMap((result) => (result.status === "fulfilled" ? [result.value] : [])),
+    failed: files.filter((_, index) => settled[index].status === "rejected"),
+  };
+};
+
 export function ExecutionWorkspace({
   run,
   selectedRunCaseId,
@@ -51,24 +90,87 @@ export function ExecutionWorkspace({
   onDetach,
 }: Props) {
   const { t } = useTranslation();
-  const [actual, setActual] = useState("");
+  const selected = useMemo(() => {
+    const addressed = selectedRunCaseId && run.run_cases.find((item) => item.id === selectedRunCaseId);
+    if (addressed) return addressed;
+    return run.run_cases.find((item) => item.latest_status === "open") ?? run.run_cases[0];
+  }, [run.run_cases, selectedRunCaseId]);
+  const [drafts, setDrafts] = useState<Record<string, TResultEvidenceDraft>>({});
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [closeConfirmationOpen, setCloseConfirmationOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [creatingDefect, setCreatingDefect] = useState(false);
   const [attachments, setAttachments] = useState<TTestResultAttachment[]>([]);
   const [attaching, setAttaching] = useState(false);
   const [attachError, setAttachError] = useState<string | null>(null);
-  const selected = useMemo(() => {
-    const addressed = selectedRunCaseId && run.run_cases.find((item) => item.id === selectedRunCaseId);
-    if (addressed) return addressed;
-    return run.run_cases.find((item) => item.latest_status === "open") ?? run.run_cases[0];
-  }, [run.run_cases, selectedRunCaseId]);
+  const activeDraft = selected ? (drafts[selected.id] ?? emptyEvidenceDraft()) : emptyEvidenceDraft();
   const executionHistory = selected ? selected.results.toReversed() : [];
   const latestResult = selected?.results.at(-1);
   const readyForRetest =
     !!latestResult?.defects.length &&
     latestResult.defects.every((defect) => defect.state_group === "completed" || defect.state_group === "cancelled");
+
+  const updateDraft = (runCaseId: string, updater: (draft: TResultEvidenceDraft) => TResultEvidenceDraft) => {
+    setDrafts((current) => ({
+      ...current,
+      [runCaseId]: updater(current[runCaseId] ?? emptyEvidenceDraft()),
+    }));
+  };
+
+  const finishDraft = (runCaseId: string) => {
+    setDrafts((current) => {
+      const nextDrafts = { ...current };
+      delete nextDrafts[runCaseId];
+      return nextDrafts;
+    });
+    const currentRunCase = run.run_cases.find((item) => item.id === runCaseId);
+    const next = run.run_cases.find(
+      (item) => currentRunCase && item.position > currentRunCase.position && item.latest_status === "open"
+    );
+    if (next) onSelectRunCase(next.id, { replace: true });
+  };
+
+  const uploadDraftFiles = async (runCaseId: string, resultId: string, files: TResultEvidenceDraftFile[]) => {
+    updateDraft(runCaseId, (draft) => ({
+      ...draft,
+      error: undefined,
+      files: draft.files.map((file) =>
+        files.some((candidate) => candidate.id === file.id) ? { ...file, status: "uploading", error: undefined } : file
+      ),
+    }));
+
+    const { uploaded, failed } = await uploadResultEvidence(files, (item) => onAttach(runCaseId, resultId, item.file));
+    const failedIds = new Set(failed.map((file) => file.id));
+    if (uploaded.length) {
+      setAttachments((current) => [
+        ...current,
+        ...uploaded.filter((item) => !current.some((currentItem) => currentItem.id === item.id)),
+      ]);
+    }
+
+    updateDraft(runCaseId, (draft) => ({
+      ...draft,
+      recordedResultId: failedIds.size ? resultId : undefined,
+      error: failedIds.size ? t("testing.execution.result_saved_upload_failed", { count: failedIds.size }) : undefined,
+      files: draft.files
+        .filter((file) => failedIds.has(file.id))
+        .map((file) => ({
+          id: file.id,
+          file: file.file,
+          status: "failed",
+          error: t("testing.execution.attach_failed"),
+        })),
+    }));
+
+    try {
+      const currentAttachments = await onListAttachments(runCaseId, resultId);
+      if (selected?.id === runCaseId) setAttachments(currentAttachments);
+    } catch {
+      // Upload results above remain authoritative; a later result selection reloads the list.
+    }
+    return failedIds.size === 0;
+  };
 
   // Attachments belong to a specific result, so they reload whenever the addressed
   // result changes rather than being held per run case.
@@ -91,7 +193,7 @@ export function ExecutionWorkspace({
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+      if (isEvidenceTypingTarget(event.target) || savingRef.current || activeDraft.recordedResultId) return;
       const shortcuts: Record<string, TTestResultStatus> = { p: "passed", f: "failed", b: "blocked", s: "skipped" };
       const status = shortcuts[event.key.toLowerCase()];
       if (status && selected && run.status !== "completed") void submit(status);
@@ -101,16 +203,43 @@ export function ExecutionWorkspace({
   });
 
   const submit = async (status: TTestResultStatus) => {
-    if (!selected || run.status === "completed") return;
+    if (!selected || run.status === "completed" || savingRef.current || activeDraft.recordedResultId) return;
+    savingRef.current = true;
+    setSaving(true);
+    updateDraft(selected.id, (draft) => ({ ...draft, error: undefined }));
+    try {
+      const result = await onResult(selected.id, {
+        status,
+        actual_result: activeDraft.actual.trim() ? { text: activeDraft.actual, format: "markdown" } : {},
+      });
+      updateDraft(selected.id, (draft) => ({ ...draft, recordedResultId: result.id }));
+      if (!activeDraft.files.length || (await uploadDraftFiles(selected.id, result.id, activeDraft.files))) {
+        // Advancing replaces rather than pushes: results are append-only, so a
+        // history entry per recorded result would offer a Back that undoes nothing.
+        finishDraft(selected.id);
+      }
+    } catch {
+      updateDraft(selected.id, (draft) => ({ ...draft, error: t("testing.execution.result_save_failed") }));
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  };
+
+  const retryDraftUploads = async () => {
+    if (!selected || !activeDraft.recordedResultId || savingRef.current) return;
+    if (!activeDraft.files.length) {
+      finishDraft(selected.id);
+      return;
+    }
+    savingRef.current = true;
     setSaving(true);
     try {
-      await onResult(selected.id, { status, actual_result: actual ? { text: actual } : {} });
-      setActual("");
-      const next = run.run_cases.find((item) => item.position > selected.position && item.latest_status === "open");
-      // Advancing replaces rather than pushes: results are append-only, so a
-      // history entry per recorded result would offer a Back that undoes nothing.
-      if (next) onSelectRunCase(next.id, { replace: true });
+      if (await uploadDraftFiles(selected.id, activeDraft.recordedResultId, activeDraft.files)) {
+        finishDraft(selected.id);
+      }
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -144,10 +273,11 @@ export function ExecutionWorkspace({
             <button
               type="button"
               key={runCase.id}
+              disabled={saving}
               onClick={() => onSelectRunCase(runCase.id)}
               className={`flex w-full items-center gap-2 border-b border-subtle px-3 py-3 text-left ${
                 selected.id === runCase.id ? "bg-surface-1" : "hover:bg-layer-1"
-              }`}
+              } disabled:cursor-wait disabled:opacity-60`}
             >
               <span
                 className={`rounded px-1.5 py-0.5 text-10 font-medium capitalize ${statusStyle[runCase.latest_status]}`}
@@ -174,7 +304,7 @@ export function ExecutionWorkspace({
                 <Lock className="size-3" /> {t("testing.execution.closed")}
               </span>
             ) : (
-              <Button variant="secondary" onClick={() => setCloseConfirmationOpen(true)}>
+              <Button variant="secondary" disabled={saving || attaching} onClick={() => setCloseConfirmationOpen(true)}>
                 {t("testing.execution.close_run")}
               </Button>
             )}
@@ -217,21 +347,31 @@ export function ExecutionWorkspace({
                         </span>
                         <time className="text-tertiary">{new Date(result.created_at).toLocaleString()}</time>
                       </div>
-                      <p className="mt-2 text-secondary">Actual: {documentText(result.actual_result)}</p>
+                      <div className="mt-2">
+                        <span className="text-11 font-medium text-tertiary">{t("testing.execution.actual")}</span>
+                        <div className="mt-1 rounded bg-surface-2 p-2">
+                          <MarkdownRenderer
+                            markdown={documentText(result.actual_result)}
+                            options={{ remarkPlugins: [remarkGfm] }}
+                          />
+                        </div>
+                      </div>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            <label className="block text-12 font-semibold text-secondary uppercase">
-              QA notes / actual result
-              <textarea
-                value={actual}
-                onChange={(event) => setActual(event.target.value)}
-                className="font-normal mt-2 min-h-24 w-full resize-y rounded-md border border-subtle bg-surface-1 p-3 text-14 text-primary outline-none focus:border-accent-strong"
-                placeholder={t("testing.execution.actual_placeholder")}
+            {run.status !== "completed" && (
+              <EvidenceComposer
+                value={activeDraft.actual}
+                files={activeDraft.files}
+                disabled={saving}
+                readOnly={Boolean(activeDraft.recordedResultId)}
+                error={activeDraft.error}
+                onChange={(actual) => updateDraft(selected.id, (draft) => ({ ...draft, actual, error: undefined }))}
+                onFilesChange={(files) => updateDraft(selected.id, (draft) => ({ ...draft, files, error: undefined }))}
               />
-            </label>
+            )}
             {latestResult && (
               <div>
                 <div className="flex items-center justify-between">
@@ -241,17 +381,29 @@ export function ExecutionWorkspace({
                     {attaching ? t("testing.execution.uploading") : t("testing.execution.attach")}
                     <input
                       type="file"
+                      multiple
                       className="hidden"
                       disabled={attaching || run.status === "completed"}
                       onChange={async (event) => {
-                        const file = event.target.files?.[0];
+                        const files = Array.from(event.target.files ?? []);
                         event.target.value = "";
-                        if (!file) return;
+                        if (!files.length) return;
                         setAttaching(true);
                         setAttachError(null);
                         try {
-                          const created = await onAttach(selected.id, latestResult.id, file);
-                          setAttachments((current) => [...current, created]);
+                          const settled = await Promise.allSettled(
+                            files.map((file) => onAttach(selected.id, latestResult.id, file))
+                          );
+                          const created = settled.flatMap((result) =>
+                            result.status === "fulfilled" ? [result.value] : []
+                          );
+                          setAttachments((current) => [
+                            ...current,
+                            ...created.filter((item) => !current.some((currentItem) => currentItem.id === item.id)),
+                          ]);
+                          if (settled.some((result) => result.status === "rejected")) {
+                            setAttachError(t("testing.execution.attach_failed"));
+                          }
                         } catch {
                           setAttachError(t("testing.execution.attach_failed"));
                         } finally {
@@ -342,7 +494,7 @@ export function ExecutionWorkspace({
             )}
           </div>
 
-          {run.status !== "completed" && (
+          {run.status !== "completed" && !activeDraft.recordedResultId && (
             <div className="sticky bottom-0 mt-auto flex flex-wrap justify-end gap-2 border-t border-subtle bg-surface-1 pt-4">
               <Button variant="secondary" disabled={saving} onClick={() => void submit("skipped")}>
                 <SkipForward className="size-4" /> {t("testing.execution.skip")}
@@ -356,6 +508,30 @@ export function ExecutionWorkspace({
               <Button variant="primary" disabled={saving} onClick={() => void submit("passed")}>
                 <Check className="size-4" /> {t("testing.execution.pass")}
               </Button>
+            </div>
+          )}
+          {run.status !== "completed" && activeDraft.recordedResultId && (
+            <div className="sticky bottom-0 mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-subtle bg-surface-1 pt-4">
+              <p className="text-11 text-secondary">{t("testing.execution.result_saved_retry_hint")}</p>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  variant="secondary"
+                  disabled={saving}
+                  onClick={() => {
+                    const runCaseId = selected.id;
+                    finishDraft(runCaseId);
+                  }}
+                >
+                  {t("testing.execution.continue_without_files")}
+                </Button>
+                <Button
+                  variant="primary"
+                  disabled={saving || !activeDraft.files.length}
+                  onClick={() => void retryDraftUploads()}
+                >
+                  <Paperclip className="size-4" /> {t("testing.execution.retry_uploads")}
+                </Button>
+              </div>
             </div>
           )}
         </div>

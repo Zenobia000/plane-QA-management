@@ -14,6 +14,7 @@ const overview = {
   runs: { total: 0, active: 0 },
   latest_run: null,
   open_defects: 0,
+  release_evidence: [],
   release_gate: { ready: false, blockers: [] },
   scorecards: [],
 };

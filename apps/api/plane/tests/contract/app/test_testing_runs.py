@@ -374,3 +374,72 @@ class TestTestingCoverageRollup:
         # requirements are verified. The two numbers must not be confused.
         assert overview["library"]["linked_percent"] == 100.0
         assert overview["requirements"]["coverage_percent"] == 50.0
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+class TestReleaseEvidence:
+    """A release decision rests on evidence testing cannot produce."""
+
+    def _url(self, workspace, project):
+        return f"/api/workspaces/{workspace.slug}/projects/{project.id}/testing/release-evidence/"
+
+    def test_failing_and_pending_evidence_blocks_the_gate(self, session_client, workspace, testing_project):
+        test_case = create_test_case(project_id=testing_project.id, title="Contract")
+        run = session_client.post(
+            _runs_url(workspace, testing_project),
+            {"name": "Release candidate", "test_case_ids": [str(test_case.id)]},
+            format="json",
+        ).json()
+        session_client.post(
+            f"{_runs_url(workspace, testing_project)}{run['id']}/cases/{run['run_cases'][0]['id']}/results/",
+            {"status": "passed"},
+            format="json",
+        )
+        overview_url = f"/api/workspaces/{workspace.slug}/projects/{testing_project.id}/testing/overview/"
+        assert session_client.get(overview_url).json()["release_gate"]["ready"] is True
+
+        # An availability objective is measured in production and can never be a
+        # test case, but shipping below it is still a release decision.
+        session_client.put(
+            self._url(workspace, testing_project),
+            {"kind": "slo", "key": "availability", "name": "Availability", "status": "failing"},
+            format="json",
+        )
+        gate = session_client.get(overview_url).json()["release_gate"]
+        assert gate["ready"] is False
+        assert "Availability is failing" in gate["blockers"]
+
+        # Recording it as met clears the blocker without touching any test result.
+        session_client.put(
+            self._url(workspace, testing_project),
+            {"kind": "slo", "key": "availability", "name": "Availability", "status": "passing"},
+            format="json",
+        )
+        assert session_client.get(overview_url).json()["release_gate"]["ready"] is True
+
+        # Evidence that was never recorded is not the same as evidence that passed.
+        session_client.put(
+            self._url(workspace, testing_project),
+            {"kind": "review", "key": "signoff", "name": "Architecture sign-off", "status": "pending"},
+            format="json",
+        )
+        gate = session_client.get(overview_url).json()["release_gate"]
+        assert gate["ready"] is False
+        assert "Architecture sign-off has not been recorded yet" in gate["blockers"]
+
+    def test_repeated_submission_updates_one_row(self, session_client, workspace, testing_project):
+        url = self._url(workspace, testing_project)
+        for status_value in ("failing", "passing", "passing"):
+            session_client.put(
+                url,
+                {"kind": "scan", "key": "trivy", "name": "Security scan", "status": status_value},
+                format="json",
+            )
+
+        evidence = session_client.get(url).json()
+
+        # A pipeline reporting the same check every run must not grow the gate a
+        # duplicate each time.
+        assert len(evidence) == 1
+        assert evidence[0]["status"] == "passing"

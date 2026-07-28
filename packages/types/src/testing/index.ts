@@ -121,6 +121,17 @@ export type TTestingOverview = {
       status: "draft" | "active" | "completed";
     } & Record<TTestRunCaseStatus, number>
   >;
+  /** Evidence a release decision rests on that running tests cannot produce. */
+  release_evidence: Array<{
+    id: string;
+    kind: "slo" | "scan" | "review" | "other";
+    key: string;
+    name: string;
+    status: "passing" | "failing" | "pending";
+    detail: string;
+    source_url: string;
+    recorded_at: string;
+  }>;
   release_gate: { ready: boolean; blockers: string[] };
 };
 

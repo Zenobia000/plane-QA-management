@@ -145,7 +145,22 @@
       "open_defects_detail": "Created from test evidence",
       "release_gate": "Release gate",
       "ready": "Ready to release",
-      "not_ready": "Not ready to release"
+      "not_ready": "Not ready to release",
+      "evidence": "Release evidence",
+      "evidence_hint": "Recorded outside testing — availability, scans and sign-offs cannot be executed before shipping.",
+      "evidence_empty": "No external evidence recorded.",
+      "evidence_status": {
+        "passing": "Passing",
+        "failing": "Failing",
+        "pending": "Pending"
+      },
+      "kind": {
+        "slo": "SLO",
+        "scan": "Scan",
+        "review": "Review",
+        "other": "Other"
+      },
+      "blockers": "Blockers"
     },
     "work_item": {
       "heading": "Testing coverage",

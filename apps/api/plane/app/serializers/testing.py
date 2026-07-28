@@ -5,6 +5,7 @@
 from rest_framework import serializers
 
 from plane.db.models import (
+    ReleaseEvidence,
     TestCase,
     TestCaseVersion,
     TestCaseWorkItemLink,
@@ -268,3 +269,19 @@ class TestDefectWriteSerializer(serializers.Serializer):
 
 class TestLibraryCSVImportSerializer(serializers.Serializer):
     csv_text = serializers.CharField(trim_whitespace=False, allow_blank=False)
+
+
+class ReleaseEvidenceSerializer(BaseSerializer):
+    class Meta:
+        model = ReleaseEvidence
+        fields = ["id", "kind", "key", "name", "status", "detail", "source_url", "recorded_at"]
+        read_only_fields = ["id", "recorded_at"]
+
+
+class ReleaseEvidenceWriteSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=ReleaseEvidence.KIND_CHOICES)
+    key = serializers.CharField(max_length=120)
+    name = serializers.CharField(max_length=255)
+    status = serializers.ChoiceField(choices=ReleaseEvidence.STATUS_CHOICES, default="pending")
+    detail = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
+    source_url = serializers.URLField(max_length=800, required=False, allow_blank=True, default="")

@@ -21,7 +21,11 @@ from .run import (
     TestRunListCreateEndpoint,
     TestRunResultEndpoint,
 )
-from .report import TestingOverviewEndpoint, TestingRequirementCoverageEndpoint
+from .report import (
+    TestingOverviewEndpoint,
+    TestingReleaseEvidenceEndpoint,
+    TestingRequirementCoverageEndpoint,
+)
 
 __all__ = [
     "TestingCapabilityEndpoint",
@@ -40,5 +44,6 @@ __all__ = [
     "TestingOverviewEndpoint",
     "AppAutomationIngestionEndpoint",
     "TestLibraryCSVEndpoint",
+    "TestingReleaseEvidenceEndpoint",
     "TestingRequirementCoverageEndpoint",
 ]

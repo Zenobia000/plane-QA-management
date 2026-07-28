@@ -21,6 +21,7 @@ from plane.app.views.testing import (
     TestRunResultEndpoint,
     TestingCapabilityEndpoint,
     TestingOverviewEndpoint,
+    TestingReleaseEvidenceEndpoint,
     TestingRequirementCoverageEndpoint,
 )
 
@@ -40,6 +41,11 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/overview/",
         TestingOverviewEndpoint.as_view(),
         name="testing-overview",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/release-evidence/",
+        TestingReleaseEvidenceEndpoint.as_view(),
+        name="testing-release-evidence",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/requirement-coverage/",

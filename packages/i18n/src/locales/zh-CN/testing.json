@@ -145,7 +145,22 @@
       "open_defects_detail": "由测试证据产生",
       "release_gate": "发布门槛",
       "ready": "可以发布",
-      "not_ready": "尚不可发布"
+      "not_ready": "尚不可发布",
+      "evidence": "发布证据",
+      "evidence_hint": "由测试之外记录 —— 可用性、扫描与签核无法在发布前执行。",
+      "evidence_empty": "尚未记录任何外部证据。",
+      "evidence_status": {
+        "passing": "达标",
+        "failing": "未达标",
+        "pending": "待记录"
+      },
+      "kind": {
+        "slo": "SLO",
+        "scan": "扫描",
+        "review": "审查",
+        "other": "其他"
+      },
+      "blockers": "阻挡项"
     },
     "work_item": {
       "heading": "验证状态",

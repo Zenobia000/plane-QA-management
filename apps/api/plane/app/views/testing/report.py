@@ -4,11 +4,22 @@
 from collections import defaultdict
 
 from django.db.models import Count, Prefetch, Q
+from rest_framework import status
 from rest_framework.response import Response
 
 from plane.app.permissions import ProjectEntityPermission
 from plane.app.views.base import BaseAPIView
-from plane.db.models import Issue, TestCase, TestCaseWorkItemLink, TestResultIssueLink, TestRun, TestRunCase
+from plane.app.serializers.testing import ReleaseEvidenceSerializer, ReleaseEvidenceWriteSerializer
+from plane.db.models import (
+    Issue,
+    Project,
+    ReleaseEvidence,
+    TestCase,
+    TestCaseWorkItemLink,
+    TestResultIssueLink,
+    TestRun,
+    TestRunCase,
+)
 
 # Nobody has scheduled a backlog item yet, and a cancelled one will never ship,
 # so neither is expected to carry an acceptance contract. Everything else is in
@@ -165,6 +176,14 @@ class TestingOverviewEndpoint(BaseAPIView):
         # Definition of Ready exists to prevent, so the gate has to see it.
         if uncovered:
             blockers.append(f"{len(uncovered)} scheduled requirement(s) with no acceptance contract")
+        # Availability, scans and sign-offs are not produced by running tests, but a
+        # release decision rests on them just the same.
+        evidence = list(ReleaseEvidence.objects.filter(project_id=project_id))
+        for item in evidence:
+            if item.status == "failing":
+                blockers.append(f"{item.name} is failing")
+            elif item.status == "pending":
+                blockers.append(f"{item.name} has not been recorded yet")
 
         return Response(
             {
@@ -202,6 +221,7 @@ class TestingOverviewEndpoint(BaseAPIView):
                     }
                     for run in runs.prefetch_related("run_cases")[:10]
                 ],
+                "release_evidence": ReleaseEvidenceSerializer(evidence, many=True).data,
                 "release_gate": {"ready": bool(latest_run) and not blockers, "blockers": blockers},
             }
         )
@@ -223,3 +243,41 @@ class TestingRequirementCoverageEndpoint(BaseAPIView):
                 "work_items": rows,
             }
         )
+
+
+class TestingReleaseEvidenceEndpoint(BaseAPIView):
+    """External evidence a release gate consults but testing does not produce."""
+
+    permission_classes = [ProjectEntityPermission]
+
+    def get(self, request, slug, project_id):
+        evidence = ReleaseEvidence.objects.filter(project_id=project_id)
+        return Response(ReleaseEvidenceSerializer(evidence, many=True).data)
+
+    def put(self, request, slug, project_id):
+        serializer = ReleaseEvidenceWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+        # Upsert on the project-scoped key so a pipeline reporting the same check
+        # repeatedly updates one row instead of growing the gate a duplicate each run.
+        project = Project.objects.get(id=project_id)
+        evidence, _ = ReleaseEvidence.objects.update_or_create(
+            project_id=project_id,
+            key=payload["key"],
+            defaults={
+                "workspace_id": project.workspace_id,
+                "kind": payload["kind"],
+                "name": payload["name"],
+                "status": payload["status"],
+                "detail": payload["detail"],
+                "source_url": payload["source_url"],
+            },
+        )
+        return Response(ReleaseEvidenceSerializer(evidence).data, status=status.HTTP_200_OK)
+
+    def delete(self, request, slug, project_id):
+        key = request.query_params.get("key")
+        if not key:
+            return Response({"error": "A key is required."}, status=status.HTTP_400_BAD_REQUEST)
+        ReleaseEvidence.objects.filter(project_id=project_id, key=key).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

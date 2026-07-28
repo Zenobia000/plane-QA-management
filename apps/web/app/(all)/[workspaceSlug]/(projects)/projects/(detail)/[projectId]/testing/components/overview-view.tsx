@@ -50,6 +50,12 @@ export const TestingOverviewView = observer(function TestingOverviewView() {
       icon: AlertTriangle,
     },
   ];
+  const evidenceStyle: Record<string, string> = {
+    passing: "bg-success-subtle text-success-primary",
+    failing: "bg-danger-subtle text-danger-primary",
+    pending: "bg-layer-2 text-secondary",
+  };
+
   return (
     <div className="space-y-5">
       <div>
@@ -144,7 +150,8 @@ export const TestingOverviewView = observer(function TestingOverviewView() {
         <div className="flex items-center gap-2">
           <CheckCircle2 className="size-5" />
           <h2 className="text-14 font-semibold text-primary">
-            Release gate: {overview.release_gate.ready ? "Ready" : "Not ready"}
+            {t("testing.overview.release_gate")}:{" "}
+            {overview.release_gate.ready ? t("testing.overview.ready") : t("testing.overview.not_ready")}
           </h2>
         </div>
         {overview.release_gate.blockers.length ? (
@@ -153,10 +160,37 @@ export const TestingOverviewView = observer(function TestingOverviewView() {
               <li key={item}>{item}</li>
             ))}
           </ul>
+        ) : null}
+      </section>
+      <section className="rounded-lg border border-subtle bg-surface-1 p-4">
+        <h2 className="text-14 font-semibold text-primary">{t("testing.overview.evidence")}</h2>
+        {/* Availability is last month's measurement and a sign-off is a decision;
+            neither can be executed before shipping, so they are recorded rather
+            than tested, and the gate reads them alongside the run results. */}
+        <p className="mt-1 text-12 text-secondary">{t("testing.overview.evidence_hint")}</p>
+        {overview.release_evidence.length ? (
+          <ul className="mt-3 space-y-2">
+            {overview.release_evidence.map((item) => (
+              <li key={item.id} className="flex flex-wrap items-center gap-3 text-12">
+                <span
+                  className={`w-20 shrink-0 rounded px-1.5 py-0.5 text-center text-10 font-medium ${evidenceStyle[item.status]}`}
+                >
+                  {t(`testing.overview.evidence_status.${item.status}`)}
+                </span>
+                <span className="text-11 text-tertiary">{t(`testing.overview.kind.${item.kind}`)}</span>
+                {item.source_url ? (
+                  <a href={item.source_url} className="font-medium text-accent-primary hover:underline">
+                    {item.name}
+                  </a>
+                ) : (
+                  <span className="font-medium text-primary">{item.name}</span>
+                )}
+                {item.detail && <span className="text-secondary">{item.detail}</span>}
+              </li>
+            ))}
+          </ul>
         ) : (
-          <p className="mt-2 text-12 text-secondary">
-            Latest run is complete with no failed, blocked, or open defect evidence.
-          </p>
+          <p className="mt-3 text-12 text-tertiary">{t("testing.overview.evidence_empty")}</p>
         )}
       </section>
     </div>

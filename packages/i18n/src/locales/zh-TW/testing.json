@@ -145,7 +145,22 @@
       "open_defects_detail": "由測試證據產生",
       "release_gate": "發布門檻",
       "ready": "可以發布",
-      "not_ready": "尚不可發布"
+      "not_ready": "尚不可發布",
+      "evidence": "發布證據",
+      "evidence_hint": "由測試之外記錄 —— 可用性、掃描與簽核無法在出貨前執行。",
+      "evidence_empty": "尚未記錄任何外部證據。",
+      "evidence_status": {
+        "passing": "達標",
+        "failing": "未達標",
+        "pending": "待記錄"
+      },
+      "kind": {
+        "slo": "SLO",
+        "scan": "掃描",
+        "review": "審查",
+        "other": "其他"
+      },
+      "blockers": "阻擋項"
     },
     "work_item": {
       "heading": "驗證狀態",

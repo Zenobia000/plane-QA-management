@@ -5,6 +5,7 @@ from django.urls import path
 
 from plane.api.views.testing import (
     AutomationIngestionEndpoint,
+    TestCaseAttachmentAPIEndpoint,
     TestCaseDetailAPIEndpoint,
     TestCaseListCreateAPIEndpoint,
     TestCaseVersionDetailAPIEndpoint,
@@ -12,6 +13,8 @@ from plane.api.views.testing import (
     TestCaseWorkItemLinkDetailAPIEndpoint,
     TestFolderDetailAPIEndpoint,
     TestFolderListCreateAPIEndpoint,
+    TestLibraryExportAPIEndpoint,
+    TestLibrarySearchAPIEndpoint,
     TestResultDefectAPIEndpoint,
     TestRunCloseAPIEndpoint,
     TestRunDetailAPIEndpoint,
@@ -54,9 +57,29 @@ urlpatterns = [
         name="api-testing-test-cases",
     ),
     path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/search/",
+        TestLibrarySearchAPIEndpoint.as_view(),
+        name="api-testing-search",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/export/",
+        TestLibraryExportAPIEndpoint.as_view(),
+        name="api-testing-export",
+    ),
+    path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/",
         TestCaseDetailAPIEndpoint.as_view(),
         name="api-testing-test-case-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/attachments/",
+        TestCaseAttachmentAPIEndpoint.as_view(),
+        name="api-testing-test-case-attachments",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/attachments/<uuid:attachment_id>/",
+        TestCaseAttachmentAPIEndpoint.as_view(),
+        name="api-testing-test-case-attachment-detail",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/versions/<int:version>/",
@@ -102,5 +125,5 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/automation-ingestions/",
         AutomationIngestionEndpoint.as_view(),
         name="testing-automation-ingestions",
-    )
+    ),
 ]

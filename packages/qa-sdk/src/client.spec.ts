@@ -187,4 +187,75 @@ describe("PlaneQAClient", () => {
     expect(String(fetcher.mock.calls[1]?.[0])).toContain("/projects/project-id/milestones/");
     expect(String(fetcher.mock.calls[2]?.[0])).toContain("/workspaces/sunny/initiatives/");
   });
+
+  it("searches test cases and work items with the controlled query endpoint", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        query: "priority:high payment",
+        scope: "all",
+        count: 1,
+        results: [{ kind: "work_item", id: "issue", identifier: "QA-42", title: "Payment" }],
+      })
+    );
+    const client = new PlaneQAClient({ baseUrl: "http://plane.local", apiKey: "token", fetch: fetcher });
+
+    const result = await client.searchTesting("sunny", "project", "priority:high payment", "all");
+
+    const url = new URL(String(fetcher.mock.calls[0]?.[0]));
+    expect(url.pathname).toContain("/projects/project/testing/search/");
+    expect(url.searchParams.get("query")).toBe("priority:high payment");
+    expect(result.results[0]?.identifier).toBe("QA-42");
+  });
+
+  it("preserves binary XLSX exports", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(new Uint8Array([80, 75, 3, 4]), {
+        headers: { "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+      })
+    );
+    const client = new PlaneQAClient({ baseUrl: "http://plane.local", apiKey: "token", fetch: fetcher });
+
+    const result = await client.exportTesting("sunny", "project", "tag:smoke", "test_cases", "excel");
+
+    expect(result).toEqual(new Uint8Array([80, 75, 3, 4]));
+    const url = new URL(String(fetcher.mock.calls[0]?.[0]));
+    expect(url.searchParams.get("export_format")).toBe("excel");
+  });
+
+  it("uploads a test case attachment and confirms it before returning", async () => {
+    const attachment = {
+      id: "asset-id",
+      attributes: { name: "evidence.png", type: "image/png", size: 3 },
+      size: 3,
+      created_at: "",
+      created_by_id: null,
+      download_url: "/download",
+      preview_url: "/preview",
+    };
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          asset_id: "asset-id",
+          asset_url: "/download",
+          upload_data: { url: "https://storage.example/upload", fields: { key: "object-key" } },
+          attachment,
+        })
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const client = new PlaneQAClient({ baseUrl: "http://plane.local", apiKey: "token", fetch: fetcher });
+
+    const result = await client.uploadTestCaseAttachment("sunny", "project", "case", {
+      name: "evidence.png",
+      type: "image/png",
+      content: new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" }),
+    });
+
+    expect(result.id).toBe("asset-id");
+    expect(String(fetcher.mock.calls[1]?.[0])).toBe("https://storage.example/upload");
+    expect(new Headers(fetcher.mock.calls[1]?.[1]?.headers).has("X-API-Key")).toBe(false);
+    expect(String(fetcher.mock.calls[2]?.[0])).toContain("/attachments/asset-id/");
+    expect(fetcher.mock.calls[2]?.[1]?.method).toBe("PATCH");
+  });
 });

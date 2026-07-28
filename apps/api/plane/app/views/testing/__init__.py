@@ -4,6 +4,7 @@
 
 from .capability import TestingCapabilityEndpoint
 from .library import (
+    TestCaseAttachmentEndpoint,
     TestCaseDetailEndpoint,
     TestCaseListCreateEndpoint,
     TestCaseVersionDetailEndpoint,
@@ -12,6 +13,8 @@ from .library import (
     TestFolderDetailEndpoint,
     TestFolderListCreateEndpoint,
     TestLibraryCSVEndpoint,
+    TestLibraryExportEndpoint,
+    TestLibrarySearchEndpoint,
 )
 from .run import (
     AppAutomationIngestionEndpoint,
@@ -30,6 +33,7 @@ from .report import (
 
 __all__ = [
     "TestingCapabilityEndpoint",
+    "TestCaseAttachmentEndpoint",
     "TestCaseDetailEndpoint",
     "TestCaseListCreateEndpoint",
     "TestCaseVersionDetailEndpoint",
@@ -46,6 +50,8 @@ __all__ = [
     "TestingOverviewEndpoint",
     "AppAutomationIngestionEndpoint",
     "TestLibraryCSVEndpoint",
+    "TestLibraryExportEndpoint",
+    "TestLibrarySearchEndpoint",
     "TestingReleaseEvidenceEndpoint",
     "TestingRequirementCoverageEndpoint",
 ]

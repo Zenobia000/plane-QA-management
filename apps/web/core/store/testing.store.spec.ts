@@ -28,6 +28,9 @@ const serviceMock = () =>
     getFolders: vi.fn().mockResolvedValue([]),
     getTestRuns: vi.fn().mockResolvedValue([]),
     createTestCase: vi.fn(),
+    archiveTestCase: vi.fn(),
+    uploadTestCaseAttachment: vi.fn(),
+    deleteTestCaseAttachment: vi.fn(),
     recordResult: vi.fn(),
     updateFolder: vi.fn(),
     deleteFolder: vi.fn(),
@@ -91,6 +94,39 @@ describe("TestingStore", () => {
 
     await expect(store.deleteFolder("workspace", "project", folder.id)).rejects.toEqual(conflict);
     expect(store.folders[folder.id]).toEqual(folder);
+  });
+
+  it("keeps a test case when archiving fails", async () => {
+    const service = serviceMock();
+    vi.mocked(service.archiveTestCase).mockRejectedValue(new Error("network"));
+    const store = new TestingStore(service);
+    store.cases.case = { id: "case" } as TTestCase;
+
+    await expect(store.archiveCase("workspace", "project", "case")).rejects.toThrow("network");
+
+    expect(store.cases.case).toBeDefined();
+  });
+
+  it("adds and removes test-case attachments after successful service writes", async () => {
+    const service = serviceMock();
+    const attachment = {
+      id: "asset",
+      attributes: { name: "evidence.png", type: "image/png", size: 3 },
+      size: 3,
+      created_at: "",
+      created_by_id: null,
+      download_url: "/download",
+      preview_url: "/preview",
+    };
+    vi.mocked(service.uploadTestCaseAttachment).mockResolvedValue(attachment);
+    vi.mocked(service.deleteTestCaseAttachment).mockResolvedValue(undefined);
+    const store = new TestingStore(service);
+
+    await store.uploadAttachment("workspace", "project", "case", new File(["png"], "evidence.png"));
+    expect(store.attachments.case).toEqual([attachment]);
+
+    await store.deleteAttachment("workspace", "project", "case", attachment.id);
+    expect(store.attachments.case).toEqual([]);
   });
 
   it("appends a retest and recomputes progress from latest statuses", async () => {

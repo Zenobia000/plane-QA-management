@@ -2,15 +2,18 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+import uuid
+
+from django.conf import settings
 from django.db.models import F, Prefetch
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from django.http import HttpResponse
-
 from plane.app.permissions import ProjectEntityPermission
 from plane.app.serializers.testing import (
+    TestCaseAttachmentSerializer,
     TestCaseSerializer,
     TestCaseWriteSerializer,
     TestCaseVersionSerializer,
@@ -21,9 +24,13 @@ from plane.app.serializers.testing import (
     TestLibraryCSVImportSerializer,
 )
 from plane.app.views.base import BaseAPIView
-from plane.db.models import TestCase, TestCaseVersion, TestCaseWorkItemLink, TestFolder, TestStep
+from plane.bgtasks.storage_metadata_task import get_asset_object_metadata
+from plane.db.models import FileAsset, TestCase, TestCaseVersion, TestCaseWorkItemLink, TestFolder, TestStep, Workspace
+from plane.settings.storage import S3Storage
 from plane.testing import create_test_case, create_test_folder, link_test_case_to_work_item, publish_test_case_version
 from plane.testing.portability import export_test_library_csv, import_test_library_csv
+from plane.testing.search import export_testing_records, search_testing_records
+from plane.utils.path_validator import sanitize_filename
 
 
 def _case_queryset(*, slug, project_id):
@@ -80,9 +87,7 @@ class TestFolderDetailEndpoint(BaseAPIView):
         serializer.is_valid(raise_exception=True)
         parent_id = serializer.validated_data["parent_id"]
         parent = (
-            TestFolder.objects.get(id=parent_id, workspace__slug=slug, project_id=project_id)
-            if parent_id
-            else None
+            TestFolder.objects.get(id=parent_id, workspace__slug=slug, project_id=project_id) if parent_id else None
         )
         ancestor = parent
         visited = set()
@@ -162,9 +167,7 @@ class TestCaseDetailEndpoint(BaseAPIView):
             "preconditions": current.preconditions,
             "priority": current.priority,
             "tags": current.tags,
-            "steps": [
-                {"action": step.action, "expected_result": step.expected_result} for step in current.steps.all()
-            ],
+            "steps": [{"action": step.action, "expected_result": step.expected_result} for step in current.steps.all()],
         }
         payload = {**initial, **request.data}
         serializer = TestCaseWriteSerializer(data=payload)
@@ -207,6 +210,132 @@ class TestCaseVersionDetailEndpoint(BaseAPIView):
             .get()
         )
         return Response(TestCaseVersionSerializer(item).data)
+
+
+class TestCaseAttachmentEndpoint(BaseAPIView):
+    permission_classes = [ProjectEntityPermission]
+
+    def _test_case(self, *, slug, project_id, test_case_id):
+        return TestCase.objects.get(
+            id=test_case_id,
+            workspace__slug=slug,
+            project_id=project_id,
+        )
+
+    def _attachment(self, *, slug, project_id, test_case_id, attachment_id):
+        return FileAsset.objects.get(
+            id=attachment_id,
+            workspace__slug=slug,
+            project_id=project_id,
+            entity_type=FileAsset.EntityTypeContext.TESTING_ARTIFACT,
+            entity_identifier=str(test_case_id),
+            is_deleted=False,
+        )
+
+    def get(self, request, slug, project_id, test_case_id, attachment_id=None):
+        self._test_case(slug=slug, project_id=project_id, test_case_id=test_case_id)
+        if attachment_id:
+            attachment = self._attachment(
+                slug=slug,
+                project_id=project_id,
+                test_case_id=test_case_id,
+                attachment_id=attachment_id,
+            )
+            if not attachment.is_uploaded:
+                return Response({"error": "The attachment is not uploaded."}, status=status.HTTP_404_NOT_FOUND)
+            mime_type = attachment.attributes.get("type", "")
+            preview = request.query_params.get("preview") == "true" and mime_type.startswith("image/")
+            storage = S3Storage(request=request)
+            signed_url = storage.generate_presigned_url(
+                object_name=attachment.asset.name,
+                disposition="inline" if preview else "attachment",
+                filename=attachment.attributes.get("name"),
+            )
+            return HttpResponseRedirect(signed_url)
+
+        attachments = FileAsset.objects.filter(
+            workspace__slug=slug,
+            project_id=project_id,
+            entity_type=FileAsset.EntityTypeContext.TESTING_ARTIFACT,
+            entity_identifier=str(test_case_id),
+            is_uploaded=True,
+            is_deleted=False,
+        )
+        return Response(TestCaseAttachmentSerializer(attachments, many=True, context={"request": request}).data)
+
+    def post(self, request, slug, project_id, test_case_id):
+        test_case = self._test_case(slug=slug, project_id=project_id, test_case_id=test_case_id)
+        if test_case.archived_at:
+            return Response(
+                {"error": "Archived test cases cannot receive attachments."}, status=status.HTTP_409_CONFLICT
+            )
+        name = sanitize_filename(request.data.get("name")) or "unnamed"
+        mime_type = request.data.get("type")
+        try:
+            size = int(request.data.get("size", 0))
+        except (TypeError, ValueError):
+            size = 0
+        if not mime_type or mime_type not in settings.ATTACHMENT_MIME_TYPES:
+            return Response({"error": "Invalid file type."}, status=status.HTTP_400_BAD_REQUEST)
+        if size < 1 or size > settings.FILE_SIZE_LIMIT:
+            return Response(
+                {"error": f"File size must be between 1 and {settings.FILE_SIZE_LIMIT} bytes."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        workspace = Workspace.objects.get(slug=slug)
+        asset_key = f"{workspace.id}/{uuid.uuid4().hex}-{name}"
+        attachment = FileAsset.objects.create(
+            attributes={"name": name, "type": mime_type, "size": size},
+            asset=asset_key,
+            size=size,
+            workspace=workspace,
+            project_id=project_id,
+            created_by=request.user,
+            entity_type=FileAsset.EntityTypeContext.TESTING_ARTIFACT,
+            entity_identifier=str(test_case.id),
+        )
+        upload_data = S3Storage(request=request).generate_presigned_post(
+            object_name=asset_key,
+            file_type=mime_type,
+            file_size=size,
+        )
+        serialized_attachment = TestCaseAttachmentSerializer(attachment, context={"request": request}).data
+        return Response(
+            {
+                "upload_data": upload_data,
+                "asset_id": str(attachment.id),
+                "asset_url": serialized_attachment["download_url"],
+                "attachment": serialized_attachment,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def patch(self, request, slug, project_id, test_case_id, attachment_id):
+        attachment = self._attachment(
+            slug=slug,
+            project_id=project_id,
+            test_case_id=test_case_id,
+            attachment_id=attachment_id,
+        )
+        if not attachment.is_uploaded:
+            attachment.is_uploaded = True
+            attachment.save(update_fields=["is_uploaded", "updated_at"])
+        if not attachment.storage_metadata:
+            get_asset_object_metadata.delay(str(attachment.id))
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request, slug, project_id, test_case_id, attachment_id):
+        attachment = self._attachment(
+            slug=slug,
+            project_id=project_id,
+            test_case_id=test_case_id,
+            attachment_id=attachment_id,
+        )
+        attachment.is_deleted = True
+        attachment.deleted_at = timezone.now()
+        attachment.save(update_fields=["is_deleted", "deleted_at", "updated_at"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TestCaseWorkItemLinkEndpoint(BaseAPIView):
@@ -265,3 +394,31 @@ class TestLibraryCSVEndpoint(BaseAPIView):
             created_by=request.user,
         )
         return Response(result, status=status.HTTP_201_CREATED)
+
+
+class TestLibrarySearchEndpoint(BaseAPIView):
+    permission_classes = [ProjectEntityPermission]
+
+    def get(self, request, slug, project_id):
+        query = request.query_params.get("query", "").strip()
+        scope = request.query_params.get("scope", "all").strip()
+        try:
+            limit = int(request.query_params.get("limit", 200))
+        except (TypeError, ValueError) as exc:
+            raise ValidationError({"limit": "Limit must be an integer."}) from exc
+        records = search_testing_records(project_id=project_id, query=query, scope=scope, limit=limit)
+        return Response({"query": query, "scope": scope, "count": len(records), "results": records})
+
+
+class TestLibraryExportEndpoint(BaseAPIView):
+    permission_classes = [ProjectEntityPermission]
+
+    def get(self, request, slug, project_id):
+        query = request.query_params.get("query", "").strip()
+        scope = request.query_params.get("scope", "all").strip()
+        export_format = request.query_params.get("export_format", "csv").strip().casefold()
+        records = search_testing_records(project_id=project_id, query=query, scope=scope, limit=200)
+        content, content_type, filename = export_testing_records(records=records, export_format=export_format)
+        response = HttpResponse(content, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response

@@ -85,6 +85,12 @@ class TestPublicTestingManagementAPI:
         linked = api_key_client.post(links_url, {"issue_id": str(requirement.id)}, format="json")
         assert linked.status_code == status.HTTP_201_CREATED
         assert api_key_client.get(links_url).json()[0]["issue_id"] == str(requirement.id)
+        searched = api_key_client.get(
+            f"{base}/search/",
+            {"query": "type:test_case Visa", "scope": "all"},
+        )
+        assert searched.status_code == status.HTTP_200_OK
+        assert searched.json()["results"][0]["id"] == case_id
 
         run = api_key_client.post(
             f"{base}/test-runs/",

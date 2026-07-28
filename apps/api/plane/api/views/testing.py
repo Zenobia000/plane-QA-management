@@ -10,6 +10,7 @@ from plane.api.serializers.testing import AutomationIngestionSerializer
 from plane.api.middleware.api_authentication import APIKeyAuthentication
 from plane.api.rate_limit import ApiKeyRateThrottle
 from plane.app.views.testing import (
+    TestCaseAttachmentEndpoint as AppTestCaseAttachmentEndpoint,
     TestCaseDetailEndpoint as AppTestCaseDetailEndpoint,
     TestCaseListCreateEndpoint as AppTestCaseListCreateEndpoint,
     TestCaseVersionDetailEndpoint as AppTestCaseVersionDetailEndpoint,
@@ -25,6 +26,8 @@ from plane.app.views.testing import (
     TestingCapabilityEndpoint as AppTestingCapabilityEndpoint,
     TestingOverviewEndpoint as AppTestingOverviewEndpoint,
     TestingRequirementCoverageEndpoint as AppTestingRequirementCoverageEndpoint,
+    TestLibraryExportEndpoint as AppTestLibraryExportEndpoint,
+    TestLibrarySearchEndpoint as AppTestLibrarySearchEndpoint,
 )
 from plane.app.permissions import ProjectEntityPermission
 from plane.testing import IdempotencyConflict, ingest_automation_results, parse_junit_xml, serialize_ingestion_response
@@ -76,9 +79,7 @@ class TestingOverviewAPIEndpoint(APIKeyTestingEndpointMixin, AppTestingOverviewE
     pass
 
 
-class TestingRequirementCoverageAPIEndpoint(
-    APIKeyTestingEndpointMixin, AppTestingRequirementCoverageEndpoint
-):
+class TestingRequirementCoverageAPIEndpoint(APIKeyTestingEndpointMixin, AppTestingRequirementCoverageEndpoint):
     pass
 
 
@@ -94,7 +95,19 @@ class TestCaseListCreateAPIEndpoint(APIKeyTestingEndpointMixin, AppTestCaseListC
     pass
 
 
+class TestLibrarySearchAPIEndpoint(APIKeyTestingEndpointMixin, AppTestLibrarySearchEndpoint):
+    pass
+
+
+class TestLibraryExportAPIEndpoint(APIKeyTestingEndpointMixin, AppTestLibraryExportEndpoint):
+    pass
+
+
 class TestCaseDetailAPIEndpoint(APIKeyTestingEndpointMixin, AppTestCaseDetailEndpoint):
+    pass
+
+
+class TestCaseAttachmentAPIEndpoint(APIKeyTestingEndpointMixin, AppTestCaseAttachmentEndpoint):
     pass
 
 
@@ -106,9 +119,7 @@ class TestCaseWorkItemLinkAPIEndpoint(APIKeyTestingEndpointMixin, AppTestCaseWor
     pass
 
 
-class TestCaseWorkItemLinkDetailAPIEndpoint(
-    APIKeyTestingEndpointMixin, AppTestCaseWorkItemLinkDetailEndpoint
-):
+class TestCaseWorkItemLinkDetailAPIEndpoint(APIKeyTestingEndpointMixin, AppTestCaseWorkItemLinkDetailEndpoint):
     pass
 
 
@@ -139,9 +150,7 @@ class AutomationIngestionEndpoint(APIKeyTestingEndpointMixin, BaseAPIView):
     def post(self, request, slug, project_id):
         idempotency_key = request.headers.get("Idempotency-Key", "").strip()
         if not idempotency_key:
-            return Response(
-                {"error": "Idempotency-Key header is required."}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Idempotency-Key header is required."}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -156,9 +165,12 @@ class AutomationIngestionEndpoint(APIKeyTestingEndpointMixin, BaseAPIView):
             )
         except IdempotencyConflict as exc:
             return Response({"error": str(exc)}, status=status.HTTP_409_CONFLICT)
-        ingestion = type(ingestion).objects.select_related("test_run").prefetch_related(
-            "test_run__run_cases"
-        ).get(id=ingestion.id)
+        ingestion = (
+            type(ingestion)
+            .objects.select_related("test_run")
+            .prefetch_related("test_run__run_cases")
+            .get(id=ingestion.id)
+        )
         return Response(
             serialize_ingestion_response(ingestion, replayed),
             status=status.HTTP_200_OK if replayed else status.HTTP_201_CREATED,

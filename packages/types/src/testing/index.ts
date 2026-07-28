@@ -77,6 +77,50 @@ export type TTestCase = {
   latest_status: TTestRunCaseStatus | null;
 };
 
+export type TTestCaseAttachment = {
+  id: string;
+  attributes: {
+    name: string;
+    type: string;
+    size: number;
+  };
+  size: number;
+  created_at: string;
+  created_by_id: string | null;
+  download_url: string;
+  preview_url: string | null;
+};
+
+export type TTestingSearchScope = "all" | "test_cases" | "work_items";
+export type TTestingExportFormat = "csv" | "html" | "excel";
+
+export type TTestingSearchResult = {
+  kind: "test_case" | "work_item";
+  id: string;
+  identifier: string;
+  sequence: number;
+  title: string;
+  description: string;
+  preconditions: string;
+  steps: string;
+  priority: string;
+  status: string;
+  folder: string;
+  tags: string[];
+  linked_record_ids: string[];
+  linked_records: string[];
+  updated_at: string;
+  state_group?: string | null;
+  work_item_type?: string | null;
+};
+
+export type TTestingSearchResponse = {
+  query: string;
+  scope: TTestingSearchScope;
+  count: number;
+  results: TTestingSearchResult[];
+};
+
 export type TTestCaseInput = {
   title: string;
   folder_id?: string | null;

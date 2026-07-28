@@ -40,14 +40,14 @@ owns typed agent tools and policy metadata. Neither client layer imports Django 
 
 ## Domain modules inside one MCP server
 
-| Module               | Responsibility                                               | Representative tools                                                                               |
-| -------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| Discovery            | Resolve workspace/project context and available capabilities | `project_list`, `project_get_context`, `project_state_list`                                        |
-| Project management   | Work item lifecycle and comments                             | `issue_list`, `issue_get`, `issue_create`, `issue_update`, `issue_transition`, `issue_add_comment` |
-| QA library           | Folders, immutable case versions, requirement links          | `test_folder_*`, `test_case_*`, `test_case_link_issue`, `test_case_unlink_issue`                   |
-| QA execution         | Fixed runs, append-only results, traceable defects           | `test_run_*`, `test_result_record`, `test_result_create_defect`                                    |
-| Quality intelligence | Overview, coverage, blockers, release decision               | `quality_overview`, `quality_coverage`, `quality_release_gate`                                     |
-| Automation           | Idempotent CI result ingestion                               | `automation_upload_junit`, `automation_upload_results`                                             |
+| Module               | Responsibility                                                   | Representative tools                                                                               |
+| -------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Discovery            | Resolve workspace/project context and available capabilities     | `project_list`, `project_get_context`, `project_state_list`                                        |
+| Project management   | Work item lifecycle and comments                                 | `issue_list`, `issue_get`, `issue_create`, `issue_update`, `issue_transition`, `issue_add_comment` |
+| QA library           | Folders, immutable case versions, attachments, requirement links | `test_folder_*`, `test_case_*`, `test_case_attachment_*`, `testing_search`, `testing_export`       |
+| QA execution         | Fixed runs, append-only results, traceable defects               | `test_run_*`, `test_result_record`, `test_result_create_defect`                                    |
+| Quality intelligence | Overview, coverage, blockers, release decision                   | `quality_overview`, `quality_coverage`, `quality_release_gate`                                     |
+| Automation           | Idempotent CI result ingestion                                   | `automation_upload_junit`, `automation_upload_results`                                             |
 
 One external MCP server is intentional: project and QA operations share identity, project context, permissions, issue
 states, traceability, and audit history. Internal modules remain independent and communicate only through the SDK.
@@ -58,7 +58,9 @@ states, traceability, and audit history. Internal modules remain independent and
 plane-qa project list|get|update|states
 plane-qa issue list|get|create|update|transition|comment|archive
 plane-qa folder list|get|create|update|delete
-plane-qa case list|get|create|update|version|archive|link-issue|unlink-issue
+plane-qa case list|get|create|update|version|archive|link-issue|unlink-issue|attachments|attach|detach
+plane-qa search query --query QUERY [--scope all|test_cases|work_items]
+plane-qa export testing --format csv|html|excel --output FILE
 plane-qa run list|get|create|record-result|create-defect|close
 plane-qa quality overview|coverage|release-gate
 plane-qa automation upload-junit|upload-results
@@ -92,8 +94,8 @@ clients should use their write-tool approval mode. Every retryable create accept
 ### Destructive operations
 
 Archive and delete commands require `--yes` in non-interactive CLI usage. Interactive CLI may ask for confirmation.
-MCP does not expose permanent deletion in the initial release. It exposes archive operations only where domain models
-support recovery. Folder deletion is allowed only for an empty folder.
+MCP does not expose permanent deletion of test cases or work items. Cases are archived, attachments are soft-deleted,
+and folder deletion is allowed only for an empty folder. Each destructive tool requires an explicit literal confirmation.
 
 ### Immutable execution history
 

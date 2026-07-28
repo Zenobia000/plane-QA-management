@@ -168,4 +168,56 @@ describe("plane-qa CLI", () => {
     expect(code).toBe(0);
     expect(createMilestone).toHaveBeenCalledWith("sunny", "p1", { name: "MVP" });
   });
+
+  it("searches across testing and work items with the controlled query", async () => {
+    const output = capture();
+    const searchTesting = vi.fn().mockResolvedValue({ count: 0, results: [] });
+    const client = {
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+      searchTesting,
+    } as unknown as PlaneQAClient;
+
+    const code = await runCLI({
+      argv: ["search", "query", "--query", "priority:high payment", "--scope", "all"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(code).toBe(0);
+    expect(searchTesting).toHaveBeenCalledWith("sunny", "p1", "priority:high payment", "all");
+  });
+
+  it("uploads a local file as test-case evidence", async () => {
+    const output = capture();
+    const uploadTestCaseAttachment = vi.fn().mockResolvedValue({ id: "asset" });
+    const client = {
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+      uploadTestCaseAttachment,
+    } as unknown as PlaneQAClient;
+
+    const code = await runCLI({
+      argv: [
+        "case",
+        "attach",
+        "--case",
+        "case-1",
+        "--file",
+        "src/fixtures/automation-results.json",
+        "--mime-type",
+        "text/plain",
+      ],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(code).toBe(0);
+    expect(uploadTestCaseAttachment).toHaveBeenCalledWith(
+      "sunny",
+      "p1",
+      "case-1",
+      expect.objectContaining({ name: "automation-results.json", type: "text/plain" })
+    );
+  });
 });

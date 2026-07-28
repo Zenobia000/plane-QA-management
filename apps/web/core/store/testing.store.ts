@@ -8,6 +8,7 @@ import { action, makeObservable, observable, runInAction } from "mobx";
 import { TestingService } from "@plane/services";
 import type {
   TTestCase,
+  TTestCaseAttachment,
   TTestCaseInput,
   TTestDefect,
   TTestDefectInput,
@@ -17,6 +18,9 @@ import type {
   TTestingCapabilities,
   TTestingOverview,
   TTestingRequirementCoverage,
+  TTestingExportFormat,
+  TTestingSearchResponse,
+  TTestingSearchScope,
   TTestRun,
   TTestRunInput,
 } from "@plane/types";
@@ -26,6 +30,7 @@ export interface ITestingStore {
   overview: TTestingOverview | null;
   requirementCoverage: TTestingRequirementCoverage | null;
   cases: Record<string, TTestCase>;
+  attachments: Record<string, TTestCaseAttachment[]>;
   folders: Record<string, TTestFolder>;
   runs: Record<string, TTestRun>;
   loading: boolean;
@@ -46,8 +51,25 @@ export interface ITestingStore {
   ) => Promise<TTestFolder>;
   renameFolder: (workspaceSlug: string, projectId: string, folderId: string, name: string) => Promise<TTestFolder>;
   deleteFolder: (workspaceSlug: string, projectId: string, folderId: string) => Promise<void>;
+  archiveCase: (workspaceSlug: string, projectId: string, caseId: string) => Promise<void>;
   linkWorkItem: (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => Promise<void>;
   unlinkWorkItem: (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => Promise<void>;
+  searchLibrary: (
+    workspaceSlug: string,
+    projectId: string,
+    query: string,
+    scope: TTestingSearchScope
+  ) => Promise<TTestingSearchResponse>;
+  exportSearch: (
+    workspaceSlug: string,
+    projectId: string,
+    query: string,
+    scope: TTestingSearchScope,
+    format: TTestingExportFormat
+  ) => Promise<Blob>;
+  fetchAttachments: (workspaceSlug: string, projectId: string, caseId: string) => Promise<void>;
+  uploadAttachment: (workspaceSlug: string, projectId: string, caseId: string, file: File) => Promise<void>;
+  deleteAttachment: (workspaceSlug: string, projectId: string, caseId: string, attachmentId: string) => Promise<void>;
   exportLibraryCSV: (workspaceSlug: string, projectId: string) => Promise<string>;
   importLibraryCSV: (workspaceSlug: string, projectId: string, csvText: string) => Promise<number>;
   createRun: (workspaceSlug: string, projectId: string, input: TTestRunInput) => Promise<TTestRun>;
@@ -97,6 +119,7 @@ export class TestingStore implements ITestingStore {
   overview: TTestingOverview | null = null;
   requirementCoverage: TTestingRequirementCoverage | null = null;
   cases: Record<string, TTestCase> = {};
+  attachments: Record<string, TTestCaseAttachment[]> = {};
   folders: Record<string, TTestFolder> = {};
   runs: Record<string, TTestRun> = {};
   loading = false;
@@ -109,6 +132,7 @@ export class TestingStore implements ITestingStore {
       overview: observable.ref,
       requirementCoverage: observable.ref,
       cases: observable,
+      attachments: observable,
       folders: observable,
       runs: observable,
       loading: observable,
@@ -119,8 +143,12 @@ export class TestingStore implements ITestingStore {
       createFolder: action,
       renameFolder: action,
       deleteFolder: action,
+      archiveCase: action,
       linkWorkItem: action,
       unlinkWorkItem: action,
+      fetchAttachments: action,
+      uploadAttachment: action,
+      deleteAttachment: action,
       importLibraryCSV: action,
       createRun: action,
       recordResult: action,
@@ -203,6 +231,14 @@ export class TestingStore implements ITestingStore {
     });
   };
 
+  archiveCase = async (workspaceSlug: string, projectId: string, caseId: string) => {
+    await this.service.archiveTestCase(workspaceSlug, projectId, caseId);
+    runInAction(() => {
+      delete this.cases[caseId];
+      delete this.attachments[caseId];
+    });
+  };
+
   linkWorkItem = async (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => {
     await this.service.linkWorkItem(workspaceSlug, projectId, caseId, issueId);
     runInAction(() => {
@@ -218,6 +254,38 @@ export class TestingStore implements ITestingStore {
       if (!testCase) return;
       testCase.work_item_ids = testCase.work_item_ids.filter((id) => id !== issueId);
       testCase.work_items = testCase.work_items.filter((item) => item.id !== issueId);
+    });
+  };
+
+  searchLibrary = (workspaceSlug: string, projectId: string, query: string, scope: TTestingSearchScope) =>
+    this.service.searchLibrary(workspaceSlug, projectId, query, scope);
+
+  exportSearch = (
+    workspaceSlug: string,
+    projectId: string,
+    query: string,
+    scope: TTestingSearchScope,
+    format: TTestingExportFormat
+  ) => this.service.exportSearch(workspaceSlug, projectId, query, scope, format);
+
+  fetchAttachments = async (workspaceSlug: string, projectId: string, caseId: string) => {
+    const attachments = await this.service.getTestCaseAttachments(workspaceSlug, projectId, caseId);
+    runInAction(() => {
+      this.attachments[caseId] = attachments;
+    });
+  };
+
+  uploadAttachment = async (workspaceSlug: string, projectId: string, caseId: string, file: File) => {
+    const attachment = await this.service.uploadTestCaseAttachment(workspaceSlug, projectId, caseId, file);
+    runInAction(() => {
+      this.attachments[caseId] = [...(this.attachments[caseId] ?? []), attachment];
+    });
+  };
+
+  deleteAttachment = async (workspaceSlug: string, projectId: string, caseId: string, attachmentId: string) => {
+    await this.service.deleteTestCaseAttachment(workspaceSlug, projectId, caseId, attachmentId);
+    runInAction(() => {
+      this.attachments[caseId] = (this.attachments[caseId] ?? []).filter((item) => item.id !== attachmentId);
     });
   };
 

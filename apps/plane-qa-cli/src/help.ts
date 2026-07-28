@@ -17,7 +17,9 @@ Commands:
   milestone list|create
   issue list|get|create|update|transition|comment|archive
   folder list|get|create|update|delete
-  case list|get|create|update|version|archive|link-issue|unlink-issue
+  case list|get|create|update|version|archive|link-issue|unlink-issue|attachments|attach|detach
+  search query --query 'type:test_case priority:high payment' [--scope all|test_cases|work_items]
+  export testing --format csv|html|excel --output FILE [--query QUERY] [--scope SCOPE]
   run list|get|create|record-result|create-defect|close
   quality overview|coverage|release-gate|open-defects
   automation upload-junit|upload-results

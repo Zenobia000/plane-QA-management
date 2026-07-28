@@ -6,22 +6,36 @@ All endpoints use `X-API-Key`, project membership permissions, API throttling, a
 /api/v1/workspaces/{workspace_slug}/projects/{project_uuid}/testing
 ```
 
-| Resource     | Methods and paths                                                          |
-| ------------ | -------------------------------------------------------------------------- |
-| Discovery    | `GET /capabilities/`                                                       |
-| Quality      | `GET /overview/`, `GET /requirement-coverage/`                             |
-| Folders      | `GET,POST /folders/`; `GET,PATCH,DELETE /folders/{folder_uuid}/`           |
-| Cases        | `GET,POST /test-cases/`; `GET,PATCH,DELETE /test-cases/{case_uuid}/`       |
-| Versions     | `GET /test-cases/{case_uuid}/versions/{version}/`                          |
-| Traceability | `GET,POST /test-cases/{case_uuid}/work-items/`; `DELETE .../{issue_uuid}/` |
-| Runs         | `GET,POST /test-runs/`; `GET /test-runs/{run_uuid}/`; `POST .../close/`    |
-| Results      | `POST /test-runs/{run_uuid}/cases/{run_case_uuid}/results/`                |
-| Defects      | `POST .../results/{result_uuid}/defects/`                                  |
-| Automation   | `POST /automation-ingestions/` with `Idempotency-Key`                      |
+| Resource     | Methods and paths                                                                 |
+| ------------ | --------------------------------------------------------------------------------- | ---------- | -------------------------- |
+| Discovery    | `GET /capabilities/`                                                              |
+| Quality      | `GET /overview/`, `GET /requirement-coverage/`                                    |
+| Folders      | `GET,POST /folders/`; `GET,PATCH,DELETE /folders/{folder_uuid}/`                  |
+| Cases        | `GET,POST /test-cases/`; `GET,PATCH,DELETE /test-cases/{case_uuid}/`              |
+| Attachments  | `GET,POST /test-cases/{case_uuid}/attachments/`; `PATCH,DELETE .../{asset_uuid}/` |
+| Versions     | `GET /test-cases/{case_uuid}/versions/{version}/`                                 |
+| Traceability | `GET,POST /test-cases/{case_uuid}/work-items/`; `DELETE .../{issue_uuid}/`        |
+| Search       | `GET /search/?query=...&scope=all                                                 | test_cases | work_items`                |
+| Export       | `GET /export/?export_format=csv                                                   | html       | excel&query=...&scope=...` |
+| Runs         | `GET,POST /test-runs/`; `GET /test-runs/{run_uuid}/`; `POST .../close/`           |
+| Results      | `POST /test-runs/{run_uuid}/cases/{run_case_uuid}/results/`                       |
+| Defects      | `POST .../results/{result_uuid}/defects/`                                         |
+| Automation   | `POST /automation-ingestions/` with `Idempotency-Key`                             |
 
 Test-case `PATCH` publishes a new immutable version. A created run pins each selected current version. Result writes append evidence; closing a run prevents further result mutation. Folder deletion succeeds only for an empty folder, and folder updates reject parent cycles.
 
 List endpoints accept `per_page` where pagination is supported. Case lists additionally accept `search`, `folder_id`, and `work_item_id`.
+
+Testing search spans current test-case versions and active Work Items in the same project. Free-text terms are combined with `AND`. The controlled query fields are `type`, `id`, `title`, `priority`, `status`, `tag`, and `folder`; for example:
+
+```text
+type:test_case priority:high tag:smoke "card payment"
+type:work_item status:started checkout
+```
+
+This is a search DSL, not database SQL. Unknown fields are rejected and no arbitrary query reaches PostgreSQL. Export applies the same query and scope, returning UTF-8 CSV, standalone HTML, or a real XLSX workbook.
+
+Attachment creation returns a presigned storage upload, followed by `PATCH` to confirm the upload. Lists include only confirmed, non-deleted files. Files are bound with `TESTING_ARTIFACT` and the test-case UUID, remain inside one workspace/project, and use the instance attachment MIME and size allowlists.
 
 ## Error contract
 

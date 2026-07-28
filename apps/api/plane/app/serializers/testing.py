@@ -5,6 +5,7 @@
 from rest_framework import serializers
 
 from plane.db.models import (
+    FileAsset,
     ReleaseEvidence,
     TestCase,
     TestCaseVersion,
@@ -134,6 +135,40 @@ class TestCaseSerializer(BaseSerializer):
         return latest.latest_status if latest else None
 
 
+class TestCaseAttachmentSerializer(BaseSerializer):
+    download_url = serializers.SerializerMethodField()
+    preview_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FileAsset
+        fields = [
+            "id",
+            "attributes",
+            "size",
+            "created_at",
+            "created_by_id",
+            "download_url",
+            "preview_url",
+        ]
+        read_only_fields = fields
+
+    def _asset_url(self, instance, *, preview=False):
+        request = self.context.get("request")
+        api_prefix = "/api/v1" if request and request.path.startswith("/api/v1/") else "/api"
+        suffix = "?preview=true" if preview else ""
+        return (
+            f"{api_prefix}/workspaces/{instance.workspace.slug}/projects/{instance.project_id}/testing/"
+            f"test-cases/{instance.entity_identifier}/attachments/{instance.id}/{suffix}"
+        )
+
+    def get_download_url(self, instance):
+        return self._asset_url(instance)
+
+    def get_preview_url(self, instance):
+        mime_type = instance.attributes.get("type", "")
+        return self._asset_url(instance, preview=True) if mime_type.startswith("image/") else None
+
+
 class TestStepInputSerializer(serializers.Serializer):
     action = serializers.JSONField()
     expected_result = serializers.JSONField(required=False, default=dict)
@@ -145,9 +180,7 @@ class TestCaseWriteSerializer(serializers.Serializer):
     description = serializers.JSONField(required=False, default=dict)
     preconditions = serializers.JSONField(required=False, default=dict)
     priority = serializers.ChoiceField(choices=TestCaseVersion.PRIORITY_CHOICES, required=False, default="none")
-    case_type = serializers.ChoiceField(
-        choices=TestCaseVersion.CASE_TYPE_CHOICES, required=False, default="functional"
-    )
+    case_type = serializers.ChoiceField(choices=TestCaseVersion.CASE_TYPE_CHOICES, required=False, default="functional")
     tags = serializers.ListField(child=serializers.CharField(max_length=100), required=False, default=list)
     steps = TestStepInputSerializer(many=True, required=False, default=list)
 

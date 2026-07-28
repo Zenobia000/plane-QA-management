@@ -6,7 +6,9 @@
 
 import { API_BASE_URL } from "@plane/constants";
 import type {
+  TFileSignedURLResponse,
   TTestCase,
+  TTestCaseAttachment,
   TTestCaseInput,
   TTestDefect,
   TTestDefectInput,
@@ -17,12 +19,19 @@ import type {
   TTestingCapabilities,
   TTestingOverview,
   TTestingRequirementCoverage,
+  TTestingExportFormat,
+  TTestingSearchResponse,
+  TTestingSearchScope,
   TTestRun,
   TTestRunInput,
 } from "@plane/types";
 import { APIService } from "../api.service";
 import { FileUploadService } from "../file/file-upload.service";
 import { generateFileUploadPayload, getFileMetaDataForUpload } from "../file/helper";
+
+type TTestCaseAttachmentUploadResponse = TFileSignedURLResponse & {
+  attachment: TTestCaseAttachment;
+};
 
 export class TestingService extends APIService {
   private fileUploadService: FileUploadService;
@@ -196,6 +205,88 @@ export class TestingService extends APIService {
       params: search ? { search } : undefined,
     })
       .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async searchLibrary(
+    workspaceSlug: string,
+    projectId: string,
+    query: string,
+    scope: TTestingSearchScope = "all"
+  ): Promise<TTestingSearchResponse> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/search/`, {
+      params: { query, scope },
+    })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async exportSearch(
+    workspaceSlug: string,
+    projectId: string,
+    query: string,
+    scope: TTestingSearchScope,
+    format: TTestingExportFormat
+  ): Promise<Blob> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/export/`, {
+      params: { query, scope, export_format: format },
+      responseType: "blob",
+    })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getTestCaseAttachments(
+    workspaceSlug: string,
+    projectId: string,
+    testCaseId: string
+  ): Promise<TTestCaseAttachment[]> {
+    return this.get(
+      `/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/test-cases/${testCaseId}/attachments/`
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async uploadTestCaseAttachment(
+    workspaceSlug: string,
+    projectId: string,
+    testCaseId: string,
+    file: File
+  ): Promise<TTestCaseAttachment> {
+    const detected = await getFileMetaDataForUpload(file);
+    const fileMetadata = { ...detected, type: detected.type || file.type };
+    const basePath = `/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/test-cases/${testCaseId}/attachments`;
+    return this.post(`${basePath}/`, fileMetadata)
+      .then(async (response) => {
+        const signed = response.data as TTestCaseAttachmentUploadResponse;
+        await this.fileUploadService.uploadFile(signed.upload_data.url, generateFileUploadPayload(signed, file));
+        await this.patch(`${basePath}/${signed.asset_id}/`);
+        return signed.attachment;
+      })
+      .catch((error) => {
+        throw error?.response?.data ?? error;
+      });
+  }
+
+  async deleteTestCaseAttachment(
+    workspaceSlug: string,
+    projectId: string,
+    testCaseId: string,
+    attachmentId: string
+  ): Promise<void> {
+    return this.delete(
+      `/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/test-cases/${testCaseId}/attachments/${attachmentId}/`
+    )
+      .then(() => undefined)
       .catch((error) => {
         throw error?.response?.data;
       });

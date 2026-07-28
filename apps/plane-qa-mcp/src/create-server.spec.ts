@@ -45,6 +45,9 @@ describe("Plane QA MCP server", () => {
         "project_get_context",
         "issue_transition",
         "test_case_update",
+        "test_case_attachment_upload",
+        "testing_search",
+        "testing_export",
         "test_result_create_defect",
         "quality_release_gate",
         "automation_upload_junit",
@@ -75,6 +78,46 @@ describe("Plane QA MCP server", () => {
     expect(response.isError).not.toBe(true);
     expect(response.structuredContent).toMatchObject({ data: { project, states: expect.any(Array) } });
     expect(connection.plane.resolveProject).toHaveBeenCalledWith("acme", "QA");
+  });
+
+  it("searches test cases and work items through the shared project scope", async () => {
+    const searchTesting = vi.fn().mockResolvedValue({ count: 1, results: [{ identifier: "QA-42" }] });
+    const connection = await connect({ searchTesting });
+    connections.push(connection);
+
+    const response = await connection.client.callTool({
+      name: "testing_search",
+      arguments: { workspace: "acme", project: "QA", query: "priority:high payment", search_scope: "all" },
+    });
+
+    expect(response.isError).not.toBe(true);
+    expect(searchTesting).toHaveBeenCalledWith("acme", project.id, "priority:high payment", "all");
+  });
+
+  it("uploads base64 test-case evidence through the SDK", async () => {
+    const uploadTestCaseAttachment = vi.fn().mockResolvedValue({ id: "asset" });
+    const connection = await connect({ uploadTestCaseAttachment });
+    connections.push(connection);
+
+    const response = await connection.client.callTool({
+      name: "test_case_attachment_upload",
+      arguments: {
+        workspace: "acme",
+        project: "QA",
+        case_id: project.id,
+        file_name: "evidence.txt",
+        mime_type: "text/plain",
+        content_base64: Buffer.from("passed").toString("base64"),
+      },
+    });
+
+    expect(response.isError).not.toBe(true);
+    expect(uploadTestCaseAttachment).toHaveBeenCalledWith(
+      "acme",
+      project.id,
+      project.id,
+      expect.objectContaining({ name: "evidence.txt", type: "text/plain", content: expect.any(Blob) })
+    );
   });
 
   it("rejects destructive calls without literal confirmation before the backend is called", async () => {

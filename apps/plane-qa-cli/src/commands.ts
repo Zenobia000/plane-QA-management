@@ -1,6 +1,14 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
+import { basename } from "node:path";
 
-import type { JsonObject, PlaneQAClient, Project, WorkItem } from "@plane/qa-sdk";
+import type {
+  JsonObject,
+  PlaneQAClient,
+  Project,
+  TestingExportFormat,
+  TestingSearchScope,
+  WorkItem,
+} from "@plane/qa-sdk";
 
 import {
   commaListOption,
@@ -81,6 +89,29 @@ export const executeCommand = async (
   }
 
   const project = await projectFor(client, config);
+
+  if (group === "search" && action === "query") {
+    return client.searchTesting(
+      config.workspace,
+      project.id,
+      optionString(args.options, "query", "") ?? "",
+      (optionString(args.options, "scope", "all") ?? "all") as TestingSearchScope
+    );
+  }
+
+  if (group === "export" && action === "testing") {
+    const outputPath = requiredOption(args.options, "output");
+    const format = (optionString(args.options, "format", "csv") ?? "csv") as TestingExportFormat;
+    const content = await client.exportTesting(
+      config.workspace,
+      project.id,
+      optionString(args.options, "query", "") ?? "",
+      (optionString(args.options, "scope", "all") ?? "all") as TestingSearchScope,
+      format
+    );
+    await writeFile(outputPath, content, typeof content === "string" ? "utf8" : undefined);
+    return { exported: true, format, output: outputPath };
+  }
 
   if (group === "type") {
     if (action === "list") return client.listWorkItemTypes(config.workspace);
@@ -271,6 +302,29 @@ export const executeCommand = async (
     }
     const caseId = requiredOption(args.options, "case");
     if (action === "get") return client.getTestCase(config.workspace, project.id, caseId);
+    if (action === "attachments") {
+      return client.listTestCaseAttachments(config.workspace, project.id, caseId);
+    }
+    if (action === "attach") {
+      const filePath = requiredOption(args.options, "file");
+      const content = await readFile(filePath);
+      return client.uploadTestCaseAttachment(config.workspace, project.id, caseId, {
+        name: optionString(args.options, "name", basename(filePath)) ?? basename(filePath),
+        type: requiredOption(args.options, "mime_type"),
+        content: new Blob([new Uint8Array(content)]),
+      });
+    }
+    if (action === "detach") {
+      const attachmentId = requiredOption(args.options, "attachment");
+      requireConfirmation(args, "test case attachment delete");
+      const preview = dryRunReceipt(args, "test case attachment delete", {
+        case_id: caseId,
+        attachment_id: attachmentId,
+      });
+      if (preview) return preview;
+      await client.deleteTestCaseAttachment(config.workspace, project.id, caseId, attachmentId);
+      return { deleted: true, case_id: caseId, attachment_id: attachmentId };
+    }
     if (action === "version") {
       const version = numberOption(args.options, "version");
       if (!version) throw new Error("--version must be a positive number.");

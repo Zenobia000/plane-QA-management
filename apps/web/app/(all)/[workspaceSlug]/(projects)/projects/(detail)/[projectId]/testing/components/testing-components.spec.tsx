@@ -114,8 +114,8 @@ describe("Testing components", () => {
       />
     );
     expect(html).toContain("Checkout");
-    expect(html).toContain('aria-label="Rename');
-    expect(html).toContain('aria-label="Delete');
+    expect(html).toContain('aria-label="testing.suites.rename"');
+    expect(html).toContain('aria-label="testing.suites.delete"');
   });
 
   it("renders selectable pinned cases in the run builder", () => {
@@ -131,7 +131,7 @@ describe("Testing components", () => {
     );
     expect(html).toContain("Checkout succeeds");
     expect(html).toContain("TC-1");
-    expect(html).toContain("Create fixed test run");
+    expect(html).toContain("testing.runs.builder_heading");
   });
 
   it("shows resolved defects as ready for append-only retest", () => {
@@ -148,10 +148,13 @@ describe("Testing components", () => {
         onDetach={vi.fn()}
       />
     );
-    expect(html).toContain("Ready for retest");
+    expect(html).toContain("testing.execution.ready_for_retest");
     expect(html).toContain("Checkout defect (completed)");
-    expect(html).toContain("Pass (P)");
-    expect(html).toContain("Fail (F)");
+    expect(html).toContain("QA notes / actual result");
+    expect(html).toContain("Execution history");
+    expect(html).toContain("HTTP 500");
+    expect(html).toContain("testing.execution.pass");
+    expect(html).toContain("testing.execution.fail");
   });
 
   it("shows the addressed run case rather than the first open one", () => {
@@ -219,8 +222,8 @@ describe("Testing components", () => {
         onDetach={vi.fn()}
       />
     );
-    expect(html).toContain("Closed");
-    expect(html).not.toContain("Pass (P)");
-    expect(html).not.toContain("Close run");
+    expect(html).toContain("testing.execution.closed");
+    expect(html).not.toContain("testing.execution.pass");
+    expect(html).not.toContain("testing.execution.close_run");
   });
 });

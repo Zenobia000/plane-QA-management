@@ -9,12 +9,17 @@ import type {
   RequestOptions,
   State,
   TestCase,
+  TestCaseAttachment,
+  TestCaseAttachmentUploadResponse,
   TestCaseLink,
   TestCaseVersion,
   TestFolder,
   TestResult,
   TestRun,
   TestingCapabilities,
+  TestingExportFormat,
+  TestingSearchResponse,
+  TestingSearchScope,
   WorkItem,
   WorkItemProperty,
   WorkItemType,
@@ -112,11 +117,13 @@ export class PlaneQAClient {
 
       const contentType = response.headers.get("content-type") ?? "";
       const payload =
-        response.status === 204
-          ? undefined
-          : contentType.includes("application/json")
-            ? await response.json()
-            : await response.text();
+        response.ok && options.responseType === "array_buffer"
+          ? new Uint8Array(await response.arrayBuffer())
+          : response.status === 204
+            ? undefined
+            : contentType.includes("application/json")
+              ? await response.json()
+              : await response.text();
       if (response.ok) return payload as T;
 
       if (mayRetry && RETRYABLE_STATUS.has(response.status) && attempt < this.maxRetries) {
@@ -406,6 +413,86 @@ export class PlaneQAClient {
 
   archiveTestCase(workspace: string, projectId: string, caseId: string): Promise<void> {
     return this.request("DELETE", this.testingPath(workspace, projectId, `/test-cases/${encodePath(caseId)}/`));
+  }
+
+  searchTesting(
+    workspace: string,
+    projectId: string,
+    query = "",
+    scope: TestingSearchScope = "all"
+  ): Promise<TestingSearchResponse> {
+    return this.request("GET", this.testingPath(workspace, projectId, "/search/"), {
+      query: { query, scope },
+    });
+  }
+
+  exportTesting(
+    workspace: string,
+    projectId: string,
+    query: string,
+    scope: TestingSearchScope,
+    format: TestingExportFormat
+  ): Promise<string | Uint8Array> {
+    return this.request("GET", this.testingPath(workspace, projectId, "/export/"), {
+      query: { query, scope, export_format: format },
+      headers: {
+        Accept:
+          format === "csv"
+            ? "text/csv"
+            : format === "excel"
+              ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              : "text/html",
+      },
+      responseType: format === "excel" ? "array_buffer" : undefined,
+    });
+  }
+
+  listTestCaseAttachments(workspace: string, projectId: string, caseId: string): Promise<TestCaseAttachment[]> {
+    return this.request(
+      "GET",
+      this.testingPath(workspace, projectId, `/test-cases/${encodePath(caseId)}/attachments/`)
+    );
+  }
+
+  async uploadTestCaseAttachment(
+    workspace: string,
+    projectId: string,
+    caseId: string,
+    input: { name: string; type: string; content: Blob }
+  ): Promise<TestCaseAttachment> {
+    const path = this.testingPath(workspace, projectId, `/test-cases/${encodePath(caseId)}/attachments/`);
+    const signed = await this.request<TestCaseAttachmentUploadResponse>("POST", path, {
+      body: { name: input.name, type: input.type, size: input.content.size },
+    });
+    const form = new FormData();
+    for (const [key, value] of Object.entries(signed.upload_data.fields)) form.append(key, value);
+    form.append("file", input.content, input.name);
+    const uploadResponse = await this.fetcher(signed.upload_data.url, {
+      method: "POST",
+      body: form,
+      signal: AbortSignal.timeout(this.timeoutMs),
+    });
+    if (!uploadResponse.ok) {
+      throw new PlaneQAError({
+        kind: "network",
+        status: uploadResponse.status,
+        message: `Attachment storage upload failed with HTTP ${uploadResponse.status}.`,
+        retryable: uploadResponse.status >= 500,
+      });
+    }
+    await this.request("PATCH", `${path}${encodePath(signed.asset_id)}/`);
+    return signed.attachment;
+  }
+
+  deleteTestCaseAttachment(workspace: string, projectId: string, caseId: string, attachmentId: string): Promise<void> {
+    return this.request(
+      "DELETE",
+      this.testingPath(
+        workspace,
+        projectId,
+        `/test-cases/${encodePath(caseId)}/attachments/${encodePath(attachmentId)}/`
+      )
+    );
   }
 
   getTestCaseVersion(workspace: string, projectId: string, caseId: string, version: number): Promise<TestCaseVersion> {

@@ -27,6 +27,9 @@ Rotate a token in Plane, replace `PLANE_API_KEY` in the secret manager or shell 
 node apps/plane-qa-cli/dist/cli.mjs project get
 node apps/plane-qa-cli/dist/cli.mjs quality release-gate
 node apps/plane-qa-cli/dist/cli.mjs case archive --case CASE_UUID --dry-run
+node apps/plane-qa-cli/dist/cli.mjs search query --query 'type:test_case priority:high payment' --scope all
+node apps/plane-qa-cli/dist/cli.mjs export testing --format excel --output testing.xlsx
+node apps/plane-qa-cli/dist/cli.mjs case attach --case CASE_UUID --file evidence.png --mime-type image/png
 ```
 
 Successful output is JSON on stdout. Errors are JSON on stderr. CI should use `--yes` only for reviewed destructive operations and a stable `--idempotency-key` for uploads.

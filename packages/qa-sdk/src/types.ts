@@ -151,6 +151,53 @@ export interface TestCaseLink {
   created_at: string;
 }
 
+export interface TestCaseAttachment {
+  id: string;
+  attributes: { name: string; type: string; size: number };
+  size: number;
+  created_at: string;
+  created_by_id: string | null;
+  download_url: string;
+  preview_url: string | null;
+}
+
+export type TestingSearchScope = "all" | "test_cases" | "work_items";
+export type TestingExportFormat = "csv" | "html" | "excel";
+
+export interface TestingSearchResult {
+  kind: "test_case" | "work_item";
+  id: string;
+  identifier: string;
+  sequence: number;
+  title: string;
+  description: string;
+  preconditions: string;
+  steps: string;
+  priority: string;
+  status: string;
+  folder: string;
+  tags: string[];
+  linked_record_ids: string[];
+  linked_records: string[];
+  updated_at: string;
+  state_group?: string | null;
+  work_item_type?: string | null;
+}
+
+export interface TestingSearchResponse {
+  query: string;
+  scope: TestingSearchScope;
+  count: number;
+  results: TestingSearchResult[];
+}
+
+export interface TestCaseAttachmentUploadResponse {
+  asset_id: string;
+  asset_url: string;
+  upload_data: { url: string; fields: Record<string, string> };
+  attachment: TestCaseAttachment;
+}
+
 export interface TestResult {
   id: string;
   sequence: number;
@@ -197,4 +244,5 @@ export interface RequestOptions {
   headers?: Record<string, string>;
   idempotent?: boolean;
   signal?: AbortSignal;
+  responseType?: "array_buffer";
 }

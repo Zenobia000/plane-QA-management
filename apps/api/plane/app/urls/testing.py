@@ -6,6 +6,7 @@ from django.urls import path
 
 from plane.app.views.testing import (
     AppAutomationIngestionEndpoint,
+    TestCaseAttachmentEndpoint,
     TestCaseDetailEndpoint,
     TestCaseListCreateEndpoint,
     TestCaseVersionDetailEndpoint,
@@ -14,6 +15,8 @@ from plane.app.views.testing import (
     TestFolderDetailEndpoint,
     TestFolderListCreateEndpoint,
     TestLibraryCSVEndpoint,
+    TestLibraryExportEndpoint,
+    TestLibrarySearchEndpoint,
     TestResultDefectEndpoint,
     TestRunCloseEndpoint,
     TestRunDetailEndpoint,
@@ -81,6 +84,16 @@ urlpatterns = [
         name="testing-test-cases",
     ),
     path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/search/",
+        TestLibrarySearchEndpoint.as_view(),
+        name="testing-search",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/export/",
+        TestLibraryExportEndpoint.as_view(),
+        name="testing-export",
+    ),
+    path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases.csv",
         TestLibraryCSVEndpoint.as_view(),
         name="testing-test-cases-csv",
@@ -89,6 +102,16 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/",
         TestCaseDetailEndpoint.as_view(),
         name="testing-test-case-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/attachments/",
+        TestCaseAttachmentEndpoint.as_view(),
+        name="testing-test-case-attachments",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/attachments/<uuid:attachment_id>/",
+        TestCaseAttachmentEndpoint.as_view(),
+        name="testing-test-case-attachment-detail",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/testing/test-cases/<uuid:test_case_id>/versions/<int:version>/",

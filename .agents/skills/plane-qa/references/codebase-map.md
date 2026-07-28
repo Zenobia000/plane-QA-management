@@ -48,6 +48,7 @@ Each has vitest specs beside the source (`client.spec.ts`, `run.spec.ts`, `creat
 - `docs/architecture/testing-platform-workflow.md` — architecture contract, C4, invariants, delivery workflow.
 - `docs/architecture/plane-qa-agent-tooling.md` — tooling architecture, safety policy, versioning.
 - `docs/api/testing-management.md`, `docs/api/testing-automation.md` — API contracts.
+- `docs/planning/testing-product-definition.md` — personas, JTBD map, traceability design principles, and the prioritised UX gap backlog.
 - `docs/architecture/decisions/0001..0004` — ADRs (case aggregate/versioning, immutable execution, automation ingestion, milestones/fork boundaries).
 - `docs/operations/plane-qa-agent-tooling.md` — runbook, troubleshooting.
 - `.agents/skills/plane-qa/` — cross-agent skill (Codex entry via `agents/openai.yaml`) and the single source of truth for all shared reference docs, including this file.

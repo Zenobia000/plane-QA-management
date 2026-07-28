@@ -1,6 +1,6 @@
 # Plane QA 工程守則與專案設定手冊
 
-> 狀態:v1.0 · 2026-07-28 · 基準 commit `9ed58492d`
+> 狀態:v1.1 · 2026-07-28 · 基準 commit `ec79aef5b`
 > Part A 對象:修改這個平台的人與 agent · Part B 對象:用這個平台跑專案的 PM / QA / RD
 
 ## 這份手冊在哪一層
@@ -162,6 +162,122 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 
 對象是用這個平台管理專案的人。流程骨架(Intake → Spec → 拆票 → Sprint → DoR → TDD → Review → QA → Defect → Gate → Retro)見 `sdlc-guideline.md`,本節只寫**本平台特有的設定與語意**。
 
+## B0 · 架構全貌:專案管理到測試的階層
+
+後面每一節的設定步驟都座落在這張圖上。先看懂它,B1 的順序與 B5 的數字才有座標系。
+
+### 這不是一棵樹,是四個軸
+
+企業敏捷框架(SAFe 尤其明顯)習慣畫一座金字塔:Portfolio → Program → Team,由上而下一路拆到底。**本系統刻意不是那樣**——四件不同的事分成四個正交的軸,因為壓成一棵樹會遺失資訊。
+
+```
+                         Workspace
+                             │
+                    ┌────────┴────────┐
+                    │   Initiative    │   跨專案的策略成果
+                    └────────┬────────┘
+                             │  InitiativeProject (M:N)
+                       ┌─────┴─────┐
+                       │  Project  │
+                       └─────┬─────┘
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+   ① 拆解軸              ② 排程軸             (交叉,非上下)
+   Issue.parent          Cycle    時間箱
+        │                Module   能力分組
+   ┌────┴────┐           Milestone 交付檢查點
+   │  Epic   │ level 0        │
+   └────┬────┘                │ CycleIssue / ModuleIssue (M:N)
+   ┌────┴────┐                │ Issue.milestone (FK)
+   │ Feature │ level 1  ◄─────┘
+   └────┬────┘
+   ┌────┴──────────────────┐
+   │  Story  │  品質需求   │ level 2   ◄── 唯一的直接量測點
+   └────┬──────────────────┘
+   ┌────┴────┐
+   │  Task   │
+   └─────────┘
+        │
+        │ ◄── 接合點 A:TestCaseWorkItemLink (M:N)
+        ▼
+   ③ 驗證軸    TestCase ──> TestCaseVersion(不可變) ──> TestStep
+        │
+        │ ◄── 接合點 B:TestRunCase.test_case_version(釘版本)
+        ▼
+   ④ 證據軸    TestRun ──> TestRunCase ──> TestResult(僅追加)
+        │                                        │
+        └──► TestRun.cycle / module              │ ◄── 接合點 C
+             (回排程軸,#10 UI 未接)              ▼
+                                          Defect = Issue ──┐
+                                                           │
+        └──────────────── 回到 ① 拆解軸,閉環 ◄────────────┘
+```
+
+| 軸         | 回答                     | 載體                                           | 形狀              |
+| ---------- | ------------------------ | ---------------------------------------------- | ----------------- |
+| ① **拆解** | 工作怎麼切、誰負責       | `Issue.parent` + `IssueType.level`             | 樹,可任意深度     |
+| ② **排程** | 什麼時候做、屬於哪個能力 | `CycleIssue`、`ModuleIssue`、`Issue.milestone` | **切面,不是階層** |
+| ③ **驗證** | 憑什麼算完成             | `TestCase` → `TestCaseVersion` → `TestStep`    | 版本鏈            |
+| ④ **證據** | 實際驗了什麼、結果如何   | `TestRun` → `TestRunCase` → `TestResult`       | 僅追加的流水      |
+
+**② 最常被誤讀成階層。** Cycle 與 Module 是 M:N join table,一個 Story 可以同時在 Sprint 12、屬於「查詢能力」模組、掛在 v2.0 里程碑下。它們是同一批 work item 的三種切法,誰也不包含誰。把 Module 當成 Epic 的下層會立刻矛盾——一個 Epic 的 story 往往散在多個 module 裡。
+
+### 接合點才是承重結構
+
+四個軸本身好懂,真正決定系統行為的是它們相接的四個位置:
+
+| 接合點                                | 連接        | 為什麼關鍵                                                            |
+| ------------------------------------- | ----------- | --------------------------------------------------------------------- |
+| **A** `TestCaseWorkItemLink`          | 拆解 ↔ 驗證 | 契約掛在**哪一層**決定覆蓋率怎麼算。掛 Story 是刻意的                 |
+| **B** `TestRunCase.test_case_version` | 驗證 ↔ 證據 | 釘住版本。契約之後改版不影響已完成的驗證,「當時測的是哪一版」永遠可答 |
+| **C** `TestResultIssueLink`           | 證據 ↔ 拆解 | 缺陷是**真的 work item**,不是測試系統的內部物件,回到拆解軸走一般流程  |
+| **D** `TestRun.cycle` / `.module`     | 排程 ↔ 證據 | 「這個 sprint 驗了什麼」。**資料層有,UI 沒接** —— 缺口 #10            |
+
+接合點 C 是整套架構的價值所在:**證據軸的產出回流成拆解軸的輸入**,迴圈閉合。這也是為什麼缺陷必須從 failed / blocked 結果原子建立——那筆交易同時創造了迴流的起點與它的來源憑證。
+
+### 每一層做什麼決策、讀什麼數字
+
+| 層         | 決策                | 數字來源                         |
+| ---------- | ------------------- | -------------------------------- |
+| Initiative | 要不要投資          | 跨專案彙總                       |
+| Epic       | 能力投入是否見效    | **roll-up** 覆蓋率               |
+| Feature    | 價值交付到什麼程度  | **roll-up** 覆蓋率 + 最差狀態    |
+| **Story**  | **驗收(DoR / DoD)** | **契約 pass / fail —— 直接量測** |
+| Task       | 分工                | —                                |
+| Cycle      | 這個時間箱交付什麼  | run scorecard                    |
+| Release    | 能不能出貨          | gate 五類 blocker(見 B5)         |
+
+**全系統只有 Story 層在真正量測。** Epic 與 Feature 的每一個數字都是沿 `Issue.parent` roll-up 出來的,沒有獨立來源。
+
+這解釋了 #14 為什麼曾被評為阻擋級:roll-up 一旦算錯,不是某一格數字錯,而是**中上層全部是假的**——DEMO 上那個底下有 8 個契約的 Epic 顯示 UNCOVERED,而 Epic 正是管理層唯一會看的那一層。roll-up 的三條規則見 B5。
+
+### 與 SAFe 詞彙對照
+
+| SAFe / 企業敏捷                  | 本系統                  | 承載方式                                |
+| -------------------------------- | ----------------------- | --------------------------------------- |
+| Strategic Theme / Portfolio Epic | **Initiative**          | workspace 層,`InitiativeProject` 跨專案 |
+| Program Epic / Capability        | **Epic**                | `IssueType` level 0 + `is_epic`         |
+| Feature                          | **Feature**             | level 1                                 |
+| Story                            | **Story**               | level 2 ← 契約掛這裡                    |
+| Enabler / NFR                    | **Quality requirement** | level 2,**與 Story 同階**               |
+| PI / Release                     | **Milestone**           | project 層檢查點,`Issue.milestone`      |
+| Iteration / Sprint               | **Cycle**               | `start_date` / `end_date`               |
+| Value Stream / ART               | **Module**              | 依產品能力切                            |
+| Team                             | **Project**             | 無獨立層                                |
+
+### 五個刻意的取捨
+
+1. **沒有獨立的 Team / ART 層** —— Project 兼任。多團隊靠多專案加 Initiative 串,不是靠加一層
+2. **FR / AC / BDD / TestCase 壓成一個物件** —— test case 就是驗收條件。省掉一整層追蹤,代價是沒有 `FR-XXX-001` 這種獨立識別碼(見 B2)
+3. **NFR 與 Story 同階,不另開子層** —— NFR 橫跨所有層級,做成子層會逼它選一個歸屬,而「Feature 層的效能要求」就無處可放
+4. **排程軸刻意不是階層** —— 保留一個 work item 同時屬於多個切面的能力
+5. **量測只在 Story 層發生** —— 上層一律 roll-up,不允許獨立填報,避免各層數字互相矛盾
+
+### 這個架構目前缺的兩塊
+
+- **接合點 D 只有一半** —— `TestRun.cycle` 資料層支援,run builder 不送出(#10)。「這個 sprint 驗了什麼」現在答不了
+- **④ 證據軸只收得下可執行的驗證** —— 審查簽核與持續 SLO 進不來(#15),因此 Availability、Maintainability、Compliance 這類需求在 Epic / Feature 層的 roll-up 裡是隱形的(見 B3)
+
 ## B1 · 開一個新專案的順序
 
 可執行的參考實作是 `python manage.py seed_testing_demo --workspace <slug>`——它建立完整的 Epic → Feature → Story 階層、契約、一輪驗證與一個缺陷迴圈,全程走服務層。**要看「正確設定長什麼樣」,先 seed 一個 DEMO 來讀。**
@@ -189,6 +305,8 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 **Module 依產品能力切,不是依團隊或技術層。**
 
 ## B2 · 需求分類:兩個維度,不是一條鏈
+
+本節放大 B0 的 ① 拆解軸,回答一個 B0 沒展開的問題:需求的**性質**要掛在哪裡。
 
 常見誤解是把它們串成 `Epic → Feature → Story → FR → NFR → Task`。這是錯的。
 

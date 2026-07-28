@@ -86,7 +86,18 @@
       "cases_label": "測試案例",
       "no_cases": "請先建立測試案例,才能建立執行。",
       "creating": "建立中…",
-      "create_count": "建立執行({count})"
+      "create_count": "建立執行({count})",
+      "scope": "範圍",
+      "no_scope": "不綁定 sprint",
+      "cycle": "Sprint(cycle)",
+      "module": "Epic(module)",
+      "search": "搜尋測試案例",
+      "search_placeholder": "以標題或 TC 編號篩選",
+      "select_all": "全選 {count} 個",
+      "clear": "清除選取",
+      "selected_count": "已選 {count} 個",
+      "unfiled_suite": "未歸檔",
+      "no_matches": "沒有符合此篩選的測試案例。"
     },
     "execution": {
       "case_position": "第 {position} 個案例 · v{version}",

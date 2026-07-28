@@ -86,7 +86,18 @@
       "cases_label": "测试案例",
       "no_cases": "请先创建测试案例,才能创建执行。",
       "creating": "创建中…",
-      "create_count": "创建执行({count})"
+      "create_count": "创建执行({count})",
+      "scope": "范围",
+      "no_scope": "不绑定 sprint",
+      "cycle": "Sprint(cycle)",
+      "module": "Epic(module)",
+      "search": "搜索测试用例",
+      "search_placeholder": "以标题或 TC 编号筛选",
+      "select_all": "全选 {count} 个",
+      "clear": "清除选择",
+      "selected_count": "已选 {count} 个",
+      "unfiled_suite": "未归档",
+      "no_matches": "没有符合此筛选的测试用例。"
     },
     "execution": {
       "case_position": "第 {position} 個案例 · v{version}",

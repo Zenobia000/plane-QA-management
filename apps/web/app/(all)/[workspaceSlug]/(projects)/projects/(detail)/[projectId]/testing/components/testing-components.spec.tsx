@@ -118,7 +118,16 @@ describe("Testing components", () => {
   });
 
   it("renders selectable pinned cases in the run builder", () => {
-    const html = renderToStaticMarkup(<TestRunBuilder testCases={[testCase]} onCancel={vi.fn()} onCreate={vi.fn()} />);
+    const html = renderToStaticMarkup(
+      <TestRunBuilder
+        workspaceSlug="acme"
+        projectId="project"
+        testCases={[testCase]}
+        folders={[]}
+        onCancel={vi.fn()}
+        onCreate={vi.fn()}
+      />
+    );
     expect(html).toContain("Checkout succeeds");
     expect(html).toContain("TC-1");
     expect(html).toContain("Create fixed test run");

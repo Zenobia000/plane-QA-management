@@ -86,7 +86,18 @@
       "cases_label": "Test cases",
       "no_cases": "Create test cases before building a run.",
       "creating": "Creating…",
-      "create_count": "Create run ({count})"
+      "create_count": "Create run ({count})",
+      "scope": "Scope",
+      "no_scope": "Not scoped to a sprint",
+      "cycle": "Sprint (cycle)",
+      "module": "Epic (module)",
+      "search": "Search test cases",
+      "search_placeholder": "Filter by title or TC number",
+      "select_all": "Select all {count}",
+      "clear": "Clear selection",
+      "selected_count": "{count} selected",
+      "unfiled_suite": "Unfiled",
+      "no_matches": "No test case matches this filter."
     },
     "execution": {
       "case_position": "Case {position} · v{version}",

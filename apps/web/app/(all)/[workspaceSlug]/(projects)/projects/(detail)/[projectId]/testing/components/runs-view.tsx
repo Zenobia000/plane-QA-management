@@ -21,7 +21,7 @@ type Props = { workspaceSlug: string; projectId: string };
 
 export const TestRunsView = observer(function TestRunsView({ workspaceSlug, projectId }: Props) {
   const { t } = useTranslation();
-  const { cases, runs, createRun, recordResult, closeRun, createDefect } = useTesting();
+  const { cases, folders, runs, createRun, recordResult, closeRun, createDefect } = useTesting();
   const { runId, runCaseId } = useParams();
   const navigate = useNavigate();
   const [building, setBuilding] = useState(false);
@@ -67,7 +67,10 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
   if (building) {
     return (
       <TestRunBuilder
+        workspaceSlug={workspaceSlug}
+        projectId={projectId}
         testCases={testCases}
+        folders={Object.values(folders)}
         onCancel={() => setBuilding(false)}
         onCreate={async (input: TTestRunInput) => {
           const created = await createRun(workspaceSlug, projectId, input);

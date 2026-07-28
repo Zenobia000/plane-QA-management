@@ -43,6 +43,8 @@ export interface ITestingStore {
     name: string,
     parentId?: string | null
   ) => Promise<TTestFolder>;
+  renameFolder: (workspaceSlug: string, projectId: string, folderId: string, name: string) => Promise<TTestFolder>;
+  deleteFolder: (workspaceSlug: string, projectId: string, folderId: string) => Promise<void>;
   linkWorkItem: (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => Promise<void>;
   exportLibraryCSV: (workspaceSlug: string, projectId: string) => Promise<string>;
   importLibraryCSV: (workspaceSlug: string, projectId: string, csvText: string) => Promise<number>;
@@ -90,6 +92,8 @@ export class TestingStore implements ITestingStore {
       createCase: action,
       updateCase: action,
       createFolder: action,
+      renameFolder: action,
+      deleteFolder: action,
       linkWorkItem: action,
       importLibraryCSV: action,
       createRun: action,
@@ -156,6 +160,21 @@ export class TestingStore implements ITestingStore {
       this.folders[folder.id] = folder;
     });
     return folder;
+  };
+
+  renameFolder = async (workspaceSlug: string, projectId: string, folderId: string, name: string) => {
+    const updated = await this.service.updateFolder(workspaceSlug, projectId, folderId, { name });
+    runInAction(() => {
+      this.folders[folderId] = updated;
+    });
+    return updated;
+  };
+
+  deleteFolder = async (workspaceSlug: string, projectId: string, folderId: string) => {
+    await this.service.deleteFolder(workspaceSlug, projectId, folderId);
+    runInAction(() => {
+      delete this.folders[folderId];
+    });
   };
 
   linkWorkItem = async (workspaceSlug: string, projectId: string, caseId: string, issueId: string) => {

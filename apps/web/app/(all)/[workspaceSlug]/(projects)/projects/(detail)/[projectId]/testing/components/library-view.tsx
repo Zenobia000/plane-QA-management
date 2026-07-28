@@ -6,11 +6,12 @@
 
 import { useMemo, useState } from "react";
 import { orderBy } from "lodash-es";
-import { Download, Folder, FolderPlus, FlaskConical, Link2, Plus, Save, Upload } from "lucide-react";
+import { Download, Link2, Plus, Save, Upload } from "lucide-react";
 import { observer } from "mobx-react";
 import { Button } from "@plane/propel/button";
 import type { TTestCase, TTestCaseInput } from "@plane/types";
 import { useTesting } from "@/hooks/store/use-testing";
+import { FolderTree } from "./folder-tree";
 
 type Props = { workspaceSlug: string; projectId: string };
 
@@ -25,6 +26,8 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
     createCase,
     updateCase,
     createFolder,
+    renameFolder,
+    deleteFolder,
     linkWorkItem,
     exportLibraryCSV,
     importLibraryCSV,
@@ -34,7 +37,6 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState("");
-  const [folderName, setFolderName] = useState("");
   const [issueId, setIssueId] = useState("");
   const [draft, setDraft] = useState<TTestCaseInput>();
   const testFolders = orderBy(Object.values(folders), ["sort_order", "name"], ["asc", "asc"]);
@@ -86,48 +88,21 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
 
   return (
     <section className="flex min-h-0 flex-1 overflow-hidden rounded-lg border border-subtle bg-surface-1">
-      <aside className="w-56 shrink-0 overflow-y-auto border-r border-subtle bg-surface-2 p-3">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-11 font-semibold text-secondary uppercase">Folders</span>
-          <FolderPlus className="size-4 text-tertiary" />
-        </div>
-        <button
-          type="button"
-          onClick={() => setSelectedFolder(null)}
-          className={`flex w-full items-center gap-2 rounded px-2 py-2 text-12 ${!selectedFolder ? "bg-layer-2 text-primary" : "text-secondary hover:bg-layer-1"}`}
-        >
-          <FlaskConical className="size-4" /> All test cases
-        </button>
-        {testFolders.map((item) => (
-          <button
-            type="button"
-            key={item.id}
-            onClick={() => setSelectedFolder(item.id)}
-            className={`flex w-full items-center gap-2 rounded px-2 py-2 text-12 ${selectedFolder === item.id ? "bg-layer-2 text-primary" : "text-secondary hover:bg-layer-1"}`}
-          >
-            <Folder className="size-4" /> {item.name}
-          </button>
-        ))}
-        <form
-          className="mt-3 flex gap-1"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            if (!folderName.trim()) return;
-            await createFolder(workspaceSlug, projectId, folderName.trim(), selectedFolder);
-            setFolderName("");
-          }}
-        >
-          <input
-            value={folderName}
-            onChange={(event) => setFolderName(event.target.value)}
-            placeholder="New folder"
-            className="h-8 min-w-0 flex-1 rounded border border-subtle bg-surface-1 px-2 text-12 text-primary outline-none"
-          />
-          <Button type="submit" variant="secondary" disabled={!folderName.trim()}>
-            +
-          </Button>
-        </form>
-      </aside>
+      <FolderTree
+        folders={testFolders}
+        selectedFolder={selectedFolder}
+        onSelect={setSelectedFolder}
+        onCreate={async (name, parentId) => {
+          await createFolder(workspaceSlug, projectId, name, parentId);
+        }}
+        onRename={async (folderId, name) => {
+          await renameFolder(workspaceSlug, projectId, folderId, name);
+        }}
+        onDelete={async (folderId) => {
+          await deleteFolder(workspaceSlug, projectId, folderId);
+          if (selectedFolder === folderId) setSelectedFolder(null);
+        }}
+      />
 
       <div className="w-80 shrink-0 overflow-y-auto border-r border-subtle">
         <div className="flex items-center justify-between border-b border-subtle p-3">

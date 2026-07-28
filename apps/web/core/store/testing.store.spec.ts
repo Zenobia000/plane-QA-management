@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { TestingService } from "@plane/services";
-import type { TTestCase, TTestResult, TTestRun } from "@plane/types";
+import type { TTestCase, TTestFolder, TTestResult, TTestRun } from "@plane/types";
 import { TestingStore } from "./testing.store";
 
 const capability = {
@@ -27,7 +27,18 @@ const serviceMock = () =>
     getTestRuns: vi.fn().mockResolvedValue([]),
     createTestCase: vi.fn(),
     recordResult: vi.fn(),
+    updateFolder: vi.fn(),
+    deleteFolder: vi.fn(),
   }) as unknown as TestingService;
+
+const folder = {
+  id: "folder",
+  name: "Checkout",
+  parent_id: null,
+  sort_order: 0,
+  created_at: "2026-07-14T00:00:00Z",
+  updated_at: "2026-07-14T00:00:00Z",
+} satisfies TTestFolder;
 
 describe("TestingStore", () => {
   it("deduplicates concurrent project loads", async () => {
@@ -44,6 +55,40 @@ describe("TestingStore", () => {
     const store = new TestingStore(service);
     await expect(store.createCase("workspace", "project", { title: "Failed create" })).rejects.toThrow("network");
     expect(store.cases).toEqual({});
+  });
+
+  it("replaces the folder in normalized state after a rename", async () => {
+    const service = serviceMock();
+    vi.mocked(service.updateFolder).mockResolvedValue({ ...folder, name: "Checkout v2" });
+    const store = new TestingStore(service);
+    store.folders[folder.id] = folder;
+
+    await store.renameFolder("workspace", "project", folder.id, "Checkout v2");
+
+    expect(service.updateFolder).toHaveBeenCalledWith("workspace", "project", folder.id, { name: "Checkout v2" });
+    expect(store.folders[folder.id].name).toBe("Checkout v2");
+  });
+
+  it("drops the folder from normalized state after a delete", async () => {
+    const service = serviceMock();
+    vi.mocked(service.deleteFolder).mockResolvedValue(undefined);
+    const store = new TestingStore(service);
+    store.folders[folder.id] = folder;
+
+    await store.deleteFolder("workspace", "project", folder.id);
+
+    expect(store.folders).toEqual({});
+  });
+
+  it("keeps a non-empty folder when the server rejects the delete", async () => {
+    const service = serviceMock();
+    const conflict = { error: "Only an empty test folder can be deleted." };
+    vi.mocked(service.deleteFolder).mockRejectedValue(conflict);
+    const store = new TestingStore(service);
+    store.folders[folder.id] = folder;
+
+    await expect(store.deleteFolder("workspace", "project", folder.id)).rejects.toEqual(conflict);
+    expect(store.folders[folder.id]).toEqual(folder);
   });
 
   it("appends a retest and recomputes progress from latest statuses", async () => {

@@ -70,6 +70,27 @@ export class TestingService extends APIService {
       });
   }
 
+  async updateFolder(
+    workspaceSlug: string,
+    projectId: string,
+    folderId: string,
+    data: Partial<Pick<TTestFolder, "name" | "parent_id" | "sort_order">>
+  ): Promise<TTestFolder> {
+    return this.patch(`/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/folders/${folderId}/`, data)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteFolder(workspaceSlug: string, projectId: string, folderId: string): Promise<void> {
+    return this.delete(`/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/folders/${folderId}/`)
+      .then(() => undefined)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
   async exportLibraryCSV(workspaceSlug: string, projectId: string): Promise<string> {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/test-cases.csv`, {
       responseType: "text",

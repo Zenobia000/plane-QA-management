@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import type { TTestCase, TTestRun } from "@plane/types";
+import type { TTestCase, TTestFolder, TTestRun } from "@plane/types";
 import { ExecutionWorkspace } from "./execution-workspace";
+import { FolderTree } from "./folder-tree";
 import { TestRunBuilder } from "./run-builder";
 
 const version = {
@@ -75,7 +76,32 @@ const failedRun = {
   ],
 } satisfies TTestRun;
 
+const folder = {
+  id: "folder",
+  name: "Checkout",
+  parent_id: null,
+  sort_order: 0,
+  created_at: "2026-07-14T00:00:00Z",
+  updated_at: "2026-07-14T00:00:00Z",
+} satisfies TTestFolder;
+
 describe("Testing components", () => {
+  it("exposes rename and delete controls for every folder", () => {
+    const html = renderToStaticMarkup(
+      <FolderTree
+        folders={[folder]}
+        selectedFolder={null}
+        onSelect={vi.fn()}
+        onCreate={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+    expect(html).toContain("Checkout");
+    expect(html).toContain("Rename Checkout");
+    expect(html).toContain("Delete Checkout");
+  });
+
   it("renders selectable pinned cases in the run builder", () => {
     const html = renderToStaticMarkup(<TestRunBuilder testCases={[testCase]} onCancel={vi.fn()} onCreate={vi.fn()} />);
     expect(html).toContain("Checkout succeeds");

@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useMemo } from "react";
-import { AtSign, Briefcase } from "lucide-react";
+import { AtSign, Briefcase, ListTodo } from "lucide-react";
 // plane imports
 import { Logo } from "@plane/propel/emoji-icon-picker";
 import {
@@ -51,6 +51,7 @@ import {
   getSubscriberFilterConfig,
   getTargetDateFilterConfig,
   getUpdatedAtFilterConfig,
+  getWorkItemTypeFilterConfig,
   isLoaderReady,
 } from "@plane/utils";
 // store hooks
@@ -62,6 +63,8 @@ import { useProject } from "@/hooks/store/use-project";
 import { useProjectState } from "@/hooks/store/use-project-state";
 // plane web imports
 import { useFiltersOperatorConfigs } from "@/hooks/rich-filters/use-filters-operator-configs";
+import { WorkItemTypeBadge } from "@/components/work-item-extensions";
+import { useProjectWorkItemTypes, useWorkspaceWorkItemTypes } from "@/hooks/use-work-item-extensions";
 
 export type TWorkItemFiltersEntityProps = {
   workspaceSlug: string;
@@ -98,6 +101,8 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
   const { getModuleById } = useModule();
   const { getStateById } = useProjectState();
   const { getUserDetails } = useMember();
+  const { data: projectWorkItemTypes } = useProjectWorkItemTypes(workspaceSlug, projectId);
+  const { data: workspaceWorkItemTypes } = useWorkspaceWorkItemTypes(workspaceSlug);
   // derived values
   const operatorConfigs = useFiltersOperatorConfigs({ workspaceSlug });
   const filtersToShow = useMemo(() => new Set(allowedFilters), [allowedFilters]);
@@ -133,11 +138,17 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
   const projects = useMemo(
     () =>
       projectIds
-        ? (projectIds.map((projectId) => getProjectById(projectId)).filter((project) => project) as IProject[])
+        ? (projectIds
+            .map((targetProjectId) => getProjectById(targetProjectId))
+            .filter((projectDetails) => projectDetails) as IProject[])
         : [],
     [projectIds, getProjectById]
   );
-  const areAllConfigsInitialized = useMemo(() => isLoaderReady(projectLoader), [projectLoader]);
+  const workItemTypes = projectId ? projectWorkItemTypes?.map((item) => item.type) : workspaceWorkItemTypes;
+  const areAllConfigsInitialized = useMemo(
+    () => isLoaderReady(projectLoader) && (!filtersToShow.has("type_id") || workItemTypes !== undefined),
+    [filtersToShow, projectLoader, workItemTypes]
+  );
 
   /**
    * Checks if a filter is enabled based on the filters to show.
@@ -356,10 +367,22 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
         isEnabled: isFilterEnabled("project_id") && projects !== undefined,
         filterIcon: Briefcase,
         projects: projects,
-        getOptionIcon: (project) => <Logo logo={project.logo_props} size={12} />,
+        getOptionIcon: (projectDetails) => <Logo logo={projectDetails.logo_props} size={12} />,
         ...operatorConfigs,
       }),
     [isFilterEnabled, projects, operatorConfigs]
+  );
+
+  const workItemTypeFilterConfig = useMemo(
+    () =>
+      getWorkItemTypeFilterConfig<TWorkItemFilterProperty>("type_id")({
+        isEnabled: isFilterEnabled("type_id") && workItemTypes !== undefined,
+        filterIcon: ListTodo,
+        workItemTypes: workItemTypes ?? [],
+        getOptionIcon: (type) => <WorkItemTypeBadge type={type} compact className="bg-transparent p-0" />,
+        ...operatorConfigs,
+      }),
+    [isFilterEnabled, operatorConfigs, workItemTypes]
   );
 
   return {
@@ -380,6 +403,7 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
       updatedAtFilterConfig,
       createdByFilterConfig,
       subscriberFilterConfig,
+      workItemTypeFilterConfig,
     ],
     configMap: {
       project_id: projectFilterConfig,
@@ -397,6 +421,7 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
       target_date: targetDateFilterConfig,
       created_at: createdAtFilterConfig,
       updated_at: updatedAtFilterConfig,
+      type_id: workItemTypeFilterConfig,
     },
     isFilterEnabled,
     members: members ?? [],

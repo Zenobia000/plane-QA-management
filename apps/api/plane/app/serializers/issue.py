@@ -42,6 +42,8 @@ from plane.db.models import (
     IssueDescriptionVersion,
     ProjectMember,
     EstimatePoint,
+    IssueType,
+    ProjectIssueType,
 )
 from plane.utils.content_validator import (
     validate_html_content,
@@ -87,6 +89,9 @@ class IssueCreateSerializer(BaseSerializer):
     parent_id = serializers.PrimaryKeyRelatedField(
         source="parent", queryset=Issue.objects.all(), required=False, allow_null=True
     )
+    type_id = serializers.PrimaryKeyRelatedField(
+        source="type", queryset=IssueType.objects.all(), required=False, allow_null=True
+    )
     label_ids = serializers.ListField(
         child=serializers.PrimaryKeyRelatedField(queryset=Label.objects.all()),
         write_only=True,
@@ -115,6 +120,7 @@ class IssueCreateSerializer(BaseSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        data["type_id"] = str(instance.type_id) if instance.type_id else None
         assignee_ids = self.initial_data.get("assignee_ids")
         data["assignee_ids"] = assignee_ids if assignee_ids else []
         label_ids = self.initial_data.get("label_ids")
@@ -194,6 +200,17 @@ class IssueCreateSerializer(BaseSerializer):
         ):
             raise serializers.ValidationError("Estimate point is not valid please pass a valid estimate_point_id")
 
+        issue_type = attrs.get("type")
+        if issue_type and (
+            not issue_type.is_active
+            or not ProjectIssueType.objects.filter(
+                project_id=self.context.get("project_id"),
+                issue_type=issue_type,
+                deleted_at__isnull=True,
+            ).exists()
+        ):
+            raise serializers.ValidationError("Work item type is not enabled for this project")
+
         return attrs
 
     def create(self, validated_data):
@@ -203,6 +220,21 @@ class IssueCreateSerializer(BaseSerializer):
         project_id = self.context["project_id"]
         workspace_id = self.context["workspace_id"]
         default_assignee_id = self.context["default_assignee_id"]
+
+        if not validated_data.get("type"):
+            project_type = (
+                ProjectIssueType.objects.filter(
+                    project_id=project_id,
+                    deleted_at__isnull=True,
+                    issue_type__is_active=True,
+                    issue_type__deleted_at__isnull=True,
+                )
+                .select_related("issue_type")
+                .order_by("-is_default", "level", "created_at")
+                .first()
+            )
+            if project_type:
+                validated_data["type"] = project_type.issue_type
 
         # Create Issue
         issue = Issue.objects.create(**validated_data, project_id=project_id)
@@ -771,6 +803,7 @@ class IssueSerializer(DynamicBaseSerializer):
     # ids
     cycle_id = serializers.PrimaryKeyRelatedField(read_only=True)
     module_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
+    type_id = serializers.UUIDField(read_only=True, allow_null=True)
 
     # Many to many
     label_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
@@ -798,6 +831,7 @@ class IssueSerializer(DynamicBaseSerializer):
             "parent_id",
             "cycle_id",
             "module_ids",
+            "type_id",
             "label_ids",
             "assignee_ids",
             "sub_issues_count",
@@ -853,6 +887,7 @@ class IssueListDetailSerializer(serializers.Serializer):
             "sequence_id": instance.sequence_id,
             "project_id": instance.project_id,
             "parent_id": instance.parent_id,
+            "type_id": instance.type_id,
             "created_at": instance.created_at,
             "updated_at": instance.updated_at,
             "created_by": instance.created_by_id,

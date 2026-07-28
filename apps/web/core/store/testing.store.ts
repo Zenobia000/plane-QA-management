@@ -15,6 +15,8 @@ import type {
   TTestFolder,
   TTestResultAttachment,
   TTestResultInput,
+  TReleaseEvidence,
+  TReleaseEvidenceInput,
   TTestingCapabilities,
   TTestingOverview,
   TTestingRequirementCoverage,
@@ -35,6 +37,13 @@ export interface ITestingStore {
   runs: Record<string, TTestRun>;
   loading: boolean;
   error: string | null;
+  refreshOverview: (workspaceSlug: string, projectId: string) => Promise<void>;
+  upsertReleaseEvidence: (
+    workspaceSlug: string,
+    projectId: string,
+    input: TReleaseEvidenceInput
+  ) => Promise<TReleaseEvidence>;
+  deleteReleaseEvidence: (workspaceSlug: string, projectId: string, key: string) => Promise<void>;
   fetchLibrary: (workspaceSlug: string, projectId: string) => Promise<void>;
   createCase: (workspaceSlug: string, projectId: string, input: TTestCaseInput) => Promise<TTestCase>;
   updateCase: (
@@ -138,6 +147,9 @@ export class TestingStore implements ITestingStore {
       loading: observable,
       error: observable,
       fetchLibrary: action,
+      refreshOverview: action,
+      upsertReleaseEvidence: action,
+      deleteReleaseEvidence: action,
       createCase: action,
       updateCase: action,
       createFolder: action,
@@ -164,6 +176,24 @@ export class TestingStore implements ITestingStore {
     const request = this.fetchLibraryData(workspaceSlug, projectId).finally(() => this.inflightFetches.delete(key));
     this.inflightFetches.set(key, request);
     return request;
+  };
+
+  refreshOverview = async (workspaceSlug: string, projectId: string) => {
+    const overview = await this.service.getOverview(workspaceSlug, projectId);
+    runInAction(() => {
+      this.overview = overview;
+    });
+  };
+
+  upsertReleaseEvidence = async (workspaceSlug: string, projectId: string, input: TReleaseEvidenceInput) => {
+    const evidence = await this.service.upsertReleaseEvidence(workspaceSlug, projectId, input);
+    await this.refreshOverview(workspaceSlug, projectId);
+    return evidence;
+  };
+
+  deleteReleaseEvidence = async (workspaceSlug: string, projectId: string, key: string) => {
+    await this.service.deleteReleaseEvidence(workspaceSlug, projectId, key);
+    await this.refreshOverview(workspaceSlug, projectId);
   };
 
   private fetchLibraryData = async (workspaceSlug: string, projectId: string) => {

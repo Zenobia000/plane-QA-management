@@ -151,6 +151,7 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
       "label_id",
       "start_date",
       "target_date",
+      "type_id",
     ],
     layoutOptions: {
       list: {
@@ -178,6 +179,7 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
       "project_id",
       "start_date",
       "target_date",
+      "type_id",
     ],
     layoutOptions: {
       spreadsheet: {
@@ -216,6 +218,7 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
       "label_id",
       "start_date",
       "target_date",
+      "type_id",
     ],
     layoutOptions: {
       list: {
@@ -278,7 +281,7 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
     },
   },
   sub_work_items: {
-    filters: ["priority", "state_id", "assignee_id", "start_date", "target_date"],
+    filters: ["priority", "state_id", "assignee_id", "start_date", "target_date", "type_id"],
     layoutOptions: {
       list: {
         display_properties: SUB_ISSUES_DISPLAY_PROPERTIES_KEYS,
@@ -350,10 +353,10 @@ export const defaultActivityFilters: TActivityFilters[] = [
 ];
 
 export const filterActivityOnSelectedFilters = (
-  activity: TIssueActivityComment[],
+  activities: TIssueActivityComment[],
   filters: TActivityFilters[]
 ): TIssueActivityComment[] =>
-  activity.filter((activity) => {
+  activities.filter((activity) => {
     if (activity.activity_type === EActivityFilterType.DEFAULT) return true;
     return filters.includes(activity.activity_type as TActivityFilters);
   });

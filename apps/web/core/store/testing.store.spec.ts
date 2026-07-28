@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { TestingService } from "@plane/services";
-import type { TTestCase, TTestFolder, TTestResult, TTestRun } from "@plane/types";
+import type { TReleaseEvidence, TTestCase, TTestFolder, TTestResult, TTestRun } from "@plane/types";
 import { TestingStore } from "./testing.store";
 
 const capability = {
@@ -34,6 +34,8 @@ const serviceMock = () =>
     recordResult: vi.fn(),
     updateFolder: vi.fn(),
     deleteFolder: vi.fn(),
+    upsertReleaseEvidence: vi.fn(),
+    deleteReleaseEvidence: vi.fn(),
   }) as unknown as TestingService;
 
 const folder = {
@@ -127,6 +129,30 @@ describe("TestingStore", () => {
 
     await store.deleteAttachment("workspace", "project", "case", attachment.id);
     expect(store.attachments.case).toEqual([]);
+  });
+
+  it("refreshes the release gate after evidence is upserted or deleted", async () => {
+    const service = serviceMock();
+    const evidence = {
+      id: "evidence",
+      kind: "slo",
+      key: "checkout-latency",
+      name: "Checkout latency",
+      status: "passing",
+      detail: "p95 under 250ms",
+      source_url: "https://example.com/report",
+      recorded_at: "2026-07-28T00:00:00Z",
+    } satisfies TReleaseEvidence;
+    vi.mocked(service.upsertReleaseEvidence).mockResolvedValue(evidence);
+    vi.mocked(service.deleteReleaseEvidence).mockResolvedValue(undefined);
+    const store = new TestingStore(service);
+
+    await expect(store.upsertReleaseEvidence("workspace", "project", evidence)).resolves.toEqual(evidence);
+    expect(service.getOverview).toHaveBeenCalledTimes(1);
+
+    await store.deleteReleaseEvidence("workspace", "project", evidence.key);
+    expect(service.deleteReleaseEvidence).toHaveBeenCalledWith("workspace", "project", evidence.key);
+    expect(service.getOverview).toHaveBeenCalledTimes(2);
   });
 
   it("appends a retest and recomputes progress from latest statuses", async () => {

@@ -16,6 +16,8 @@ import type {
   TTestResult,
   TTestResultAttachment,
   TTestResultInput,
+  TReleaseEvidence,
+  TReleaseEvidenceInput,
   TTestingCapabilities,
   TTestingOverview,
   TTestingRequirementCoverage,
@@ -122,6 +124,36 @@ export class TestingService extends APIService {
   async getOverview(workspaceSlug: string, projectId: string): Promise<TTestingOverview> {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/overview/`)
       .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getReleaseEvidence(workspaceSlug: string, projectId: string): Promise<TReleaseEvidence[]> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/release-evidence/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async upsertReleaseEvidence(
+    workspaceSlug: string,
+    projectId: string,
+    input: TReleaseEvidenceInput
+  ): Promise<TReleaseEvidence> {
+    return this.put(`/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/release-evidence/`, input)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteReleaseEvidence(workspaceSlug: string, projectId: string, key: string): Promise<void> {
+    return this.delete(`/api/workspaces/${workspaceSlug}/projects/${projectId}/testing/release-evidence/`, undefined, {
+      params: { key },
+    })
+      .then(() => undefined)
       .catch((error) => {
         throw error?.response?.data;
       });

@@ -152,6 +152,19 @@ export type TTestingCapabilities = {
   };
 };
 
+export type TReleaseEvidence = {
+  id: string;
+  kind: "slo" | "scan" | "review" | "other";
+  key: string;
+  name: string;
+  status: "passing" | "failing" | "pending";
+  detail: string;
+  source_url: string;
+  recorded_at: string;
+};
+
+export type TReleaseEvidenceInput = Omit<TReleaseEvidence, "id" | "recorded_at">;
+
 export type TTestingOverview = {
   /** Library hygiene: how many cases answer for a requirement. */
   library: { total: number; requirement_linked: number; linked_percent: number };
@@ -176,16 +189,7 @@ export type TTestingOverview = {
     } & Record<TTestRunCaseStatus, number>
   >;
   /** Evidence a release decision rests on that running tests cannot produce. */
-  release_evidence: Array<{
-    id: string;
-    kind: "slo" | "scan" | "review" | "other";
-    key: string;
-    name: string;
-    status: "passing" | "failing" | "pending";
-    detail: string;
-    source_url: string;
-    recorded_at: string;
-  }>;
+  release_evidence: TReleaseEvidence[];
   release_gate: { ready: boolean; blockers: string[] };
 };
 

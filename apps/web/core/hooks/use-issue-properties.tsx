@@ -5,6 +5,7 @@
  */
 
 import type { TIssueServiceType } from "@plane/types";
+import { useWorkItemPropertyDefinitions, useWorkItemPropertyValues } from "./use-work-item-extensions";
 
 export const useWorkItemProperties = (
   projectId: string | null | undefined,
@@ -12,5 +13,6 @@ export const useWorkItemProperties = (
   workItemId: string | null | undefined,
   _issueServiceType: TIssueServiceType
 ) => {
-  if (!projectId || !workspaceSlug || !workItemId) return;
+  useWorkItemPropertyDefinitions(workspaceSlug ?? undefined, projectId ?? undefined);
+  useWorkItemPropertyValues(workspaceSlug ?? undefined, projectId ?? undefined, workItemId ?? undefined);
 };

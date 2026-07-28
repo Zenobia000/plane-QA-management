@@ -4,45 +4,48 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { observer } from "mobx-react";
 import { AlertTriangle } from "lucide-react";
-import { useParams } from "next/navigation";
+import { NavLink, Outlet, useParams } from "react-router";
 import { PageHead } from "@/components/core/page-title";
 import { useTesting } from "@/hooks/store/use-testing";
-import { TestLibraryView } from "./components/library-view";
-import { TestingOverviewView } from "./components/overview-view";
-import { TestRunsView } from "./components/runs-view";
+import type { TTestingTab } from "./helpers";
+import { testingPath } from "./helpers";
+
+const TABS: Array<{ key: TTestingTab; label: string }> = [
+  { key: "overview", label: "Overview" },
+  { key: "cases", label: "Test cases" },
+  { key: "runs", label: "Test runs" },
+];
 
 function TestingPage() {
   const { workspaceSlug, projectId } = useParams();
   const { error, fetchLibrary } = useTesting();
-  const [tab, setTab] = useState<"overview" | "library" | "runs">("overview");
-  const workspace = workspaceSlug?.toString();
-  const project = projectId?.toString();
 
   useEffect(() => {
-    if (workspace && project) void fetchLibrary(workspace, project);
-  }, [fetchLibrary, project, workspace]);
+    if (workspaceSlug && projectId) void fetchLibrary(workspaceSlug, projectId);
+  }, [fetchLibrary, projectId, workspaceSlug]);
 
-  if (!workspace || !project) return null;
+  if (!workspaceSlug || !projectId) return null;
 
   return (
     <>
       <PageHead title="Testing" />
       <main className="mx-auto flex h-full w-full max-w-6xl flex-col gap-5 p-6">
         <nav className="flex gap-1 border-b border-subtle" aria-label="Testing sections">
-          {(["overview", "library", "runs"] as const).map((item) => (
-            <button
-              type="button"
-              key={item}
-              onClick={() => setTab(item)}
-              className={`border-b-2 px-3 py-2 text-13 font-medium capitalize ${
-                tab === item ? "border-accent-strong text-primary" : "border-transparent text-secondary"
-              }`}
+          {TABS.map((tab) => (
+            <NavLink
+              key={tab.key}
+              to={testingPath({ workspaceSlug, projectId, tab: tab.key })}
+              className={({ isActive }) =>
+                `border-b-2 px-3 py-2 text-13 font-medium ${
+                  isActive ? "border-accent-strong text-primary" : "border-transparent text-secondary"
+                }`
+              }
             >
-              {item === "library" ? "Test cases" : item === "runs" ? "Test runs" : "Overview"}
-            </button>
+              {tab.label}
+            </NavLink>
           ))}
         </nav>
         {error && (
@@ -50,13 +53,7 @@ function TestingPage() {
             <AlertTriangle className="size-4 shrink-0" /> {error}
           </div>
         )}
-        {tab === "overview" ? (
-          <TestingOverviewView />
-        ) : tab === "library" ? (
-          <TestLibraryView workspaceSlug={workspace} projectId={project} />
-        ) : (
-          <TestRunsView workspaceSlug={workspace} projectId={project} />
-        )}
+        <Outlet />
       </main>
     </>
   );

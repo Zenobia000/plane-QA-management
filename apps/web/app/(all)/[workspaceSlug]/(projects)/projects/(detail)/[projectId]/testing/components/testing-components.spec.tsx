@@ -113,6 +113,7 @@ describe("Testing components", () => {
     const html = renderToStaticMarkup(
       <ExecutionWorkspace
         run={failedRun}
+        onSelectRunCase={vi.fn()}
         onBack={vi.fn()}
         onResult={vi.fn()}
         onClose={vi.fn()}
@@ -125,10 +126,57 @@ describe("Testing components", () => {
     expect(html).toContain("Fail (F)");
   });
 
+  it("shows the addressed run case rather than the first open one", () => {
+    const twoCaseRun = {
+      ...failedRun,
+      run_cases: [
+        { ...failedRun.run_cases[0], id: "run-case-open", latest_status: "open", results: [], position: 1 },
+        { ...failedRun.run_cases[0], id: "run-case-addressed", position: 2 },
+      ],
+    } satisfies TTestRun;
+    const html = renderToStaticMarkup(
+      <ExecutionWorkspace
+        run={twoCaseRun}
+        selectedRunCaseId="run-case-addressed"
+        onSelectRunCase={vi.fn()}
+        onBack={vi.fn()}
+        onResult={vi.fn()}
+        onClose={vi.fn()}
+        onCreateDefect={vi.fn()}
+      />
+    );
+    // The addressed case is the failed one; its defect panel only renders for it.
+    expect(html).toContain("Case 2");
+    expect(html).toContain("Checkout defect (completed)");
+  });
+
+  it("falls back to the first open case when the URL addresses none", () => {
+    const twoCaseRun = {
+      ...failedRun,
+      run_cases: [
+        { ...failedRun.run_cases[0], id: "run-case-open", latest_status: "open", results: [], position: 1 },
+        { ...failedRun.run_cases[0], id: "run-case-failed", position: 2 },
+      ],
+    } satisfies TTestRun;
+    const html = renderToStaticMarkup(
+      <ExecutionWorkspace
+        run={twoCaseRun}
+        onSelectRunCase={vi.fn()}
+        onBack={vi.fn()}
+        onResult={vi.fn()}
+        onClose={vi.fn()}
+        onCreateDefect={vi.fn()}
+      />
+    );
+    expect(html).toContain("Case 1");
+    expect(html).not.toContain("Checkout defect (completed)");
+  });
+
   it("removes mutation controls after a run is closed", () => {
     const html = renderToStaticMarkup(
       <ExecutionWorkspace
         run={{ ...failedRun, status: "completed" }}
+        onSelectRunCase={vi.fn()}
         onBack={vi.fn()}
         onResult={vi.fn()}
         onClose={vi.fn()}

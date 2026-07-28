@@ -4,13 +4,15 @@
  * See the LICENSE file for details.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { orderBy } from "lodash-es";
 import { Download, Link2, Plus, Save, Upload } from "lucide-react";
 import { observer } from "mobx-react";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Button } from "@plane/propel/button";
 import type { TTestCase, TTestCaseInput } from "@plane/types";
 import { useTesting } from "@/hooks/store/use-testing";
+import { findCaseBySequence, testingPath } from "../helpers";
 import { FolderTree } from "./folder-tree";
 
 type Props = { workspaceSlug: string; projectId: string };
@@ -32,34 +34,50 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
     exportLibraryCSV,
     importLibraryCSV,
   } = useTesting();
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string>();
+  const { sequence } = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState("");
   const [issueId, setIssueId] = useState("");
   const [draft, setDraft] = useState<TTestCaseInput>();
+  const selectedFolder = searchParams.get("folder");
   const testFolders = orderBy(Object.values(folders), ["sort_order", "name"], ["asc", "asc"]);
   const testCases = orderBy(
     Object.values(cases).filter((item) => !selectedFolder || item.folder_id === selectedFolder),
     ["sequence"],
     ["asc"]
   );
-  const selected = selectedId ? cases[selectedId] : undefined;
+  const selected = findCaseBySequence(cases, sequence);
 
-  const beginEdit = (testCase: TTestCase) => {
-    setSelectedId(testCase.id);
+  const openCase = (testCase: TTestCase) =>
+    navigate(
+      testingPath({ workspaceSlug, projectId, tab: "cases", sequence: testCase.sequence, folderId: selectedFolder })
+    );
+
+  // The addressed case drives the editor, so the draft is seeded from the URL
+  // rather than from the click that got here -- a shared link must open the
+  // same editor state. Re-seeds on version bump so a save shows the new version.
+  useEffect(() => {
+    if (!selected) {
+      setDraft(undefined);
+      return;
+    }
     setIssueId("");
     setDraft({
-      title: testCase.current.title,
-      folder_id: testCase.folder_id,
-      description: testCase.current.description,
-      preconditions: testCase.current.preconditions,
-      priority: testCase.current.priority,
-      tags: testCase.current.tags,
-      steps: testCase.current.steps.map((step) => ({ action: step.action, expected_result: step.expected_result })),
+      title: selected.current.title,
+      folder_id: selected.folder_id,
+      description: selected.current.description,
+      preconditions: selected.current.preconditions,
+      priority: selected.current.priority,
+      tags: selected.current.tags,
+      steps: selected.current.steps.map((step) => ({ action: step.action, expected_result: step.expected_result })),
     });
-  };
+    // Deliberately keyed on identity and version only: depending on `selected`
+    // itself would re-seed on every store mutation and discard in-progress edits.
+    // oxlint-disable-next-line exhaustive-deps
+  }, [selected?.id, selected?.current_version]);
 
   const stepText = useMemo(
     () =>
@@ -77,7 +95,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
       });
       setTitle("");
       setCreating(false);
-      beginEdit(created);
+      openCase(created);
     } finally {
       setSaving(false);
     }
@@ -91,7 +109,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
       <FolderTree
         folders={testFolders}
         selectedFolder={selectedFolder}
-        onSelect={setSelectedFolder}
+        onSelect={(folderId) => navigate(testingPath({ workspaceSlug, projectId, tab: "cases", folderId }))}
         onCreate={async (name, parentId) => {
           await createFolder(workspaceSlug, projectId, name, parentId);
         }}
@@ -100,7 +118,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
         }}
         onDelete={async (folderId) => {
           await deleteFolder(workspaceSlug, projectId, folderId);
-          if (selectedFolder === folderId) setSelectedFolder(null);
+          if (selectedFolder === folderId) navigate(testingPath({ workspaceSlug, projectId, tab: "cases" }));
         }}
       />
 
@@ -175,8 +193,8 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
           <button
             type="button"
             key={testCase.id}
-            onClick={() => beginEdit(testCase)}
-            className={`w-full border-b border-subtle p-3 text-left ${selectedId === testCase.id ? "bg-layer-1" : "hover:bg-surface-2"}`}
+            onClick={() => openCase(testCase)}
+            className={`w-full border-b border-subtle p-3 text-left ${selected?.id === testCase.id ? "bg-layer-1" : "hover:bg-surface-2"}`}
           >
             <span className="text-10 font-medium text-tertiary">
               TC-{testCase.sequence} · v{testCase.current_version}
@@ -189,8 +207,20 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
 
       <div className="min-w-0 flex-1 overflow-y-auto p-5">
         {!selected || !draft ? (
-          <div className="flex h-full items-center justify-center text-13 text-secondary">
-            Select a case to inspect or edit it.
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-13 text-secondary">
+            {sequence ? (
+              <>
+                <p>TC-{sequence} does not exist in this project.</p>
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate(testingPath({ workspaceSlug, projectId, tab: "cases" }))}
+                >
+                  Back to all test cases
+                </Button>
+              </>
+            ) : (
+              <p>Select a case to inspect or edit it.</p>
+            )}
           </div>
         ) : (
           <form

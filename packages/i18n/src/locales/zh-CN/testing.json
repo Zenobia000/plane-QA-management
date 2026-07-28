@@ -68,7 +68,20 @@
       "executions": "执行历史",
       "executions_empty": "尚未被任何一轮验证纳入。",
       "pinned": "锁定 v{version}",
-      "link_requirement": "关联需求"
+      "link_requirement": "关联需求",
+      "case_type": "验证方式",
+      "type": {
+        "functional": "功能",
+        "performance": "性能",
+        "security": "安全",
+        "reliability": "可靠性",
+        "compliance": "合规"
+      },
+      "threshold": "门槛",
+      "measured": "最新测量",
+      "headroom": "余裕 {percent}%",
+      "no_measurement": "尚未测量",
+      "threshold_hint": "以 metric、operator、threshold、unit 结构化,才能画趋势与自动判定。"
     },
     "runs": {
       "heading": "测试执行",

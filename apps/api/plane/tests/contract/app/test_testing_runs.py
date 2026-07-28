@@ -160,9 +160,12 @@ class TestTestingRunsAPI:
         assert "HTTP 500" in issue.description_html
         assert f'/{workspace.slug}/projects/{testing_project.id}/testing' in issue.description_html
         assert issue.description_json["environment"] == {"browser": "Chromium", "region": "local"}
+        # The defect points at the execution that produced it, not at the tab in
+        # general -- reproducing starts from the exact run case.
         assert issue.description_json["source_url"].endswith(
-            f"/{workspace.slug}/projects/{testing_project.id}/testing"
+            f"/testing/runs/{run['id']}/{run_case['id']}"
         )
+        assert issue.description_json["case_url"].endswith("/testing/cases/1")
         assert TestResultIssueLink.objects.filter(test_result_id=result["id"], issue_id=defect["id"]).exists()
         detail = session_client.get(f"{_runs_url(workspace, testing_project)}{run['id']}/").json()
         assert detail["run_cases"][0]["results"][0]["defects"][0]["id"] == defect["id"]

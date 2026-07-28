@@ -6,6 +6,19 @@
 
 export type TTestingDocument = Record<string, unknown>;
 
+export type TTestCaseType = "functional" | "performance" | "security" | "reliability" | "compliance";
+
+/** A measurable expectation, structured so it can be charted and judged. */
+export type TTestThreshold = {
+  metric?: string;
+  operator?: "<" | "<=" | ">" | ">=" | "==";
+  threshold?: number;
+  unit?: string;
+};
+
+/** The measurement a threshold case produced. */
+export type TTestMeasurement = { measured?: number; unit?: string; metric?: string; source?: string };
+
 export type TTestStep = {
   id: string;
   position: number;
@@ -20,6 +33,8 @@ export type TTestCaseVersion = {
   description: TTestingDocument;
   preconditions: TTestingDocument;
   priority: "urgent" | "high" | "medium" | "low" | "none";
+  /** How the contract is verified -- not what kind of requirement it answers for. */
+  case_type: TTestCaseType;
   tags: string[];
   steps: TTestStep[];
   created_at: string;
@@ -58,6 +73,7 @@ export type TTestCaseInput = {
   description?: TTestingDocument;
   preconditions?: TTestingDocument;
   priority?: TTestCaseVersion["priority"];
+  case_type?: TTestCaseType;
   tags?: string[];
   steps?: Array<Pick<TTestStep, "action" | "expected_result">>;
 };

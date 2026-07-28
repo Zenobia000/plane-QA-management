@@ -13,6 +13,7 @@ const version = {
   description: {},
   preconditions: { text: "A cart exists" },
   priority: "high",
+  case_type: "functional",
   tags: ["smoke"],
   steps: [{ id: "step", position: 1, action: { text: "Pay" }, expected_result: { text: "Approved" } }],
   created_at: "2026-07-14T00:00:00Z",

@@ -68,7 +68,20 @@
       "executions": "執行歷史",
       "executions_empty": "尚未被任何一輪驗證納入。",
       "pinned": "釘住 v{version}",
-      "link_requirement": "連結需求"
+      "link_requirement": "連結需求",
+      "case_type": "驗證方式",
+      "type": {
+        "functional": "功能",
+        "performance": "效能",
+        "security": "安全",
+        "reliability": "可靠性",
+        "compliance": "合規"
+      },
+      "threshold": "門檻",
+      "measured": "最新量測",
+      "headroom": "餘裕 {percent}%",
+      "no_measurement": "尚未量測",
+      "threshold_hint": "以 metric、operator、threshold、unit 結構化,才能畫趨勢與自動判定。"
     },
     "runs": {
       "heading": "測試執行",

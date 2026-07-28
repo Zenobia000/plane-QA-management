@@ -18,6 +18,7 @@ const makeCase = (id: string, sequence: number) =>
       description: {},
       preconditions: {},
       priority: "none",
+      case_type: "functional",
       tags: [],
       steps: [],
       created_at: "",

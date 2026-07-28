@@ -74,7 +74,16 @@ def create_test_folder(*, project_id, name, parent_id=None, sort_order=65535):
 
 @transaction.atomic
 def create_test_case(
-    *, project_id, title, folder_id=None, description=None, preconditions=None, priority="none", tags=None, steps=None
+    *,
+    project_id,
+    title,
+    folder_id=None,
+    description=None,
+    preconditions=None,
+    priority="none",
+    case_type="functional",
+    tags=None,
+    steps=None,
 ):
     project = Project.objects.select_for_update().get(id=project_id)
     folder = _folder_for_project(project, folder_id)
@@ -97,6 +106,7 @@ def create_test_case(
         description=description or {},
         preconditions=preconditions or {},
         priority=priority,
+        case_type=case_type,
         tags=tags or [],
     )
     _create_steps(version, steps or [])
@@ -105,7 +115,16 @@ def create_test_case(
 
 @transaction.atomic
 def publish_test_case_version(
-    *, test_case_id, project_id, title, description=None, preconditions=None, priority="none", tags=None, steps=None
+    *,
+    test_case_id,
+    project_id,
+    title,
+    description=None,
+    preconditions=None,
+    priority="none",
+    case_type="functional",
+    tags=None,
+    steps=None,
 ):
     test_case = TestCase.objects.select_for_update().get(id=test_case_id, project_id=project_id)
     next_version = test_case.current_version + 1
@@ -118,6 +137,7 @@ def publish_test_case_version(
         description=description or {},
         preconditions=preconditions or {},
         priority=priority,
+        case_type=case_type,
         tags=tags or [],
     )
     _create_steps(version, steps or [])
@@ -252,10 +272,25 @@ def create_defect_from_result(*, result_id, run_case_id, project_id, created_by,
     defect_name = (name or f"[TC-{run_case.test_case.sequence}] {version.title}").strip()
     if not defect_name:
         raise ValidationError("A defect name is required.")
-    actual = (
-        result.actual_result.get("text", "")
-        if isinstance(result.actual_result, dict)
-        else str(result.actual_result)
+    actual_payload = result.actual_result if isinstance(result.actual_result, dict) else {}
+    actual = actual_payload.get("text", "") if actual_payload else str(result.actual_result)
+    # Rich content survives the handover when it exists. Flattening everything to
+    # plain text is what left a developer unable to reproduce from the defect alone.
+    actual_html = actual_payload.get("html") if isinstance(actual_payload.get("html"), str) else None
+    measured = actual_payload.get("measured")
+    measurement_html = (
+        f"<p><strong>Measured:</strong> {escape(str(measured))} "
+        f"{escape(str(actual_payload.get('unit', '')))}</p>"
+        if measured is not None
+        else ""
+    )
+    artifacts = actual_payload.get("artifacts")
+    artifacts_html = (
+        "<p><strong>Artifacts:</strong> "
+        + ", ".join(f'<a href="{escape(str(item))}">{escape(str(item))}</a>' for item in artifacts)
+        + "</p>"
+        if isinstance(artifacts, list) and artifacts
+        else ""
     )
     preconditions = (
         version.preconditions.get("text", "")
@@ -264,10 +299,24 @@ def create_defect_from_result(*, result_id, run_case_id, project_id, created_by,
     )
     environment = json.dumps(run_case.test_run.configuration, ensure_ascii=False, sort_keys=True)
     app_base_url = (settings.APP_BASE_URL or settings.WEB_URL or "").rstrip("/")
-    source_url = f"{app_base_url}/{result.workspace.slug}/projects/{project_id}/testing" if app_base_url else ""
+    # Addressable since #11, so the defect points at the exact execution that
+    # produced it rather than at the Testing tab in general.
+    source_url = (
+        f"{app_base_url}/{result.workspace.slug}/projects/{project_id}"
+        f"/testing/runs/{run_case.test_run_id}/{run_case.id}"
+        if app_base_url
+        else ""
+    )
+    case_url = (
+        f"{app_base_url}/{result.workspace.slug}/projects/{project_id}"
+        f"/testing/cases/{run_case.test_case.sequence}"
+        if app_base_url
+        else ""
+    )
     source_html = (
         f'<p><strong>Source:</strong> <a href="{escape(source_url)}">'
-        f"Open TC-{run_case.test_case.sequence} in Testing</a></p>"
+        f"Open this execution</a> · "
+        f'<a href="{escape(case_url)}">TC-{run_case.test_case.sequence}</a></p>'
         if source_url
         else ""
     )
@@ -281,7 +330,10 @@ def create_defect_from_result(*, result_id, run_case_id, project_id, created_by,
         f"<p><strong>Build:</strong> {escape(run_case.test_run.build or '—')}</p>"
         f"<p><strong>Environment:</strong> {escape(environment or '{}')}</p>"
         f"<p><strong>Preconditions:</strong> {escape(preconditions or '—')}</p>"
-        f"<p><strong>Actual result:</strong> {escape(actual or '—')}</p>"
+        f"<p><strong>Actual result:</strong></p>"
+        f"{actual_html or f'<p>{escape(actual) if actual else chr(8212)}</p>'}"
+        f"{measurement_html}"
+        f"{artifacts_html}"
         f"{source_html}"
         f"<ol>{steps}</ol>"
     )
@@ -299,6 +351,7 @@ def create_defect_from_result(*, result_id, run_case_id, project_id, created_by,
             "environment": run_case.test_run.configuration,
             "preconditions": version.preconditions,
             "source_url": source_url,
+            "case_url": case_url,
         },
         priority=priority,
         created_by=created_by,

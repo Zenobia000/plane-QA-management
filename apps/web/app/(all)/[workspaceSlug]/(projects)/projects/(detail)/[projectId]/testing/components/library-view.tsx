@@ -11,7 +11,7 @@ import { observer } from "mobx-react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
-import type { TTestCase, TTestCaseInput } from "@plane/types";
+import type { TTestCase, TTestCaseInput, TTestCaseType, TTestThreshold } from "@plane/types";
 import { ExistingIssuesListModal } from "@/components/core/modals/existing-issues-list-modal";
 import { useTesting } from "@/hooks/store/use-testing";
 import { findCaseBySequence, testingPath } from "../helpers";
@@ -86,6 +86,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
       description: selected.current.description,
       preconditions: selected.current.preconditions,
       priority: selected.current.priority,
+      case_type: selected.current.case_type,
       tags: selected.current.tags,
       steps: selected.current.steps.map((step) => ({ action: step.action, expected_result: step.expected_result })),
     });
@@ -232,6 +233,11 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
               <span className="rounded border border-subtle px-1.5 py-0.5 text-10 text-tertiary">
                 {t(`testing.cases.source.${sourceOf(testCase)}`)}
               </span>
+              {testCase.current.case_type !== "functional" && (
+                <span className="rounded border border-accent-strong px-1.5 py-0.5 text-10 text-accent-primary">
+                  {t(`testing.cases.type.${testCase.current.case_type}`)}
+                </span>
+              )}
             </span>
           </button>
         ))}
@@ -301,6 +307,20 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
                   {testFolders.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-12 font-medium text-secondary">
+                {t("testing.cases.case_type")}
+                <select
+                  value={draft.case_type ?? "functional"}
+                  onChange={(event) => setDraft({ ...draft, case_type: event.target.value as TTestCaseType })}
+                  className="mt-1 h-10 w-full rounded border border-subtle bg-surface-1 px-2 text-13 text-primary"
+                >
+                  {(["functional", "performance", "security", "reliability", "compliance"] as const).map((item) => (
+                    <option key={item} value={item}>
+                      {t(`testing.cases.type.${item}`)}
                     </option>
                   ))}
                 </select>
@@ -385,6 +405,30 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
                 </Button>
               </div>
             </div>
+            {draft.case_type !== "functional" && draft.case_type !== undefined && (
+              <div className="rounded border border-subtle p-3">
+                <p className="text-12 font-medium text-secondary">{t("testing.cases.threshold")}</p>
+                {(() => {
+                  // The expectation is already structured on the step; rendering it as a
+                  // threshold rather than prose is what makes it judgeable and chartable.
+                  const expectation = (selected.current.steps[0]?.expected_result ?? {}) as TTestThreshold;
+                  const latest = selected.executions[0];
+                  if (expectation.threshold === undefined)
+                    return <p className="mt-1 text-11 text-tertiary">{t("testing.cases.threshold_hint")}</p>;
+                  return (
+                    <div className="mt-2 flex flex-wrap items-center gap-4 text-12">
+                      <span className="font-mono text-primary">
+                        {expectation.metric} {expectation.operator} {expectation.threshold} {expectation.unit}
+                      </span>
+                      <span className="text-tertiary">
+                        {t("testing.cases.measured")}:{" "}
+                        {latest ? t(`testing.status.${latest.latest_status}`) : t("testing.cases.no_measurement")}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
             <div className="rounded border border-subtle p-3">
               <p className="text-12 font-medium text-secondary">{t("testing.cases.executions")}</p>
               {selected.executions.length ? (

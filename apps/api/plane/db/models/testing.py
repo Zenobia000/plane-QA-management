@@ -73,6 +73,17 @@ class TestCaseVersion(ProjectBaseModel):
         ("low", "Low"),
         ("none", "None"),
     )
+    # How the contract is verified, not what kind of requirement it answers for.
+    # A functional requirement can carry a performance threshold among its
+    # acceptance conditions, so this never doubles as an FR/NFR classification --
+    # that lives on the work item.
+    CASE_TYPE_CHOICES = (
+        ("functional", "Functional"),
+        ("performance", "Performance"),
+        ("security", "Security"),
+        ("reliability", "Reliability"),
+        ("compliance", "Compliance"),
+    )
 
     test_case = models.ForeignKey(TestCase, on_delete=models.CASCADE, related_name="versions")
     version = models.PositiveIntegerField()
@@ -80,6 +91,7 @@ class TestCaseVersion(ProjectBaseModel):
     description = models.JSONField(default=dict, blank=True)
     preconditions = models.JSONField(default=dict, blank=True)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="none")
+    case_type = models.CharField(max_length=20, choices=CASE_TYPE_CHOICES, default="functional")
     tags = models.JSONField(default=list, blank=True)
 
     class Meta:

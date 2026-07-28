@@ -38,6 +38,7 @@ class TestCaseVersionSerializer(BaseSerializer):
             "description",
             "preconditions",
             "priority",
+            "case_type",
             "tags",
             "steps",
             "created_at",
@@ -143,6 +144,9 @@ class TestCaseWriteSerializer(serializers.Serializer):
     description = serializers.JSONField(required=False, default=dict)
     preconditions = serializers.JSONField(required=False, default=dict)
     priority = serializers.ChoiceField(choices=TestCaseVersion.PRIORITY_CHOICES, required=False, default="none")
+    case_type = serializers.ChoiceField(
+        choices=TestCaseVersion.CASE_TYPE_CHOICES, required=False, default="functional"
+    )
     tags = serializers.ListField(child=serializers.CharField(max_length=100), required=False, default=list)
     steps = TestStepInputSerializer(many=True, required=False, default=list)
 

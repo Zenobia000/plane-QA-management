@@ -281,12 +281,13 @@ class Command(BaseCommand):
             "quality": create_test_folder(project_id=project.id, name="品質門檻", parent_id=root.id, sort_order=3000),
         }
 
-        def case(title, folder, tags, steps, priority="high", preconditions=None):
+        def case(title, folder, tags, steps, priority="high", preconditions=None, case_type="functional"):
             return create_test_case(
                 project_id=project.id,
                 title=title,
                 folder_id=folders[folder].id,
                 priority=priority,
+                case_type=case_type,
                 tags=tags,
                 preconditions=preconditions or {},
                 steps=steps,
@@ -350,6 +351,7 @@ class Command(BaseCommand):
                 title="履歷查詢 P95 回應時間低於 2,000 ms",
                 folder_id=folders["quality"].id,
                 priority="high",
+                case_type="performance",
                 tags=["performance", "automated", "threshold"],
                 preconditions={
                     "text": "資料庫含 1,000 萬筆履歷 · 200 VU · 持續 5 分鐘",
@@ -378,6 +380,7 @@ class Command(BaseCommand):
                     _step("檢視稽核紀錄", "留下一筆未授權存取事件"),
                 ],
                 priority="urgent",
+                case_type="security",
             ),
         }
 
@@ -482,12 +485,12 @@ class Command(BaseCommand):
         write(f"  {len(cases)} test cases · 1 run pinned at build {BUILD}")
         write(f"  1 failure -> defect {project.identifier}-{defect.sequence_id} -> retest appended")
         write("")
-        write("Gaps this sample makes observable (see docs/planning/testing-product-definition.md):")
-        write("  #14  the epic and both features read as uncovered although 8 contracts sit beneath them,")
-        write("       the untyped defect is listed as a requirement, and coverage_percent reports the")
-        write("       share of cases that are linked rather than the share of requirements covered")
-        write("  #18  a scheduled story with no acceptance contract now blocks the release gate")
-        write("  #17  the threshold case carries a structured expectation the UI renders as plain text")
+        write("What this sample demonstrates (see docs/planning/testing-product-definition.md):")
+        write("  coverage rolls up: the epic and both features report the eight contracts beneath them")
+        write("  the defect is excluded from coverage -- it is evidence, not an untested requirement")
+        write("  the scheduled story with no contract blocks the release gate")
+        write("  the threshold case carries metric, operator, threshold and unit, and renders as one")
+        write("  the defect links back to the exact execution that produced it")
         write("")
         write(f"  overview  {base}/overview")
         write(f"  cases     {base}/cases")

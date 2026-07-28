@@ -68,7 +68,20 @@
       "executions": "Execution history",
       "executions_empty": "Not included in any run yet.",
       "pinned": "pinned v{version}",
-      "link_requirement": "Link requirement"
+      "link_requirement": "Link requirement",
+      "case_type": "Verified by",
+      "type": {
+        "functional": "Functional",
+        "performance": "Performance",
+        "security": "Security",
+        "reliability": "Reliability",
+        "compliance": "Compliance"
+      },
+      "threshold": "Threshold",
+      "measured": "Latest measurement",
+      "headroom": "{percent}% headroom",
+      "no_measurement": "Not measured yet",
+      "threshold_hint": "Structured as metric, operator, threshold and unit so it can be charted and judged."
     },
     "runs": {
       "heading": "Test runs",

@@ -67,7 +67,8 @@
       "unlink": "解除关联 {name}",
       "executions": "执行历史",
       "executions_empty": "尚未被任何一轮验证纳入。",
-      "pinned": "锁定 v{version}"
+      "pinned": "锁定 v{version}",
+      "link_requirement": "关联需求"
     },
     "runs": {
       "heading": "测试执行",

@@ -67,7 +67,8 @@
       "unlink": "Unlink {name}",
       "executions": "Execution history",
       "executions_empty": "Not included in any run yet.",
-      "pinned": "pinned v{version}"
+      "pinned": "pinned v{version}",
+      "link_requirement": "Link requirement"
     },
     "runs": {
       "heading": "Test runs",

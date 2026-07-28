@@ -12,6 +12,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import type { TTestCase, TTestCaseInput } from "@plane/types";
+import { ExistingIssuesListModal } from "@/components/core/modals/existing-issues-list-modal";
 import { useTesting } from "@/hooks/store/use-testing";
 import { findCaseBySequence, testingPath } from "../helpers";
 import { FolderTree } from "./folder-tree";
@@ -54,7 +55,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState("");
-  const [issueId, setIssueId] = useState("");
+  const [linking, setLinking] = useState(false);
   const [draft, setDraft] = useState<TTestCaseInput>();
   const selectedFolder = searchParams.get("folder");
   const testFolders = orderBy(Object.values(folders), ["sort_order", "name"], ["asc", "asc"]);
@@ -79,7 +80,6 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
       setDraft(undefined);
       return;
     }
-    setIssueId("");
     setDraft({
       title: selected.current.title,
       folder_id: selected.folder_id,
@@ -377,23 +377,11 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
               ) : (
                 <p className="mt-1 text-11 text-tertiary">{t("testing.cases.traceability_empty")}</p>
               )}
-              <div className="mt-2 flex gap-2">
-                <input
-                  value={issueId}
-                  onChange={(event) => setIssueId(event.target.value)}
-                  placeholder={t("testing.cases.link_placeholder")}
-                  className="h-9 min-w-0 flex-1 rounded border border-subtle bg-surface-1 px-2 text-12 text-primary outline-none"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={!issueId.trim()}
-                  onClick={async () => {
-                    await linkWorkItem(workspaceSlug, projectId, selected.id, issueId.trim());
-                    setIssueId("");
-                  }}
-                >
-                  <Link2 className="size-4" /> {t("testing.cases.link")}
+              <div className="mt-2">
+                {/* Pasting a UUID was the only way to link a requirement; the work-item
+                    picker used by relations everywhere else does the same job by search. */}
+                <Button type="button" variant="secondary" onClick={() => setLinking(true)}>
+                  <Link2 className="size-4" /> {t("testing.cases.link_requirement")}
                 </Button>
               </div>
             </div>
@@ -439,6 +427,20 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
           </form>
         )}
       </div>
+      {selected && (
+        <ExistingIssuesListModal
+          workspaceSlug={workspaceSlug}
+          projectId={projectId}
+          isOpen={linking}
+          handleClose={() => setLinking(false)}
+          searchParams={{}}
+          selectedWorkItemIds={selected.work_item_ids}
+          handleOnSubmit={async (items) => {
+            await Promise.all(items.map((item) => linkWorkItem(workspaceSlug, projectId, selected.id, item.id)));
+            setLinking(false);
+          }}
+        />
+      )}
     </section>
   );
 });

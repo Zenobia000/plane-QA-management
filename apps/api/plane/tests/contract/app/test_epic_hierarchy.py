@@ -93,13 +93,46 @@ class TestEpicHierarchy:
         assert [node["name"] for node in nodes] == ["Epic"]
         epic_node = nodes[0]
         rollup = epic_node["rollup"]
+        # Four items sit beneath the epic, but only the three stories are leaves. The
+        # feature is a summary of those stories, so counting it too would state the same
+        # work twice.
         assert rollup["descendants"] == 4
+        assert rollup["leaves"] == 3
+        assert sum(rollup["state_distribution"].values()) == 3
         assert rollup["state_distribution"]["completed"] == 1
-        assert rollup["state_distribution"]["started"] == 4
+        assert rollup["state_distribution"]["started"] == 2
         # 5 + 8, and emphatically not 4 + 5 which is what summing the keys would give.
-        assert rollup["points"] == {"total": 13, "sized": 2, "unsized": 3}
+        # Only Story C is unsized; the epic and the feature are not work awaiting an
+        # estimate, they are nodes that aggregate one.
+        assert rollup["points"] == {"total": 13, "sized": 2, "unsized": 1}
         assert epic_node["children"][0]["name"] == "Feature"
         assert epic_node["children"][0]["rollup"]["points"]["total"] == 13
+
+    def test_a_parents_own_estimate_is_superseded_by_its_breakdown(
+        self, session_client, workspace, testing_project
+    ):
+        """Estimating an epic and then breaking it down must not add the two together."""
+        epic, feature, started, _done = self._tree(workspace, testing_project)
+        estimate = Estimate.objects.create(
+            workspace=workspace, project=testing_project, name="Fibonacci", type="points"
+        )
+        twenty = EstimatePoint.objects.create(
+            estimate=estimate, workspace=workspace, project=testing_project, key=7, value="20"
+        )
+        five = EstimatePoint.objects.create(
+            estimate=estimate, workspace=workspace, project=testing_project, key=4, value="5"
+        )
+        Issue.objects.filter(id=epic.id).update(estimate_point=twenty)
+        Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Story", state=started,
+            parent=feature, estimate_point=five,
+        )
+
+        nodes = session_client.get(self._url(workspace, testing_project)).json()["nodes"]
+
+        # The epic's own 20 points are a pre-breakdown guess the stories replaced.
+        assert nodes[0]["estimate_point"] == 20
+        assert nodes[0]["rollup"]["points"]["total"] == 5
 
     def test_coverage_and_worst_status_travel_up_from_the_story_that_owns_them(
         self, session_client, workspace, testing_project
@@ -126,13 +159,15 @@ class TestEpicHierarchy:
         nodes = session_client.get(self._url(workspace, testing_project)).json()["nodes"]
         rollup = nodes[0]["rollup"]["coverage"]
 
-        # Four requirements are in scope. Three count as covered, because coverage is
-        # inherited upward: the contract sits on one story, and the feature and epic that
-        # deliver it are answered by it. Only the sibling story nothing verifies is
-        # uncovered -- which is the number a delivery decision needs.
-        assert rollup["in_scope"] == 4
-        assert rollup["covered"] == 3
+        # Two leaf stories are in scope; one holds a contract. The epic and feature are
+        # also "covered" in their own right, because coverage is inherited upward -- but
+        # that verdict is a restatement of the story beneath them, so counting it here
+        # would inflate both sides of the ratio.
+        assert rollup["in_scope"] == 2
+        assert rollup["covered"] == 1
         assert rollup["uncovered"] == 1
+        # The node's own inherited verdict is still reported, separately from the rollup.
+        assert nodes[0]["covered"] is True
         # The failure belongs to a story two levels down and still surfaces on the epic.
         assert rollup["latest_status"] == "failed"
 
@@ -167,6 +202,25 @@ class TestEpicHierarchy:
         # second root and inflate every count above it.
         assert [node["name"] for node in nodes] == ["Epic"]
         assert nodes[0]["rollup"]["descendants"] == 2
+        assert nodes[0]["rollup"]["leaves"] == 1
+
+    def test_a_feature_whose_stories_all_lack_contracts_counts_the_stories_only(
+        self, session_client, workspace, testing_project
+    ):
+        """The case that exposed the double count: two gaps must not report as three."""
+        epic, feature, started, _done = self._tree(workspace, testing_project)
+        for name in ("Story A", "Story B"):
+            Issue.objects.create(
+                workspace=workspace, project=testing_project, name=name, state=started, parent=feature
+            )
+
+        nodes = session_client.get(self._url(workspace, testing_project)).json()["nodes"]
+        coverage = nodes[0]["rollup"]["coverage"]
+
+        # The feature is uncovered too, since nothing beneath it is verified. Counting it
+        # alongside its own stories reported three missing contracts where two exist.
+        assert coverage["in_scope"] == 2
+        assert coverage["uncovered"] == 2
 
     def test_non_member_cannot_read_the_hierarchy(self, api_client, workspace, testing_project):
         response = api_client.get(self._url(workspace, testing_project))

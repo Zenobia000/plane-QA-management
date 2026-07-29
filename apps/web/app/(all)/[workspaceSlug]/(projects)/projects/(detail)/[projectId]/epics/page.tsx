@@ -24,9 +24,12 @@ const epicService = new EpicService();
  * estimate is blank because points never sum upward, and nothing there says whether the
  * work beneath it has been verified.
  *
- * Every column here is therefore an aggregate over descendants, and the three chosen are the
- * three questions a delivery conversation actually asks: how far along, is it verified, how
- * big.
+ * Every column here is therefore an aggregate over the node's *leaf* descendants, answering
+ * the three questions a delivery conversation asks: how far along, is it verified, how big.
+ *
+ * Leaves rather than all descendants, because a feature's state is a hand-set summary of the
+ * same stories it contains -- counting both states one fact twice. A leaf row shows its own
+ * values instead, since it has nothing beneath it to summarise.
  */
 export default function EpicsPage() {
   const { workspaceSlug, projectId } = useParams();
@@ -63,16 +66,24 @@ export default function EpicsPage() {
     [projectId, setPeekIssue, workspaceSlug]
   );
 
+  /**
+   * Walked rather than summed from the roots, because a root may itself be a leaf and a
+   * leaf's rollup is empty by construction -- its figures live on the node.
+   */
   const totals = useMemo(() => {
-    const nodes = hierarchy?.nodes ?? [];
-    return nodes.reduce(
-      (sum, node) => ({
-        items: sum.items + node.rollup.descendants + 1,
-        points: sum.points + node.rollup.points.total,
-        uncovered: sum.uncovered + (node.rollup.coverage.in_scope - node.rollup.coverage.covered),
-      }),
-      { items: 0, points: 0, uncovered: 0 }
-    );
+    let items = 0;
+    let points = 0;
+    let uncovered = 0;
+    const visit = (node: TEpicNode) => {
+      items += 1;
+      if (node.is_leaf) {
+        points += node.estimate_point ?? 0;
+        if (!node.covered) uncovered += 1;
+      }
+      node.children.forEach(visit);
+    };
+    (hierarchy?.nodes ?? []).forEach(visit);
+    return { items, points, uncovered };
   }, [hierarchy]);
 
   if (!workspaceSlug || !projectId) return null;
@@ -85,7 +96,7 @@ export default function EpicsPage() {
           <div>
             <h1 className="text-18 font-semibold text-primary">需求階層</h1>
             <p className="mt-0.5 text-12 text-tertiary">
-              Epic → Feature → Story。每一列的數字都是底下所有後代的彙總,不是這一列自己的欄位。
+              Epic → Feature → Story。父層的數字只統計底下的葉節點 —— 中間層是摘要,計入會把同一份工作數兩次。
             </p>
           </div>
           {hierarchy ? (
@@ -109,10 +120,10 @@ export default function EpicsPage() {
 
         {hierarchy ? (
           <section className="rounded border border-subtle">
-            <div className="grid grid-cols-[minmax(0,1fr)_9rem_7rem_5rem] gap-3 border-b border-subtle bg-layer-1 px-3 py-2 text-11 font-medium text-tertiary">
+            <div className="grid grid-cols-[minmax(0,1fr)_9rem_8rem_5rem] gap-3 border-b border-subtle bg-layer-1 px-3 py-2 text-11 font-medium text-tertiary">
               <span>需求</span>
-              <span>進度(底下的 story)</span>
-              <span>驗收覆蓋</span>
+              <span title="只計葉節點:中間層是摘要,計入會重複計算">進度(葉節點)</span>
+              <span title="已連結驗收契約的葉節點比例">驗收覆蓋</span>
               <span className="text-right">點數</span>
             </div>
             {hierarchy.nodes.length ? (

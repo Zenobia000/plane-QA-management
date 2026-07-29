@@ -9,19 +9,32 @@ carries only its own fields. That is fine for operating on one item and useless 
 "how is this epic doing", because the answer is a property of the descendants, not of the
 epic row. Every number below is therefore computed downward from each node.
 
+**A node's rollup describes its leaf descendants, and never itself.** That rule is doing
+more work than it looks. A feature's state is a hand-set summary of the same work its
+stories represent, so counting the feature alongside its own stories states one fact twice.
+An earlier version of this module summed every node in the subtree and consequently
+reported an epic with eight stories as 3/11 rather than 3/8, counted two features and the
+epic itself as "unsized work", and turned a feature whose two stories both lack contracts
+into three uncovered requirements instead of two. All three were the same error.
+
+Leaves are the unit because they are the only nodes that are not summaries of something
+else. The known limitation: leaves need not sit at a uniform depth. Break one story into
+tasks and leave its siblings whole, and that story's tasks each count once while its
+siblings count once apiece -- the denominators stop being comparable. Uniform breakdown
+depth is a modelling discipline this endpoint reports on but cannot enforce.
+
 Four aggregates, deliberately from four different axes:
 
-- **state distribution** walks the breakdown. The one-level `state_distribution` the
-  sub-issues endpoint already returns is not enough here -- an epic's children are
-  features, and their states say nothing about the ten stories underneath
-- **points** sum the `value` of each descendant's estimate, not the `key`. `key` is a
-  1-based ordinal, so summing it -- which is what the cycle burndown does -- orders
-  sprints correctly while not being a point total
-- **coverage** is taken straight from `requirement_coverage`, which already walks the same
-  tree, excludes defects and resolves the worst status. Recomputing it here would be a
-  second definition of the same word, and the two would drift
-- **cycle and milestone spread** show where the work underneath actually sits. A feature
-  whose stories straddle three sprints is a scheduling fact the tree would otherwise hide
+- **state distribution** counts leaves by state group, which is progress at the level the
+  work actually happens
+- **points** sum the `value` of each leaf's estimate, not the `key`. `key` is a 1-based
+  ordinal, so summing it -- which is what the cycle burndown does -- orders sprints
+  correctly while not being a point total. A parent's own estimate is ignored once it has
+  children, because the breakdown supersedes it
+- **coverage** counts leaves using `requirement_coverage`'s own verdict, so the number here
+  and the number the release gate blocks on cannot drift apart
+- **cycle, module and milestone spread** show where the leaf work sits. A feature whose
+  stories straddle three sprints is a scheduling fact the tree would otherwise hide
 
 Defects are excluded from the tree entirely. They are parentless, so they would otherwise
 render as roots beside the epics, and they are evidence rather than requirements.
@@ -44,10 +57,16 @@ from plane.db.models import CycleIssue, Issue, ModuleIssue, TestResultIssueLink
 
 STATE_GROUPS = ("backlog", "unstarted", "started", "completed", "cancelled")
 
+# Worst status wins, matching the precedence the coverage report already applies. A node
+# nothing has verified sorts last rather than first: "no contract" is reported by the
+# coverage counts, and letting it outrank a real failure would bury the failure.
+STATUS_PRECEDENCE = {"failed": 0, "blocked": 1, "open": 2, "skipped": 3, "passed": 4, None: 5}
+
 
 def _empty_rollup():
     return {
         "descendants": 0,
+        "leaves": 0,
         "state_distribution": {group: 0 for group in STATE_GROUPS},
         "points": {"total": 0, "sized": 0, "unsized": 0},
         "coverage": {"in_scope": 0, "covered": 0, "uncovered": 0, "latest_status": None},
@@ -59,6 +78,7 @@ def _empty_rollup():
 
 def _merge(into, other):
     into["descendants"] += other["descendants"]
+    into["leaves"] += other["leaves"]
     for group in STATE_GROUPS:
         into["state_distribution"][group] += other["state_distribution"][group]
     for key in ("total", "sized", "unsized"):
@@ -68,15 +88,12 @@ def _merge(into, other):
     for axis in ("cycles", "milestones", "modules"):
         for name, count in other[axis].items():
             into[axis][name] += count
+    into["coverage"]["latest_status"] = min(
+        into["coverage"]["latest_status"],
+        other["coverage"]["latest_status"],
+        key=lambda status: STATUS_PRECEDENCE.get(status, 5),
+    )
     return into
-
-
-# Worst status wins, matching the precedence the coverage report already applies.
-STATUS_PRECEDENCE = {"failed": 0, "blocked": 1, "open": 2, "skipped": 3, "passed": 4, None: 5}
-
-
-def _worst(left, right):
-    return min(left, right, key=lambda status: STATUS_PRECEDENCE.get(status, 5))
 
 
 def _point_value(issue):
@@ -92,6 +109,51 @@ def _point_value(issue):
         return int(issue.estimate_point.value)
     except (TypeError, ValueError):
         return None
+
+
+def _leaf_contribution(issue, coverage_row):
+    """What one leaf contributes to every ancestor above it.
+
+    Only leaves produce numbers. An interior node's rollup is the sum of these and nothing
+    else, which is what keeps a summary from being counted beside the thing it summarises.
+    """
+    metrics = _empty_rollup()
+    metrics["leaves"] = 1
+
+    state_group = issue.state.group if issue.state else None
+    if state_group in metrics["state_distribution"]:
+        metrics["state_distribution"][state_group] += 1
+
+    points = _point_value(issue)
+    if points is None:
+        metrics["points"]["unsized"] += 1
+    else:
+        metrics["points"]["total"] += points
+        metrics["points"]["sized"] += 1
+
+    for link in issue.issue_cycle.all():
+        metrics["cycles"][link.cycle.name] += 1
+    for link in issue.issue_module.all():
+        metrics["modules"][link.module.name] += 1
+    if issue.milestone:
+        metrics["milestones"][issue.milestone.name] += 1
+
+    if coverage_row and coverage_row["requires_contract"]:
+        metrics["coverage"]["in_scope"] = 1
+        metrics["coverage"]["covered" if coverage_row["covered"] else "uncovered"] = 1
+        metrics["coverage"]["latest_status"] = coverage_row["latest_status"]
+
+    return metrics
+
+
+def _serialize(rollup):
+    serialized = dict(rollup)
+    for axis in ("cycles", "milestones", "modules"):
+        serialized[axis] = [
+            {"name": name, "count": count}
+            for name, count in sorted(rollup[axis].items(), key=lambda pair: -pair[1])
+        ]
+    return serialized
 
 
 def build_hierarchy(project_id):
@@ -125,48 +187,32 @@ def build_hierarchy(project_id):
             return None
         seen = seen | {issue.id}
 
-        own = _empty_rollup()
-        own["descendants"] = 1
-        state_group = issue.state.group if issue.state else None
-        if state_group in own["state_distribution"]:
-            own["state_distribution"][state_group] += 1
-        points = _point_value(issue)
-        if points is None:
-            own["points"]["unsized"] += 1
-        else:
-            own["points"]["total"] += points
-            own["points"]["sized"] += 1
-        for link in issue.issue_cycle.all():
-            own["cycles"][link.cycle.name] += 1
-        for link in issue.issue_module.all():
-            own["modules"][link.module.name] += 1
-        if issue.milestone:
-            own["milestones"][issue.milestone.name] += 1
-
-        row = coverage_by_item.get(str(issue.id))
-        worst = None
-        if row and row["requires_contract"]:
-            own["coverage"]["in_scope"] = 1
-            own["coverage"]["covered" if row["covered"] else "uncovered"] = 1
-            worst = row["latest_status"]
-
-        rollup = _empty_rollup()
-        _merge(rollup, own)
         rendered = []
         for child in sorted(children.get(issue.id, []), key=lambda item: item.sequence_id):
             built = node(child, seen)
-            if built is None:
-                continue
-            rendered.append(built)
-            _merge(rollup, built["_rollup_raw"])
-            worst = _worst(worst, built["rollup"]["coverage"]["latest_status"])
+            if built is not None:
+                rendered.append(built)
 
-        rollup["coverage"]["latest_status"] = worst
+        if rendered:
+            # An interior node reports its descendants and contributes nothing of its own.
+            rollup = _empty_rollup()
+            for built in rendered:
+                _merge(rollup, built["_contribution"])
+                rollup["descendants"] += 1
+            contribution = rollup
+        else:
+            # A leaf has nothing beneath it, so its own rollup is empty; the numbers it
+            # produces belong to its ancestors.
+            rollup = _empty_rollup()
+            contribution = _leaf_contribution(issue, coverage_by_item.get(str(issue.id)))
+
+        row = coverage_by_item.get(str(issue.id))
         return {
             "id": str(issue.id),
             "sequence_id": issue.sequence_id,
             "name": issue.name,
             "priority": issue.priority,
+            "is_leaf": not rendered,
             "type": (
                 {"id": str(issue.type_id), "name": issue.type.name, "is_epic": issue.type.is_epic}
                 if issue.type
@@ -179,31 +225,26 @@ def build_hierarchy(project_id):
             ),
             "estimate_point": _point_value(issue),
             "milestone": issue.milestone.name if issue.milestone else None,
+            # The node's own verdict, distinct from the rollup: an epic is "covered" when
+            # anything beneath it is, which is a different statement from how many of its
+            # leaves hold contracts.
+            "covered": bool(row and row["covered"]),
+            "latest_status": row["latest_status"] if row else None,
             "children": rendered,
             "rollup": _serialize(rollup),
-            "_rollup_raw": rollup,
+            "_contribution": contribution,
         }
 
     def strip(built):
-        built.pop("_rollup_raw", None)
+        built.pop("_contribution", None)
         for child in built["children"]:
             strip(child)
         return built
 
-    ordered = sorted(roots, key=lambda item: (item.type_level if item.type_level is not None else 99, item.sequence_id))
+    ordered = sorted(
+        roots, key=lambda item: (item.type_level if item.type_level is not None else 99, item.sequence_id)
+    )
     return [strip(built) for built in (node(issue, frozenset()) for issue in ordered) if built]
-
-
-def _serialize(rollup):
-    serialized = dict(rollup)
-    for axis in ("cycles", "milestones", "modules"):
-        serialized[axis] = [
-            {"name": name, "count": count}
-            for name, count in sorted(rollup[axis].items(), key=lambda pair: -pair[1])
-        ]
-    # The node counts itself, which is not a descendant.
-    serialized["descendants"] = max(rollup["descendants"] - 1, 0)
-    return serialized
 
 
 class ProjectEpicHierarchyEndpoint(BaseAPIView):

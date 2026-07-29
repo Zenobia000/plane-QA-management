@@ -29,8 +29,15 @@ export type TEpicAxisSpread = {
 };
 
 export type TEpicRollup = {
-  /** Descendants at every depth, excluding the node itself. */
+  /** Items at every depth beneath the node, excluding the node itself. */
   descendants: number;
+  /**
+   * Leaf descendants -- the denominator every other figure here is computed over.
+   *
+   * Interior nodes are summaries of their own children, so counting a feature beside the
+   * stories it summarises would state the same work twice.
+   */
+  leaves: number;
   state_distribution: Record<TEpicStateGroup, number>;
   points: {
     /** Sum of estimate values, not of the 1-based ordinal keys the burndown adds up. */
@@ -59,6 +66,11 @@ export type TEpicNode = {
   state: { id: string; name: string; group: TEpicStateGroup } | null;
   estimate_point: number | null;
   milestone: string | null;
+  /** True when nothing sits beneath it, in which case `rollup` is empty by construction. */
+  is_leaf: boolean;
+  /** This node's own inherited coverage verdict, distinct from the rollup ratio. */
+  covered: boolean;
+  latest_status: string | null;
   children: TEpicNode[];
   rollup: TEpicRollup;
 };

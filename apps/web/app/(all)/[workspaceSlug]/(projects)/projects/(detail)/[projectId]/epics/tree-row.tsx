@@ -26,10 +26,28 @@ const STATUS_TONE: Record<string, string> = {
   passed: "bg-success-subtle text-success-primary",
 };
 
-/** Proportional bar rather than five numbers: the shape is the message at a glance. */
-function StateBar({ node }: { node: TEpicNode }) {
+function StatusChip({ status }: { status: string | null }) {
+  if (!status) return null;
+  return (
+    <span className={`rounded px-1.5 py-0.5 text-10 font-medium ${STATUS_TONE[status] ?? "bg-layer-2 text-secondary"}`}>
+      {status}
+    </span>
+  );
+}
+
+/**
+ * Progress over leaf descendants, as a proportional bar.
+ *
+ * A leaf has nothing beneath it, so it shows its own state instead of an empty bar. The
+ * distinction matters: an empty bar would read as "no progress" when the honest statement
+ * is "this is the work, not a summary of work".
+ */
+function ProgressCell({ node }: { node: TEpicNode }) {
+  if (node.is_leaf) {
+    return <span className="truncate text-11 text-secondary">{node.state ? node.state.name : "—"}</span>;
+  }
   const distribution = node.rollup.state_distribution;
-  const total = STATE_ORDER.reduce((sum, group) => sum + distribution[group], 0);
+  const total = node.rollup.leaves;
   if (!total) return <span className="text-11 text-tertiary">—</span>;
   return (
     <div className="flex items-center gap-2">
@@ -52,24 +70,45 @@ function StateBar({ node }: { node: TEpicNode }) {
   );
 }
 
-/** Coverage is the one column that answers "is this verified", so an uncovered count shows. */
+/** Coverage: a ratio over leaves for a parent, and a plain verdict for a leaf. */
 function CoverageCell({ node }: { node: TEpicNode }) {
+  if (node.is_leaf) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className={node.covered ? "text-11 text-secondary" : "text-11 font-medium text-danger-primary"}>
+          {node.covered ? "已連結" : "無契約"}
+        </span>
+        <StatusChip status={node.latest_status} />
+      </div>
+    );
+  }
   const { covered, in_scope: inScope, latest_status: status } = node.rollup.coverage;
   if (!inScope) return <span className="text-11 text-tertiary">—</span>;
-  const uncovered = inScope - covered;
   return (
     <div className="flex items-center gap-2">
-      <span className={uncovered ? "text-11 font-medium text-danger-primary" : "text-11 text-secondary"}>
+      <span className={covered < inScope ? "text-11 font-medium text-danger-primary" : "text-11 text-secondary"}>
         {covered}/{inScope}
       </span>
-      {status ? (
-        <span
-          className={`rounded px-1.5 py-0.5 text-10 font-medium ${STATUS_TONE[status] ?? "bg-layer-2 text-secondary"}`}
-        >
-          {status}
+      <StatusChip status={status} />
+    </div>
+  );
+}
+
+/** Points: the leaf's own estimate, or the sum of the leaves beneath. */
+function PointsCell({ node }: { node: TEpicNode }) {
+  if (node.is_leaf) {
+    return <span className="text-right text-11 text-secondary">{node.estimate_point ?? "—"}</span>;
+  }
+  const { total, unsized } = node.rollup.points;
+  return (
+    <span className="text-right text-11 text-secondary">
+      {total || "—"}
+      {unsized ? (
+        <span className="ml-1 text-tertiary" title={`${unsized} 個葉節點未估點`}>
+          (+{unsized})
         </span>
       ) : null}
-    </div>
+    </span>
   );
 }
 
@@ -82,11 +121,10 @@ type TreeRowProps = {
 export function TreeRow({ node, depth, onOpen }: TreeRowProps) {
   const [expanded, setExpanded] = useState(depth < 1);
   const hasChildren = node.children.length > 0;
-  const { points, descendants } = node.rollup;
 
   return (
     <>
-      <div className="grid grid-cols-[minmax(0,1fr)_9rem_7rem_5rem] items-center gap-3 border-b border-subtle px-3 py-2 hover:bg-layer-1">
+      <div className="grid grid-cols-[minmax(0,1fr)_9rem_8rem_5rem] items-center gap-3 border-b border-subtle px-3 py-2 hover:bg-layer-1">
         <div className="flex min-w-0 items-center gap-1" style={{ paddingLeft: `${depth * 1.25}rem` }}>
           <button
             type="button"
@@ -108,14 +146,15 @@ export function TreeRow({ node, depth, onOpen }: TreeRowProps) {
           >
             {node.name}
           </button>
-          {descendants ? <span className="shrink-0 text-11 text-tertiary">{descendants}</span> : null}
+          {node.rollup.leaves ? (
+            <span className="shrink-0 text-11 text-tertiary" title="底下的葉節點數">
+              {node.rollup.leaves}
+            </span>
+          ) : null}
         </div>
-        <StateBar node={node} />
+        <ProgressCell node={node} />
         <CoverageCell node={node} />
-        <span className="text-right text-11 text-secondary">
-          {points.total || "—"}
-          {points.unsized ? <span className="ml-1 text-tertiary">(+{points.unsized})</span> : null}
-        </span>
+        <PointsCell node={node} />
       </div>
       {expanded
         ? node.children.map((child) => <TreeRow key={child.id} node={child} depth={depth + 1} onOpen={onOpen} />)

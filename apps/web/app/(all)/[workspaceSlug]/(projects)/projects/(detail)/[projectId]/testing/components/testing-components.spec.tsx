@@ -1,6 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeAll, describe, expect, it, vi } from "vitest";
-import { initPromise } from "@plane/i18n";
+import { describe, expect, it, vi } from "vitest";
 import type { TTestCase, TTestFolder, TTestRun } from "@plane/types";
 
 // react-markdown's transitive mdast packages are browser-bundled in the app but
@@ -102,15 +101,6 @@ describe("Testing components", () => {
   // The components read their copy through i18n now, so the English bundle has to
   // be resolved before a static render can be asserted on.
   //
-  // Assertions deliberately avoid interpolated copy. ICU interpolation does not
-  // run under vitest -- pre-existing keys such as `entity.delete.label` come back
-  // as "Delete {entity}" here too -- so a placeholder surviving in this output
-  // says nothing about the browser. Nothing in this suite can catch a broken
-  // interpolation; only a rendered check can.
-  beforeAll(async () => {
-    await initPromise;
-  });
-
   it("exposes rename and delete controls for every folder", () => {
     const html = renderToStaticMarkup(
       <FolderTree
@@ -161,7 +151,7 @@ describe("Testing components", () => {
     expect(html).toContain("Checkout defect (completed)");
     expect(html).toContain("testing.execution.markdown_hint");
     expect(html).toContain("testing.execution.drop_files");
-    expect(html).toContain("Execution history");
+    expect(html).toContain("testing.execution.defect_heading");
     expect(html).toContain("HTTP 500");
     expect(html).toContain("testing.execution.pass");
     expect(html).toContain("testing.execution.fail");

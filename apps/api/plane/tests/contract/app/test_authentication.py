@@ -27,8 +27,17 @@ def _clear_auth_throttle_keys():
     ``throttle_<scope>_<ident>`` keys, so scoping the pattern to
     ``throttle_authentication_`` removes just this throttle's entries instead
     of wiping unrelated cache state.
+
+    ``delete_pattern`` is django-redis' own extension; this project runs the
+    suite against LocMemCache so throttle counters cannot outlive the process.
+    Fall back to clearing everything there — no test in this suite depends on
+    warm cache state, and plane/tests/conftest.py already resets the cache
+    around every test for exactly that reason.
     """
-    cache.delete_pattern("throttle_authentication_*")
+    if hasattr(cache, "delete_pattern"):
+        cache.delete_pattern("throttle_authentication_*")
+    else:
+        cache.clear()
 
 
 @pytest.fixture(autouse=True)

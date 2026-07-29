@@ -18,6 +18,7 @@ from .testing import urlpatterns as testing_patterns
 from .work_item_type import urlpatterns as work_item_type_patterns
 from .work_item_property import urlpatterns as work_item_property_patterns
 from .portfolio import urlpatterns as portfolio_patterns
+from .view import urlpatterns as view_patterns
 
 urlpatterns = [
     *asset_patterns,
@@ -36,4 +37,5 @@ urlpatterns = [
     *work_item_type_patterns,
     *work_item_property_patterns,
     *portfolio_patterns,
+    *view_patterns,
 ]

@@ -271,6 +271,51 @@ export const executeCommand = async (
     }
   }
 
+  if (group === "view") {
+    // Omitting --project makes it a workspace view spanning every project.
+    const scope = args.options.workspace_level ? undefined : project.id;
+    if (action === "list") return client.listViews(config.workspace, scope);
+    if (action === "create") {
+      return client.createView(
+        config.workspace,
+        compact({
+          name: requiredOption(args.options, "name"),
+          description: optionString(args.options, "description"),
+          filters: jsonOption(args.options, "filters", undefined),
+          display_filters: jsonOption(args.options, "display_filters", undefined),
+          display_properties: jsonOption(args.options, "display_properties", undefined),
+          access: numberOption(args.options, "access"),
+        }) as { name: string },
+        scope
+      );
+    }
+    const viewId = requiredOption(args.options, "view");
+    if (action === "get") return client.getView(config.workspace, viewId, scope);
+    if (action === "update") {
+      return client.updateView(
+        config.workspace,
+        viewId,
+        compact({
+          name: optionString(args.options, "name"),
+          description: optionString(args.options, "description"),
+          filters: jsonOption(args.options, "filters", undefined),
+          display_filters: jsonOption(args.options, "display_filters", undefined),
+          display_properties: jsonOption(args.options, "display_properties", undefined),
+          access: numberOption(args.options, "access"),
+          is_locked: args.options.lock ? true : undefined,
+        }),
+        scope
+      );
+    }
+    if (action === "delete") {
+      requireConfirmation(args, "view delete");
+      const preview = dryRunReceipt(args, "view delete", { id: viewId });
+      if (preview) return preview;
+      await client.deleteView(config.workspace, viewId, scope);
+      return { deleted: true, id: viewId };
+    }
+  }
+
   if (group === "case") {
     if (action === "list") {
       return client.listTestCases(

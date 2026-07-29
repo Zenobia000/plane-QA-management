@@ -104,6 +104,36 @@ export interface TestingCapabilities {
   };
 }
 
+/** A saved work-item query plus its presentation settings. */
+export interface SavedView {
+  id: string;
+  name: string;
+  description: string;
+  /** Set this; the server compiles `query` from it. */
+  filters: Record<string, unknown>;
+  query: Record<string, unknown>;
+  display_filters: Record<string, unknown>;
+  display_properties: Record<string, unknown>;
+  /** 0 private, 1 public. */
+  access: number;
+  is_locked: boolean;
+  project: string | null;
+  workspace: string;
+  owned_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SavedViewInput {
+  name: string;
+  description?: string;
+  filters?: Record<string, unknown>;
+  display_filters?: Record<string, unknown>;
+  display_properties?: Record<string, unknown>;
+  access?: number;
+  is_locked?: boolean;
+}
+
 export interface TestFolder {
   id: string;
   name: string;

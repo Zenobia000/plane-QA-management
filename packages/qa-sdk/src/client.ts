@@ -1,6 +1,8 @@
 import { errorKindForStatus, PlaneQAError } from "./errors";
 import { paginatedSchema, parsePlaneResponse, projectSchema, testingCapabilitiesSchema } from "./schemas";
 import type {
+  SavedView,
+  SavedViewInput,
   JsonObject,
   JsonValue,
   PaginatedResponse,
@@ -152,6 +154,61 @@ export class PlaneQAClient {
 
   private testingPath(workspace: string, projectId: string, suffix: string): string {
     return this.projectPath(workspace, projectId, `/testing${suffix}`);
+  }
+
+  /**
+   * Saved views.
+   *
+   * Send `filters`; the server compiles `query` from it, so callers never write
+   * the internal lookup syntax. Passing a project scopes the view to it; omitting
+   * one creates a workspace view spanning every project.
+   */
+  listViews(workspace: string, projectId?: string): Promise<SavedView[]> {
+    return this.request(
+      "GET",
+      projectId ? this.projectPath(workspace, projectId, "/views/") : this.apiPath(workspace, "/views/")
+    );
+  }
+
+  getView(workspace: string, viewId: string, projectId?: string): Promise<SavedView> {
+    return this.request(
+      "GET",
+      projectId
+        ? this.projectPath(workspace, projectId, `/views/${encodePath(viewId)}/`)
+        : this.apiPath(workspace, `/views/${encodePath(viewId)}/`)
+    );
+  }
+
+  createView(workspace: string, input: SavedViewInput, projectId?: string): Promise<SavedView> {
+    return this.request(
+      "POST",
+      projectId ? this.projectPath(workspace, projectId, "/views/") : this.apiPath(workspace, "/views/"),
+      { body: input }
+    );
+  }
+
+  updateView(
+    workspace: string,
+    viewId: string,
+    input: Partial<SavedViewInput>,
+    projectId?: string
+  ): Promise<SavedView> {
+    return this.request(
+      "PATCH",
+      projectId
+        ? this.projectPath(workspace, projectId, `/views/${encodePath(viewId)}/`)
+        : this.apiPath(workspace, `/views/${encodePath(viewId)}/`),
+      { body: input }
+    );
+  }
+
+  deleteView(workspace: string, viewId: string, projectId?: string): Promise<void> {
+    return this.request(
+      "DELETE",
+      projectId
+        ? this.projectPath(workspace, projectId, `/views/${encodePath(viewId)}/`)
+        : this.apiPath(workspace, `/views/${encodePath(viewId)}/`)
+    );
   }
 
   listProjects(workspace: string, query: RequestOptions["query"] = {}): Promise<PaginatedResponse<Project>> {

@@ -39,6 +39,24 @@ export const testFolderSchema = z.object({
   updated_at: z.string(),
 });
 
+export const savedViewSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string(),
+  /** Author-facing filter set; `query` is compiled from it server-side. */
+  filters: z.record(z.unknown()),
+  query: z.record(z.unknown()),
+  display_filters: z.record(z.unknown()),
+  display_properties: z.record(z.unknown()),
+  access: z.number().int(),
+  is_locked: z.boolean(),
+  project: z.string().uuid().nullable(),
+  workspace: z.string().uuid(),
+  owned_by: z.string().uuid(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
 export const testCaseVersionSchema = z.object({
   id: z.string().uuid(),
   version: z.number().int().positive(),

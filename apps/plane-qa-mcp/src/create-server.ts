@@ -347,6 +347,100 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
     })
   );
 
+  // Saved views. `project` is optional here alone: omitting it addresses the
+  // workspace-level views that span every project.
+  const viewScope = {
+    workspace: scope.workspace,
+    project: scope.project.optional().describe("Project UUID or identifier; omit for a workspace view"),
+  };
+
+  const viewProjectId = async (workspace: string, reference?: string) =>
+    reference ? (await resolveProject(client, workspace, reference)).id : undefined;
+
+  server.registerTool(
+    "view_list",
+    {
+      description: "List saved work-item views for a project, or workspace-level views when project is omitted.",
+      inputSchema: z.object(viewScope),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, project: reference }) =>
+      toolResult(await client.listViews(workspace, await viewProjectId(workspace, reference)))
+    )
+  );
+
+  server.registerTool(
+    "view_get",
+    {
+      description: "Read one saved view.",
+      inputSchema: z.object({ ...viewScope, view_id: z.string().uuid() }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, project: reference, view_id }) =>
+      toolResult(await client.getView(workspace, view_id, await viewProjectId(workspace, reference)))
+    )
+  );
+
+  server.registerTool(
+    "view_create",
+    {
+      description:
+        "Create a saved view. Supply filters; the server compiles the query from them, so the internal " +
+        "lookup syntax is never written by hand. display_filters controls layout, grouping and ordering.",
+      inputSchema: z.object({
+        ...viewScope,
+        name: z.string().min(1),
+        description: z.string().optional(),
+        filters: z
+          .record(z.unknown())
+          .optional()
+          .describe('e.g. { "state_group": ["started"], "priority": ["urgent"] }'),
+        display_filters: z.record(z.unknown()).optional().describe('e.g. { "layout": "list", "group_by": "priority" }'),
+        display_properties: z.record(z.unknown()).optional(),
+        access: z.number().int().min(0).max(1).optional().describe("0 private, 1 public (default)"),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, project: reference, ...input }) =>
+      toolResult(await client.createView(workspace, input, await viewProjectId(workspace, reference)))
+    )
+  );
+
+  server.registerTool(
+    "view_update",
+    {
+      description: "Update a saved view. A locked view is rejected with a conflict rather than silently ignored.",
+      inputSchema: z.object({
+        ...viewScope,
+        view_id: z.string().uuid(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        filters: z.record(z.unknown()).optional(),
+        display_filters: z.record(z.unknown()).optional(),
+        display_properties: z.record(z.unknown()).optional(),
+        access: z.number().int().min(0).max(1).optional(),
+        is_locked: z.boolean().optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, project: reference, view_id, ...input }) =>
+      toolResult(await client.updateView(workspace, view_id, input, await viewProjectId(workspace, reference)))
+    )
+  );
+
+  server.registerTool(
+    "view_delete",
+    {
+      description: "Delete a saved view you own. Requires an explicit true confirmation.",
+      inputSchema: z.object({ ...viewScope, view_id: z.string().uuid(), confirm: z.literal(true) }),
+      annotations: destructiveAnnotations,
+    },
+    safely(async ({ workspace, project: reference, view_id }) => {
+      await client.deleteView(workspace, view_id, await viewProjectId(workspace, reference));
+      return toolResult({ deleted: true, id: view_id });
+    })
+  );
+
   server.registerTool(
     "test_folder_create",
     {

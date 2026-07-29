@@ -82,3 +82,9 @@ from .portfolio import (
     MilestoneDetailAPIEndpoint,
     MilestoneListCreateAPIEndpoint,
 )
+from .view import (
+    ProjectViewDetailAPIEndpoint,
+    ProjectViewListCreateAPIEndpoint,
+    WorkspaceViewDetailAPIEndpoint,
+    WorkspaceViewListCreateAPIEndpoint,
+)

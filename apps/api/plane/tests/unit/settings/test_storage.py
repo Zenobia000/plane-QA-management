@@ -204,3 +204,76 @@ class TestS3StorageSignedURLExpiration:
         mock_s3_client.generate_presigned_url.assert_called_once()
         call_kwargs = mock_s3_client.generate_presigned_url.call_args[1]
         assert call_kwargs["ExpiresIn"] == 120
+
+
+S3_ENV = {
+    "AWS_ACCESS_KEY_ID": "test-key",
+    "AWS_SECRET_ACCESS_KEY": "test-secret",
+    "AWS_S3_BUCKET_NAME": "test-bucket",
+    "AWS_REGION": "us-east-1",
+}
+
+
+@pytest.mark.unit
+class TestS3StorageScriptCapableDisposition:
+    """A caller may not serve a script-capable file inline (GHSA-ch8j-vr4r-qf6h).
+
+    Assets are proxied on the application's own origin, so an SVG rendered
+    inline runs its <script> and onload handlers against the logged-in session.
+    Callers state the disposition they want for the common case; when the MIME
+    type can execute, this class overrides them.
+    """
+
+    def _disposition(self, mock_boto3, **kwargs):
+        mock_s3_client = Mock()
+        mock_s3_client.generate_presigned_url.return_value = "https://test-url.com"
+        mock_boto3.client.return_value = mock_s3_client
+
+        S3Storage().generate_presigned_url("test-object", **kwargs)
+
+        params = mock_s3_client.generate_presigned_url.call_args[1]["Params"]
+        return params["ResponseContentDisposition"]
+
+    @patch.dict(os.environ, S3_ENV, clear=True)
+    @patch("plane.settings.storage.boto3")
+    def test_svg_requested_inline_is_forced_to_attachment(self, mock_boto3):
+        disposition = self._disposition(mock_boto3, disposition="inline", mime_type="image/svg+xml")
+        assert disposition.startswith("attachment")
+
+    @patch.dict(os.environ, S3_ENV, clear=True)
+    @patch("plane.settings.storage.boto3")
+    def test_mime_parameters_and_casing_do_not_evade_the_check(self, mock_boto3):
+        """"IMAGE/SVG+XML; charset=utf-8" is the same type as "image/svg+xml"."""
+        disposition = self._disposition(
+            mock_boto3, disposition="inline", mime_type="  IMAGE/SVG+XML; charset=utf-8 "
+        )
+        assert disposition.startswith("attachment")
+
+    @patch.dict(os.environ, S3_ENV, clear=True)
+    @patch("plane.settings.storage.boto3")
+    def test_html_is_forced_to_attachment(self, mock_boto3):
+        disposition = self._disposition(mock_boto3, disposition="inline", mime_type="text/html")
+        assert disposition.startswith("attachment")
+
+    @patch.dict(os.environ, S3_ENV, clear=True)
+    @patch("plane.settings.storage.boto3")
+    def test_safe_image_keeps_the_requested_inline_disposition(self, mock_boto3):
+        """The guard must not turn ordinary screenshot previews into downloads."""
+        disposition = self._disposition(mock_boto3, disposition="inline", mime_type="image/png")
+        assert disposition.startswith("inline")
+
+    @patch.dict(os.environ, S3_ENV, clear=True)
+    @patch("plane.settings.storage.boto3")
+    def test_filename_is_still_attached_when_forced(self, mock_boto3):
+        disposition = self._disposition(
+            mock_boto3, disposition="inline", mime_type="image/svg+xml", filename="diagram.svg"
+        )
+        assert disposition.startswith("attachment")
+        assert "diagram.svg" in disposition
+
+    @patch.dict(os.environ, S3_ENV, clear=True)
+    @patch("plane.settings.storage.boto3")
+    def test_callers_without_a_mime_type_are_unchanged(self, mock_boto3):
+        """Existing call sites pass no MIME type and must keep working."""
+        disposition = self._disposition(mock_boto3, disposition="inline")
+        assert disposition.startswith("inline")

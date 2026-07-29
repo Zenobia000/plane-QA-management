@@ -67,10 +67,13 @@ class TestResultAttachmentEndpoint(BaseAPIView):
                 object_name=asset.asset.name,
                 disposition="inline" if file_type.startswith("image/") else "attachment",
                 filename=asset.attributes.get("name"),
+                mime_type=file_type,
             )
             return HttpResponseRedirect(signed_url)
 
         assets = FileAsset.objects.filter(
+            workspace__slug=slug,
+            project_id=project_id,
             entity_type=FileAsset.EntityTypeContext.TESTING_ARTIFACT,
             entity_identifier=str(result.id),
             is_uploaded=True,

@@ -173,6 +173,56 @@ class TestTestingRunsAPI:
         assert downloaded.status_code == status.HTTP_302_FOUND
         assert downloaded.url == "https://download.example.test/failure.png"
 
+    def test_svg_evidence_is_served_as_a_download_not_rendered(
+        self, session_client, workspace, testing_project
+    ):
+        """A script-capable attachment must download rather than render.
+
+        Uploading an SVG is legitimate — a QA engineer may attach a diagram — so
+        the constraint is on how it is served. Assets are proxied on the
+        application's own origin, so an SVG returned with an inline disposition
+        would run its <script> against the logged-in session
+        (GHSA-ch8j-vr4r-qf6h). This drives the real disposition logic by mocking
+        only the S3 client underneath it.
+        """
+        test_case = create_test_case(project_id=testing_project.id, title="Diagram evidence")
+        run = session_client.post(
+            _runs_url(workspace, testing_project),
+            {"name": "Evidence run", "test_case_ids": [str(test_case.id)]},
+            format="json",
+        ).json()
+        run_case = run["run_cases"][0]
+        result_url = f"{_runs_url(workspace, testing_project)}{run['id']}/cases/{run_case['id']}/results/"
+        result = session_client.post(
+            result_url,
+            {"status": "failed", "actual_result": {"text": "See diagram"}},
+            format="json",
+        ).json()
+        attachments_url = f"{result_url}{result['id']}/attachments/"
+
+        with patch(
+            "plane.app.views.testing.attachment.S3Storage.generate_presigned_post",
+            return_value={"url": "https://upload.example.test", "fields": {}},
+        ):
+            created = session_client.post(
+                attachments_url,
+                {"name": "payload.svg", "type": "image/svg+xml", "size": 100},
+                format="json",
+            )
+
+        assert created.status_code == status.HTTP_200_OK
+        attachment_url = f"{attachments_url}{created.json()['asset_id']}/"
+        session_client.patch(attachment_url, {}, format="json")
+
+        with patch("plane.settings.storage.boto3") as mock_boto3:
+            s3_client = mock_boto3.client.return_value
+            s3_client.generate_presigned_url.return_value = "https://download.example.test/payload.svg"
+            downloaded = session_client.get(attachment_url)
+
+        assert downloaded.status_code == status.HTTP_302_FOUND
+        params = s3_client.generate_presigned_url.call_args[1]["Params"]
+        assert params["ResponseContentDisposition"].startswith("attachment")
+
     def test_failed_result_creates_traceable_plane_defect(self, session_client, workspace, testing_project):
         test_case = create_test_case(
             project_id=testing_project.id,

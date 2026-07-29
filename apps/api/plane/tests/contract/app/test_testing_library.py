@@ -207,6 +207,43 @@ class TestTestingLibraryAPI:
         assert session_client.get(attachments_url).json() == []
         assert FileAsset.all_objects.get(id=attachment_id).is_deleted is True
 
+    def test_svg_attachment_ignores_the_preview_request(self, session_client, workspace, testing_project):
+        """?preview=true must not render a script-capable attachment inline.
+
+        Every attachment is handed a preview_url ending in ?preview=true, so the
+        inline path is the product's default for anything image-shaped. SVG is
+        image-shaped and executes script, and assets are proxied on the
+        application's own origin, which is the stored-XSS shape of
+        GHSA-ch8j-vr4r-qf6h. Mocks stop at the S3 client so the disposition is
+        decided by the real code.
+        """
+        test_case = create_test_case(project_id=testing_project.id, title="Diagram attachment")
+        attachments_url = f"{_case_url(workspace, testing_project, test_case.id)}attachments/"
+
+        with patch(
+            "plane.app.views.testing.library.S3Storage.generate_presigned_post",
+            return_value={"url": "https://storage.example/upload", "fields": {"key": "asset-key"}},
+        ):
+            created = session_client.post(
+                attachments_url,
+                {"name": "payload.svg", "type": "image/svg+xml", "size": 128},
+                format="json",
+            )
+
+        assert created.status_code == status.HTTP_200_OK
+        attachment_id = created.json()["asset_id"]
+        with patch("plane.app.views.testing.library.get_asset_object_metadata.delay"):
+            session_client.patch(f"{attachments_url}{attachment_id}/", {}, format="json")
+
+        with patch("plane.settings.storage.boto3") as mock_boto3:
+            s3_client = mock_boto3.client.return_value
+            s3_client.generate_presigned_url.return_value = "https://storage.example/payload.svg"
+            previewed = session_client.get(f"{attachments_url}{attachment_id}/?preview=true")
+
+        assert previewed.status_code == status.HTTP_302_FOUND
+        params = s3_client.generate_presigned_url.call_args[1]["Params"]
+        assert params["ResponseContentDisposition"].startswith("attachment")
+
     def test_library_cursor_pagination_is_stable(self, session_client, workspace, testing_project):
         for title in ("First", "Second", "Third"):
             session_client.post(_cases_url(workspace, testing_project), {"title": title}, format="json")

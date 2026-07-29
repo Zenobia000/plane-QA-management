@@ -9,6 +9,7 @@ import uuid
 # Third party imports
 import boto3
 from botocore.exceptions import ClientError
+from django.conf import settings
 from urllib.parse import quote
 
 # Module imports
@@ -98,6 +99,17 @@ class S3Storage(S3Boto3Storage):
 
         return response
 
+    @staticmethod
+    def is_script_capable(mime_type):
+        """Whether a browser may execute this MIME type when it renders it.
+
+        Compares the bare type, since "image/svg+xml; charset=utf-8" and
+        "IMAGE/SVG+XML" name the same thing an attacker would upload.
+        """
+        if not mime_type:
+            return False
+        return mime_type.split(";")[0].strip().lower() in settings.SCRIPT_CAPABLE_MIME_TYPES
+
     def _get_content_disposition(self, disposition, filename=None):
         """Helper method to generate Content-Disposition header value"""
         if filename is None:
@@ -116,10 +128,20 @@ class S3Storage(S3Boto3Storage):
         http_method="GET",
         disposition="inline",
         filename=None,
+        mime_type=None,
     ):
-        """Generate a presigned URL to share an S3 object"""
+        """Generate a presigned URL to share an S3 object.
+
+        Pass ``mime_type`` whenever it is known. Assets are proxied on the
+        application's own origin, so a script-capable file served inline runs
+        against the logged-in session (GHSA-ch8j-vr4r-qf6h). Deciding that here
+        rather than at each call site means a caller can express the disposition
+        it wants for the common case without having to remember the exception.
+        """
         if expiration is None:
             expiration = self.signed_url_expiration
+        if disposition != "attachment" and self.is_script_capable(mime_type):
+            disposition = "attachment"
         content_disposition = self._get_content_disposition(disposition, filename)
         try:
             response = self.s3_client.generate_presigned_url(

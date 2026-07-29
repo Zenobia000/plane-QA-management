@@ -250,6 +250,7 @@ class TestCaseAttachmentEndpoint(BaseAPIView):
                 object_name=attachment.asset.name,
                 disposition="inline" if preview else "attachment",
                 filename=attachment.attributes.get("name"),
+                mime_type=mime_type,
             )
             return HttpResponseRedirect(signed_url)
 

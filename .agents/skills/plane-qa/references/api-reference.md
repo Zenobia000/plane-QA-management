@@ -63,15 +63,28 @@ The search syntax is a field-query DSL, not SQL. Unknown fields are rejected; ar
 
 Relative to `/api/v1/workspaces/{slug}/projects/{project_uuid}/` (outside `testing/`):
 
-| Method                      | Path                                                         | Purpose                                                                                                                        |
-| --------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| GET/POST · GET/PATCH/DELETE | `cycles/` · `cycles/{uuid}/`                                 | Sprints/time-boxes: `name`, `start_date`, `end_date` (`YYYY-MM-DD`)                                                            |
-| GET/POST · GET/DELETE       | `cycles/{cycle_uuid}/cycle-issues/` · `.../{issue_uuid}/`    | Add work items to a cycle: `{"issues": ["<uuid>", ...]}`                                                                       |
-| POST                        | `cycles/{cycle_uuid}/transfer-issues/`                       | Sprint rollover: `{"new_cycle_id": "..."}` — moves only incomplete work items, snapshots old-cycle progress                    |
-| POST                        | `cycles/{uuid}/archive/`                                     | Archive a cycle                                                                                                                |
-| GET/POST · GET/PATCH/DELETE | `modules/` · `modules/{uuid}/`                               | Epics/capabilities                                                                                                             |
-| GET/POST · DELETE           | `modules/{module_uuid}/module-issues/` · `.../{issue_uuid}/` | Add work items to a module                                                                                                     |
-| GET/POST                    | `work-items/`, `labels/`, `states/`, `members/`              | Work items (fields incl. `start_date` ≤ `target_date`, `assignees` must be project members, `labels`), plus supporting lookups |
+| Method                      | Path                                                         | Purpose                                                                                                                                                                           |
+| --------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET/POST · GET/PATCH/DELETE | `cycles/` · `cycles/{uuid}/`                                 | Sprints/time-boxes: `name`, `start_date`, `end_date` (`YYYY-MM-DD`)                                                                                                               |
+| GET/POST · GET/DELETE       | `cycles/{cycle_uuid}/cycle-issues/` · `.../{issue_uuid}/`    | Add work items to a cycle: `{"issues": ["<uuid>", ...]}`                                                                                                                          |
+| POST                        | `cycles/{cycle_uuid}/transfer-issues/`                       | Sprint rollover: `{"new_cycle_id": "..."}` — moves only incomplete work items, snapshots old-cycle progress                                                                       |
+| POST                        | `cycles/{uuid}/archive/`                                     | Archive a cycle                                                                                                                                                                   |
+| GET/POST · GET/PATCH/DELETE | `modules/` · `modules/{uuid}/`                               | Epics/capabilities                                                                                                                                                                |
+| GET/POST · DELETE           | `modules/{module_uuid}/module-issues/` · `.../{issue_uuid}/` | Add work items to a module                                                                                                                                                        |
+| GET/POST                    | `work-items/`, `labels/`, `states/`, `members/`              | Work items (fields incl. `start_date` ≤ `target_date`, `assignees` must be project members, `labels`), plus supporting lookups                                                    |
+| GET/POST · GET/PATCH/DELETE | `views/` · `views/{uuid}/`                                   | Saved views. Send `filters`; `query` is compiled from it server-side and a supplied one is ignored. PATCH on a locked view returns 409; DELETE requires ownership (403 otherwise) |
+
+### Workspace-scoped views
+
+Relative to `/api/v1/workspaces/{slug}/` — the same handlers with no project segment:
+
+| Method                      | Path                       | Purpose                                                                        |
+| --------------------------- | -------------------------- | ------------------------------------------------------------------------------ |
+| GET/POST · GET/PATCH/DELETE | `views/` · `views/{uuid}/` | Views spanning every project in the workspace; responses carry `project: null` |
+
+Visibility for both scopes is the model's own rule, not the browser's: your views plus every `access: 1` (public) one. `access: 0` is private to its owner, and a key acts for its user.
+
+Pages have no public endpoints. Their content is a Yjs CRDT document, so an HTML-only write is safe only for a page that has never been opened; that is out of scope here.
 
 ## CE work-item extensions
 

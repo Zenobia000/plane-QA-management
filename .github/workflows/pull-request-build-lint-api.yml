@@ -4,15 +4,16 @@ on:
   workflow_dispatch:
   pull_request:
     branches:
+      - "main"
       - "preview"
     types:
       - "opened"
       - "synchronize"
       - "ready_for_review"
-      - "review_requested"
       - "reopened"
     paths:
       - "apps/api/**"
+      - "docker-compose-test.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,9 +24,7 @@ jobs:
     name: Lint API
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    if: |
-      github.event.pull_request.draft == false &&
-      github.event.pull_request.requested_reviewers != null
+    if: github.event.pull_request.draft == false
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
@@ -40,3 +39,27 @@ jobs:
         run: cd apps/api && pip install -r requirements.txt
       - name: Lint apps/api
         run: ruff check --fix apps/api
+
+  # The suite needs Postgres, Valkey, RabbitMQ and MinIO. docker-compose-test.yml
+  # already wires them with health checks, so CI runs the same command a developer
+  # runs locally rather than a second, drifting definition of the environment.
+  test-api:
+    name: Test API
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v6
+
+      # apps/api/.env is gitignored, and the compose file reads it for the
+      # service credentials. The example holds no SECRET_KEY, and settings fall
+      # back to a generated one, which is what a test run wants.
+      - name: Create the API env file
+        run: cp apps/api/.env.example apps/api/.env
+
+      - name: Run pytest
+        run: docker compose -f docker-compose-test.yml run --rm api-tests pytest
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose-test.yml down -v

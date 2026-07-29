@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { FlaskConical } from "lucide-react";
+import { Link } from "react-router";
 import { useTranslation } from "@plane/i18n";
 import { TestingService } from "@plane/services";
 import type { TTestCase, TTestRunCaseStatus } from "@plane/types";
@@ -28,23 +29,14 @@ const sourceOf = (testCase: TTestCase) => (testCase.current.tags.includes("autom
  * has to answer "is this verified" on its own and then get out of the way -- every
  * row links through to the contract it names.
  */
-export function TestingWorkItemSummary({ workspaceSlug, projectId, issueId }: Props) {
+export function TestingWorkItemSummaryContent({
+  workspaceSlug,
+  projectId,
+  cases,
+}: Omit<Props, "issueId"> & { cases: TTestCase[] }) {
   const { t } = useTranslation();
-  const [cases, setCases] = useState<TTestCase[]>();
-  useEffect(() => {
-    let active = true;
-    void testingService
-      .getWorkItemTestCases(workspaceSlug, projectId, issueId)
-      .then((items) => active && setCases(items))
-      .catch(() => active && setCases([]));
-    return () => {
-      active = false;
-    };
-  }, [issueId, projectId, workspaceSlug]);
-
   const testingPath = `/${workspaceSlug}/projects/${projectId}/testing`;
 
-  if (!cases) return null;
   if (!cases.length)
     return (
       <section className="overflow-hidden rounded-lg border border-subtle bg-surface-1" aria-label="Testing coverage">
@@ -58,9 +50,9 @@ export function TestingWorkItemSummary({ workspaceSlug, projectId, issueId }: Pr
           {/* Not an empty list -- a requirement with no contract is a Definition-of-Ready
               signal, and it now blocks the release gate, so say so and offer the way out. */}
           <p className="text-12 text-secondary">{t("testing.work_item.empty")}</p>
-          <a href={`${testingPath}/cases`} className="mt-2 inline-block text-12 font-medium text-accent-primary">
+          <Link to={`${testingPath}/cases`} className="mt-2 inline-block text-12 font-medium text-accent-primary">
             {t("testing.work_item.create_contract")}
-          </a>
+          </Link>
         </div>
       </section>
     );
@@ -78,9 +70,9 @@ export function TestingWorkItemSummary({ workspaceSlug, projectId, issueId }: Pr
           <FlaskConical className="size-4 text-accent-primary" />
           <h3 className="text-13 font-semibold text-primary">{t("testing.work_item.heading")}</h3>
         </div>
-        <a href={testingPath} className="text-11 font-medium text-accent-primary hover:underline">
+        <Link to={testingPath} className="text-11 font-medium text-accent-primary hover:underline">
           {t("testing.work_item.open_testing")}
-        </a>
+        </Link>
       </div>
       {/* Conclusion before detail: this line is all a delivery decision usually needs. */}
       <p className="border-b border-subtle px-4 py-2 text-12 text-secondary">
@@ -92,9 +84,9 @@ export function TestingWorkItemSummary({ workspaceSlug, projectId, issueId }: Pr
         })}
       </p>
       {cases.map((testCase) => (
-        <a
+        <Link
           key={testCase.id}
-          href={`${testingPath}/cases/${testCase.sequence}`}
+          to={`${testingPath}/cases/${testCase.sequence}`}
           className="grid grid-cols-[5rem_1fr_5rem_5rem] items-center gap-3 border-b border-subtle px-4 py-3 text-12 last:border-0 hover:bg-surface-2"
         >
           <span className="font-medium text-secondary">TC-{testCase.sequence}</span>
@@ -109,8 +101,25 @@ export function TestingWorkItemSummary({ workspaceSlug, projectId, issueId }: Pr
               ? t(`testing.status.${testCase.latest_status as TTestRunCaseStatus}`)
               : t("testing.status.not_run")}
           </span>
-        </a>
+        </Link>
       ))}
     </section>
   );
+}
+
+export function TestingWorkItemSummary({ workspaceSlug, projectId, issueId }: Props) {
+  const [cases, setCases] = useState<TTestCase[]>();
+  useEffect(() => {
+    let active = true;
+    void testingService
+      .getWorkItemTestCases(workspaceSlug, projectId, issueId)
+      .then((items) => active && setCases(items))
+      .catch(() => active && setCases([]));
+    return () => {
+      active = false;
+    };
+  }, [issueId, projectId, workspaceSlug]);
+
+  if (!cases) return null;
+  return <TestingWorkItemSummaryContent workspaceSlug={workspaceSlug} projectId={projectId} cases={cases} />;
 }

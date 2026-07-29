@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { observer } from "mobx-react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
@@ -31,10 +31,11 @@ import type {
   TTestCaseType,
   TTestingExportFormat,
   TTestingSearchResponse,
+  TTestingSearchResult,
   TTestingSearchScope,
   TTestThreshold,
 } from "@plane/types";
-import { AlertModalCore } from "@plane/ui";
+import { AlertModalCore, CustomMenu } from "@plane/ui";
 import { ExistingIssuesListModal } from "@/components/core/modals/existing-issues-list-modal";
 import { useTesting } from "@/hooks/store/use-testing";
 import { findCaseBySequence, testingPath } from "../helpers";
@@ -67,6 +68,162 @@ const errorMessage = (error: unknown, fallback: string) => {
   }
   return fallback;
 };
+
+type TTestCaseTraceabilityProps = {
+  testCase: TTestCase;
+  workspaceSlug: string;
+  projectId: string;
+  onLinkRequirement: () => void;
+  onUnlinkWorkItem: (workItemId: string) => void;
+};
+
+export function TestCaseTraceability({
+  testCase,
+  workspaceSlug,
+  projectId,
+  onLinkRequirement,
+  onUnlinkWorkItem,
+}: TTestCaseTraceabilityProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="rounded border border-subtle p-3">
+      <p className="text-12 font-medium text-secondary">{t("testing.cases.traceability")}</p>
+      {testCase.work_items.length ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {testCase.work_items.map((item) => (
+            <span
+              key={item.id}
+              className="inline-flex items-center gap-1.5 rounded border border-subtle bg-surface-2 py-1 pr-1 pl-2 text-11"
+            >
+              <Link
+                to={`/${workspaceSlug}/projects/${projectId}/issues/${item.id}`}
+                className="text-accent-primary hover:underline"
+              >
+                #{item.sequence_id} {item.name}
+              </Link>
+              <button
+                type="button"
+                aria-label={t("testing.cases.unlink", { name: item.name })}
+                onClick={() => onUnlinkWorkItem(item.id)}
+                className="rounded p-0.5 text-tertiary hover:bg-layer-2 hover:text-primary"
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-1 text-11 text-tertiary">{t("testing.cases.traceability_empty")}</p>
+      )}
+      <div className="mt-2">
+        <Button type="button" variant="secondary" onClick={onLinkRequirement}>
+          <Link2 className="size-4" /> {t("testing.cases.link_requirement")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+type TTestCaseExecutionHistoryProps = {
+  testCase: TTestCase;
+  workspaceSlug: string;
+  projectId: string;
+};
+
+export function TestCaseExecutionHistory({ testCase, workspaceSlug, projectId }: TTestCaseExecutionHistoryProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="rounded border border-subtle p-3">
+      <p className="text-12 font-medium text-secondary">{t("testing.cases.executions")}</p>
+      {testCase.executions.length ? (
+        <ul className="mt-2 space-y-1">
+          {testCase.executions.map((execution) => (
+            <li key={execution.run_case_id} className="flex items-center gap-2 text-11">
+              <span
+                className={`w-14 shrink-0 rounded px-1.5 py-0.5 text-center text-10 font-medium ${
+                  execution.latest_status === "failed" || execution.latest_status === "blocked"
+                    ? "bg-danger-subtle text-danger-primary"
+                    : execution.latest_status === "passed"
+                      ? "bg-success-subtle text-success-primary"
+                      : "bg-layer-2 text-secondary"
+                }`}
+              >
+                {t(`testing.status.${execution.latest_status}`)}
+              </span>
+              <Link
+                to={testingPath({
+                  workspaceSlug,
+                  projectId,
+                  tab: "runs",
+                  runId: execution.run_id,
+                  runCaseId: execution.run_case_id,
+                })}
+                className="min-w-0 flex-1 truncate text-accent-primary hover:underline"
+              >
+                {execution.run_name}
+              </Link>
+              <span className="shrink-0 text-tertiary">
+                {execution.build || "—"} · {t("testing.cases.pinned", { version: execution.pinned_version })}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1 text-11 text-tertiary">{t("testing.cases.executions_empty")}</p>
+      )}
+    </div>
+  );
+}
+
+type TTestLibrarySearchResultProps = {
+  result: TTestingSearchResult;
+  testCase?: TTestCase;
+  workspaceSlug: string;
+  projectId: string;
+  onOpenCase: (testCase: TTestCase) => void;
+};
+
+export function TestLibrarySearchResult({
+  result,
+  testCase,
+  workspaceSlug,
+  projectId,
+  onOpenCase,
+}: TTestLibrarySearchResultProps) {
+  const content = (
+    <>
+      <span className="text-10 font-medium text-tertiary">
+        {result.identifier} · {result.kind === "test_case" ? "Test case" : "Work item"}
+      </span>
+      <span className="mt-1 block truncate text-13 font-medium text-primary">{result.title}</span>
+      <span className="mt-1 block truncate text-11 text-secondary capitalize">
+        {result.priority} · {result.status}
+      </span>
+    </>
+  );
+
+  if (testCase)
+    return (
+      <button
+        type="button"
+        onClick={() => onOpenCase(testCase)}
+        className="block w-full border-b border-subtle p-3 text-left hover:bg-surface-2"
+      >
+        {content}
+      </button>
+    );
+
+  return (
+    <Link
+      to={`/${workspaceSlug}/projects/${projectId}/issues/${result.id}`}
+      className="block border-b border-subtle p-3 hover:bg-surface-2"
+    >
+      {content}
+    </Link>
+  );
+}
 
 export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug, projectId }: Props) {
   const { t } = useTranslation();
@@ -268,21 +425,41 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
               </p>
             </div>
             <div className="flex gap-1">
-              <Button
-                variant="secondary"
-                onClick={async () => {
-                  const csv = await exportLibraryCSV(workspaceSlug, projectId);
-                  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-                  const anchor = document.createElement("a");
-                  anchor.href = url;
-                  anchor.download = "plane-testing-library.csv";
-                  anchor.click();
-                  URL.revokeObjectURL(url);
-                }}
-                aria-label={t("testing.cases.export")}
+              <CustomMenu
+                customButton={<Download className="size-4" />}
+                customButtonClassName="flex h-8 items-center rounded border border-subtle px-2 text-secondary hover:bg-layer-1"
+                ariaLabel={t("common.export")}
+                placement="bottom-end"
+                closeOnSelect
               >
-                <Download className="size-4" />
-              </Button>
+                <p className="px-2 pb-1 text-10 font-medium text-tertiary uppercase">Test library</p>
+                <CustomMenu.MenuItem
+                  className="flex items-center gap-2"
+                  onClick={async () => {
+                    const csv = await exportLibraryCSV(workspaceSlug, projectId);
+                    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+                    const anchor = document.createElement("a");
+                    anchor.href = url;
+                    anchor.download = "plane-testing-library.csv";
+                    anchor.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  <FileText className="size-3.5" /> CSV backup
+                </CustomMenu.MenuItem>
+                <hr className="my-2 border-subtle" />
+                <p className="px-2 pb-1 text-10 font-medium text-tertiary uppercase">Current search</p>
+                {(["csv", "html", "excel"] as const).map((format) => (
+                  <CustomMenu.MenuItem
+                    key={format}
+                    className="flex items-center gap-2"
+                    onClick={() => void handleExport(format)}
+                  >
+                    <Download className="size-3.5" />
+                    {format === "excel" ? "Excel (.xlsx)" : format.toUpperCase()}
+                  </CustomMenu.MenuItem>
+                ))}
+              </CustomMenu>
               <label
                 className="flex h-8 cursor-pointer items-center rounded border border-subtle px-2 text-secondary hover:bg-layer-1"
                 aria-label={t("testing.cases.import")}
@@ -336,11 +513,6 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
                 <option value="test_cases">Test cases</option>
                 <option value="work_items">Work items</option>
               </select>
-              {(["csv", "html", "excel"] as const).map((format) => (
-                <Button key={format} type="button" variant="secondary" onClick={() => void handleExport(format)}>
-                  {format === "excel" ? "XLSX" : format.toUpperCase()}
-                </Button>
-              ))}
               {searchResponse && (
                 <Button type="button" variant="secondary" onClick={() => setSearchResponse(undefined)}>
                   Clear
@@ -384,38 +556,16 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
             </form>
           )}
           {searchResponse
-            ? searchResponse.results.map((result) => {
-                const testCase = result.kind === "test_case" ? cases[result.id] : undefined;
-                const content = (
-                  <>
-                    <span className="text-10 font-medium text-tertiary">
-                      {result.identifier} · {result.kind === "test_case" ? "Test case" : "Work item"}
-                    </span>
-                    <span className="mt-1 block truncate text-13 font-medium text-primary">{result.title}</span>
-                    <span className="mt-1 block truncate text-11 text-secondary capitalize">
-                      {result.priority} · {result.status}
-                    </span>
-                  </>
-                );
-                return testCase ? (
-                  <button
-                    key={`${result.kind}-${result.id}`}
-                    type="button"
-                    onClick={() => openCase(testCase)}
-                    className="block w-full border-b border-subtle p-3 text-left hover:bg-surface-2"
-                  >
-                    {content}
-                  </button>
-                ) : (
-                  <a
-                    key={`${result.kind}-${result.id}`}
-                    href={`/${workspaceSlug}/projects/${projectId}/issues/${result.id}`}
-                    className="block border-b border-subtle p-3 hover:bg-surface-2"
-                  >
-                    {content}
-                  </a>
-                );
-              })
+            ? searchResponse.results.map((result) => (
+                <TestLibrarySearchResult
+                  key={`${result.kind}-${result.id}`}
+                  result={result}
+                  testCase={result.kind === "test_case" ? cases[result.id] : undefined}
+                  workspaceSlug={workspaceSlug}
+                  projectId={projectId}
+                  onOpenCase={openCase}
+                />
+              ))
             : testCases.map((testCase) => (
                 <div
                   key={testCase.id}
@@ -686,43 +836,15 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
                   <p className="mt-3 text-11 text-tertiary">No attachments yet.</p>
                 )}
               </div>
-              <div className="rounded border border-subtle p-3">
-                <p className="text-12 font-medium text-secondary">{t("testing.cases.traceability")}</p>
-                {selected.work_items.length ? (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {selected.work_items.map((item) => (
-                      <span
-                        key={item.id}
-                        className="inline-flex items-center gap-1.5 rounded border border-subtle bg-surface-2 py-1 pr-1 pl-2 text-11"
-                      >
-                        <a
-                          href={`/${workspaceSlug}/projects/${projectId}/issues/${item.id}`}
-                          className="text-accent-primary hover:underline"
-                        >
-                          #{item.sequence_id} {item.name}
-                        </a>
-                        <button
-                          type="button"
-                          aria-label={t("testing.cases.unlink", { name: item.name })}
-                          onClick={() => void unlinkWorkItem(workspaceSlug, projectId, selected.id, item.id)}
-                          className="rounded p-0.5 text-tertiary hover:bg-layer-2 hover:text-primary"
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-1 text-11 text-tertiary">{t("testing.cases.traceability_empty")}</p>
-                )}
-                <div className="mt-2">
-                  {/* Pasting a UUID was the only way to link a requirement; the work-item
-                    picker used by relations everywhere else does the same job by search. */}
-                  <Button type="button" variant="secondary" onClick={() => setLinking(true)}>
-                    <Link2 className="size-4" /> {t("testing.cases.link_requirement")}
-                  </Button>
-                </div>
-              </div>
+              <TestCaseTraceability
+                testCase={selected}
+                workspaceSlug={workspaceSlug}
+                projectId={projectId}
+                onLinkRequirement={() => setLinking(true)}
+                onUnlinkWorkItem={(workItemId) =>
+                  void unlinkWorkItem(workspaceSlug, projectId, selected.id, workItemId)
+                }
+              />
               {draft.case_type !== "functional" && draft.case_type !== undefined && (
                 <div className="rounded border border-subtle p-3">
                   <p className="text-12 font-medium text-secondary">{t("testing.cases.threshold")}</p>
@@ -747,45 +869,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
                   })()}
                 </div>
               )}
-              <div className="rounded border border-subtle p-3">
-                <p className="text-12 font-medium text-secondary">{t("testing.cases.executions")}</p>
-                {selected.executions.length ? (
-                  <ul className="mt-2 space-y-1">
-                    {selected.executions.map((execution) => (
-                      <li key={execution.run_case_id} className="flex items-center gap-2 text-11">
-                        <span
-                          className={`w-14 shrink-0 rounded px-1.5 py-0.5 text-center text-10 font-medium ${
-                            execution.latest_status === "failed" || execution.latest_status === "blocked"
-                              ? "bg-danger-subtle text-danger-primary"
-                              : execution.latest_status === "passed"
-                                ? "bg-success-subtle text-success-primary"
-                                : "bg-layer-2 text-secondary"
-                          }`}
-                        >
-                          {t(`testing.status.${execution.latest_status}`)}
-                        </span>
-                        <a
-                          href={testingPath({
-                            workspaceSlug,
-                            projectId,
-                            tab: "runs",
-                            runId: execution.run_id,
-                            runCaseId: execution.run_case_id,
-                          })}
-                          className="min-w-0 flex-1 truncate text-accent-primary hover:underline"
-                        >
-                          {execution.run_name}
-                        </a>
-                        <span className="shrink-0 text-tertiary">
-                          {execution.build || "—"} · {t("testing.cases.pinned", { version: execution.pinned_version })}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-1 text-11 text-tertiary">{t("testing.cases.executions_empty")}</p>
-                )}
-              </div>
+              <TestCaseExecutionHistory testCase={selected} workspaceSlug={workspaceSlug} projectId={projectId} />
             </form>
           )}
         </div>
@@ -797,6 +881,7 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
             handleClose={() => setLinking(false)}
             searchParams={{}}
             selectedWorkItemIds={selected.work_item_ids}
+            openWorkItemsInNewTab={false}
             handleOnSubmit={async (items) => {
               await Promise.all(items.map((item) => linkWorkItem(workspaceSlug, projectId, selected.id, item.id)));
               setLinking(false);

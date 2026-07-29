@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+from unittest.mock import patch
+
 import pytest
 from django.utils import timezone
 from rest_framework import status
@@ -121,6 +123,55 @@ class TestTestingRunsAPI:
         assert closed.status_code == status.HTTP_200_OK
         assert closed.json()["status"] == "completed"
         assert rejected.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_result_attachment_is_listed_only_after_upload_and_has_download_url(
+        self, session_client, workspace, testing_project
+    ):
+        test_case = create_test_case(project_id=testing_project.id, title="Evidence upload")
+        run = session_client.post(
+            _runs_url(workspace, testing_project),
+            {"name": "Evidence run", "test_case_ids": [str(test_case.id)]},
+            format="json",
+        ).json()
+        run_case = run["run_cases"][0]
+        result_url = f"{_runs_url(workspace, testing_project)}{run['id']}/cases/{run_case['id']}/results/"
+        result = session_client.post(
+            result_url,
+            {"status": "failed", "actual_result": {"text": "See screenshot"}},
+            format="json",
+        ).json()
+        attachments_url = f"{result_url}{result['id']}/attachments/"
+
+        with patch(
+            "plane.app.views.testing.attachment.S3Storage.generate_presigned_post",
+            return_value={"url": "https://upload.example.test", "fields": {}},
+        ):
+            created = session_client.post(
+                attachments_url,
+                {"name": "failure.png", "type": "image/png", "size": 100},
+                format="json",
+            )
+
+        assert created.status_code == status.HTTP_200_OK
+        assert session_client.get(attachments_url).json() == []
+
+        attachment_url = f"{attachments_url}{created.json()['asset_id']}/"
+        confirmed = session_client.patch(attachment_url, {}, format="json")
+        listed = session_client.get(attachments_url)
+
+        assert confirmed.status_code == status.HTTP_200_OK
+        assert confirmed.json()["asset_url"] == attachment_url
+        assert listed.status_code == status.HTTP_200_OK
+        assert listed.json()[0]["asset_url"] == attachment_url
+
+        with patch(
+            "plane.app.views.testing.attachment.S3Storage.generate_presigned_url",
+            return_value="https://download.example.test/failure.png",
+        ):
+            downloaded = session_client.get(attachment_url)
+
+        assert downloaded.status_code == status.HTTP_302_FOUND
+        assert downloaded.url == "https://download.example.test/failure.png"
 
     def test_failed_result_creates_traceable_plane_defect(self, session_client, workspace, testing_project):
         test_case = create_test_case(

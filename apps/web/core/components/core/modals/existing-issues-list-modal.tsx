@@ -4,9 +4,10 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Rocket } from "lucide-react";
 import { Combobox } from "@headlessui/react";
+import { Link } from "react-router";
 // i18n
 import { useTranslation } from "@plane/i18n";
 // types
@@ -39,6 +40,7 @@ type Props = {
   workspaceLevelToggle?: boolean;
   shouldHideIssue?: (issue: ISearchIssueResponse) => boolean;
   selectedWorkItemIds?: string[];
+  openWorkItemsInNewTab?: boolean;
   workItemSearchServiceCallback?: (params: TProjectIssuesSearchParams) => Promise<ISearchIssueResponse[]>;
 };
 
@@ -57,6 +59,7 @@ export function ExistingIssuesListModal(props: Props) {
     workspaceLevelToggle = false,
     shouldHideIssue,
     selectedWorkItemIds,
+    openWorkItemsInNewTab = true,
     workItemSearchServiceCallback,
   } = props;
   // states
@@ -98,7 +101,7 @@ export function ExistingIssuesListModal(props: Props) {
     handleClose();
   };
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     if (!isOpen || !workspaceSlug) return;
     setIsLoading(true);
     const searchService =
@@ -117,7 +120,15 @@ export function ExistingIssuesListModal(props: Props) {
         setIsSearching(false);
         setIsLoading(false);
       });
-  };
+  }, [
+    debouncedSearchTerm,
+    isOpen,
+    isWorkspaceLevel,
+    projectId,
+    searchParams,
+    workspaceSlug,
+    workItemSearchServiceCallback,
+  ]);
 
   const handleSelectIssues = () => {
     setSelectedIssues((prevData) => (prevData.length === filteredIssues.length ? [] : [...filteredIssues]));
@@ -132,7 +143,7 @@ export function ExistingIssuesListModal(props: Props) {
 
   useEffect(() => {
     handleSearch();
-  }, [debouncedSearchTerm, isOpen, isWorkspaceLevel, projectId, workspaceSlug]);
+  }, [handleSearch]);
 
   const filteredIssues = issues.filter((issue) => !shouldHideIssue?.(issue));
 
@@ -278,21 +289,21 @@ export function ExistingIssuesListModal(props: Props) {
                           </span>
                           <span className="truncate">{issue.name}</span>
                         </div>
-                        <a
-                          href={generateWorkItemLink({
+                        <Link
+                          to={generateWorkItemLink({
                             workspaceSlug,
                             projectId: issue?.project_id,
                             issueId: issue?.id,
                             projectIdentifier: issue.project__identifier,
                             sequenceId: issue?.sequence_id,
                           })}
-                          target="_blank"
+                          target={openWorkItemsInNewTab ? "_blank" : "_self"}
                           className="relative z-1 hidden flex-shrink-0 text-secondary group-hover:block hover:text-primary"
-                          rel="noopener noreferrer"
+                          rel={openWorkItemsInNewTab ? "noopener noreferrer" : undefined}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Rocket className="h-4 w-4" />
-                        </a>
+                        </Link>
                       </Combobox.Option>
                     );
                   })}

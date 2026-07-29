@@ -3,6 +3,7 @@
 # See the LICENSE file for details.
 
 import pytest
+from django.core.cache import cache
 from rest_framework.test import APIClient
 from pytest_django.fixtures import django_db_setup
 
@@ -14,6 +15,24 @@ from plane.db.models.api import APIToken
 def django_db_setup(django_db_setup):  # noqa: F811
     """Set up the Django database for the test session"""
     pass
+
+
+@pytest.fixture(autouse=True)
+def _isolate_throttle_counters():
+    """Give every test its own rate-limit budget.
+
+    DRF throttles count requests in the default cache keyed by client IP or API
+    token, never by test, so without this a test's remaining budget depends on
+    how many tests ran before it. The authentication suite spends its 10/minute
+    per-IP budget partway through the file and every later test then fails on
+    RATE_LIMIT_EXCEEDED rather than on the behaviour it asserts.
+
+    Tests that assert throttling *does* fire are unaffected: they patch the rate
+    down and exceed it within a single test.
+    """
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture

@@ -15,16 +15,10 @@ INSTALLED_APPS.append(  # noqa
     "plane.tests"
 )
 
-# The API-key throttle counts against a shared cache keyed only by the token, so a
-# suite that exercises the public API repeatedly throttles itself: running the
-# contract/api directory alone produced 57 failures on HTTP 429, all of them
-# infrastructure rather than behaviour. Rate limiting is a deployment concern and
-# has its own coverage; here it only makes results depend on how many tests ran
-# before this one.
-API_KEY_RATE_LIMIT = "10000/minute"
-
 # An in-memory, per-process cache keeps throttle counters from surviving between
-# runs on a reused database.
+# runs on a reused database. Production rates stay in force so the suite exercises
+# the real limits; the _isolate_throttle_counters fixture in plane/tests/conftest.py
+# resets each test's budget so they are spent within a test, never across the suite.
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",

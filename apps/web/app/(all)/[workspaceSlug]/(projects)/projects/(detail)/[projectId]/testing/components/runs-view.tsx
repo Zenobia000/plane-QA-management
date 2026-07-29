@@ -58,6 +58,8 @@ export const TestRunsView = observer(function TestRunsView({ workspaceSlug, proj
     return (
       <ExecutionWorkspace
         run={selectedRun}
+        workspaceSlug={workspaceSlug}
+        projectId={projectId}
         selectedRunCaseId={runCaseId}
         onSelectRunCase={(id, options) =>
           navigate(

@@ -134,6 +134,16 @@ export class TestingStore implements ITestingStore {
   runs: Record<string, TTestRun> = {};
   loading = false;
   error: string | null = null;
+  /**
+   * Which project's library is already in memory.
+   *
+   * The route refetches on every mount, so leaving Testing to read a work item
+   * and coming back used to blank the view behind a spinner until all six
+   * requests resolved — losing the open case, the selected folder and the
+   * scroll position with it. Keeping the last project lets a revalidation run
+   * against data that is already on screen.
+   */
+  hydratedFor: string | null = null;
   private inflightFetches = new Map<string, Promise<void>>();
 
   constructor(private service: TestingService = new TestingService()) {
@@ -146,6 +156,7 @@ export class TestingStore implements ITestingStore {
       folders: observable,
       runs: observable,
       loading: observable,
+      hydratedFor: observable,
       error: observable,
       fetchLibrary: action,
       refreshOverview: action,
@@ -198,7 +209,10 @@ export class TestingStore implements ITestingStore {
   };
 
   private fetchLibraryData = async (workspaceSlug: string, projectId: string) => {
-    this.loading = true;
+    const key = `${workspaceSlug}:${projectId}`;
+    // Only the first load of a project may take the screen away; a return visit
+    // revalidates behind the data already rendered.
+    this.loading = this.hydratedFor !== key;
     this.error = null;
     try {
       const [capability, overview, requirementCoverage, cases, folders, runs] = await Promise.all([
@@ -216,6 +230,7 @@ export class TestingStore implements ITestingStore {
         this.cases = Object.fromEntries(cases.map((testCase) => [testCase.id, testCase]));
         this.folders = Object.fromEntries(folders.map((folder) => [folder.id, folder]));
         this.runs = Object.fromEntries(runs.map((testRun) => [testRun.id, testRun]));
+        this.hydratedFor = key;
       });
     } catch (error) {
       runInAction(() => {

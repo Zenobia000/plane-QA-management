@@ -56,6 +56,40 @@ describe("TestingStore", () => {
     expect(service.getTestRuns).toHaveBeenCalledTimes(1);
   });
 
+  it("takes the screen away on first load only, not on a return visit", async () => {
+    const service = serviceMock();
+    const store = new TestingStore(service);
+    const loadingDuringFirst: boolean[] = [];
+    const loadingDuringSecond: boolean[] = [];
+
+    const first = store.fetchLibrary("workspace", "project");
+    loadingDuringFirst.push(store.loading);
+    await first;
+
+    const second = store.fetchLibrary("workspace", "project");
+    loadingDuringSecond.push(store.loading);
+    await second;
+
+    // The route refetches on every mount, so leaving Testing to read a work item
+    // and coming back used to blank the view behind a spinner until all six
+    // requests resolved -- taking the open case and scroll position with it.
+    expect(loadingDuringFirst).toEqual([true]);
+    expect(loadingDuringSecond).toEqual([false]);
+    expect(service.getTestCases).toHaveBeenCalledTimes(2);
+  });
+
+  it("still takes the screen away when the project changes", async () => {
+    const service = serviceMock();
+    const store = new TestingStore(service);
+    await store.fetchLibrary("workspace", "project");
+
+    const other = store.fetchLibrary("workspace", "other-project");
+    // Nothing on screen belongs to the new project, so showing its stale
+    // predecessor would be a lie rather than a head start.
+    expect(store.loading).toBe(true);
+    await other;
+  });
+
   it("does not mutate normalized state when create fails", async () => {
     const service = serviceMock();
     vi.mocked(service.createTestCase).mockRejectedValue(new Error("network"));

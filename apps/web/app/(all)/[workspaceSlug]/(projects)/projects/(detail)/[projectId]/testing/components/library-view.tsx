@@ -40,6 +40,7 @@ import { ExistingIssuesListModal } from "@/components/core/modals/existing-issue
 import { useTesting } from "@/hooks/store/use-testing";
 import { findCaseBySequence, testingPath } from "../helpers";
 import { FolderTree } from "./folder-tree";
+import { WorkItemLink } from "./work-item-link";
 
 type Props = { workspaceSlug: string; projectId: string };
 
@@ -96,12 +97,15 @@ export function TestCaseTraceability({
               key={item.id}
               className="inline-flex items-center gap-1.5 rounded border border-subtle bg-surface-2 py-1 pr-1 pl-2 text-11"
             >
-              <Link
-                to={`/${workspaceSlug}/projects/${projectId}/issues/${item.id}`}
+              <WorkItemLink
+                workspaceSlug={workspaceSlug}
+                projectId={projectId}
+                issueId={item.id}
+                sequenceId={item.sequence_id}
                 className="text-accent-primary hover:underline"
               >
                 #{item.sequence_id} {item.name}
-              </Link>
+              </WorkItemLink>
               <button
                 type="button"
                 aria-label={t("testing.cases.unlink", { name: item.name })}
@@ -216,12 +220,15 @@ export function TestLibrarySearchResult({
     );
 
   return (
-    <Link
-      to={`/${workspaceSlug}/projects/${projectId}/issues/${result.id}`}
+    <WorkItemLink
+      workspaceSlug={workspaceSlug}
+      projectId={projectId}
+      issueId={result.id}
+      sequenceId={result.sequence}
       className="block border-b border-subtle p-3 hover:bg-surface-2"
     >
       {content}
-    </Link>
+    </WorkItemLink>
   );
 }
 

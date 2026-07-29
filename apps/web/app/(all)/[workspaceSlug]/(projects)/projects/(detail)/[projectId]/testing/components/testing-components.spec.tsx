@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import type { TTestCase, TTestFolder, TTestRun } from "@plane/types";
 
@@ -135,20 +136,29 @@ describe("Testing components", () => {
 
   it("shows resolved defects as ready for append-only retest", () => {
     const html = renderToStaticMarkup(
-      <ExecutionWorkspace
-        run={failedRun}
-        onSelectRunCase={vi.fn()}
-        onBack={vi.fn()}
-        onResult={vi.fn()}
-        onClose={vi.fn()}
-        onCreateDefect={vi.fn()}
-        onListAttachments={vi.fn().mockResolvedValue([])}
-        onAttach={vi.fn()}
-        onDetach={vi.fn()}
-      />
+      <MemoryRouter>
+        <ExecutionWorkspace
+          run={failedRun}
+          workspaceSlug="acme"
+          projectId="project-1"
+          onSelectRunCase={vi.fn()}
+          onBack={vi.fn()}
+          onResult={vi.fn()}
+          onClose={vi.fn()}
+          onCreateDefect={vi.fn()}
+          onListAttachments={vi.fn().mockResolvedValue([])}
+          onAttach={vi.fn()}
+          onDetach={vi.fn()}
+        />
+      </MemoryRouter>
     );
     expect(html).toContain("testing.execution.ready_for_retest");
-    expect(html).toContain("Checkout defect (completed)");
+    // A defect born from a result has to be reachable from it, and in the same
+    // tab: it used to render as joined text, which was a dead end.
+    expect(html).toContain('href="/acme/projects/project-1/issues/issue"');
+    expect(html).toContain("Checkout defect");
+    expect(html).toContain("(completed)");
+    expect(html).not.toContain('target="_blank"');
     expect(html).toContain("testing.execution.markdown_hint");
     expect(html).toContain("testing.execution.drop_files");
     expect(html).toContain("testing.execution.defect_heading");
@@ -166,22 +176,26 @@ describe("Testing components", () => {
       ],
     } satisfies TTestRun;
     const html = renderToStaticMarkup(
-      <ExecutionWorkspace
-        run={twoCaseRun}
-        selectedRunCaseId="run-case-addressed"
-        onSelectRunCase={vi.fn()}
-        onBack={vi.fn()}
-        onResult={vi.fn()}
-        onClose={vi.fn()}
-        onCreateDefect={vi.fn()}
-        onListAttachments={vi.fn().mockResolvedValue([])}
-        onAttach={vi.fn()}
-        onDetach={vi.fn()}
-      />
+      <MemoryRouter>
+        <ExecutionWorkspace
+          run={twoCaseRun}
+          selectedRunCaseId="run-case-addressed"
+          workspaceSlug="acme"
+          projectId="project-1"
+          onSelectRunCase={vi.fn()}
+          onBack={vi.fn()}
+          onResult={vi.fn()}
+          onClose={vi.fn()}
+          onCreateDefect={vi.fn()}
+          onListAttachments={vi.fn().mockResolvedValue([])}
+          onAttach={vi.fn()}
+          onDetach={vi.fn()}
+        />
+      </MemoryRouter>
     );
     // The defect panel renders only for the addressed case, so its presence is
     // what proves the URL won over the first-open default.
-    expect(html).toContain("Checkout defect (completed)");
+    expect(html).toContain("Checkout defect");
   });
 
   it("falls back to the first open case when the URL addresses none", () => {
@@ -193,34 +207,42 @@ describe("Testing components", () => {
       ],
     } satisfies TTestRun;
     const html = renderToStaticMarkup(
-      <ExecutionWorkspace
-        run={twoCaseRun}
-        onSelectRunCase={vi.fn()}
-        onBack={vi.fn()}
-        onResult={vi.fn()}
-        onClose={vi.fn()}
-        onCreateDefect={vi.fn()}
-        onListAttachments={vi.fn().mockResolvedValue([])}
-        onAttach={vi.fn()}
-        onDetach={vi.fn()}
-      />
+      <MemoryRouter>
+        <ExecutionWorkspace
+          run={twoCaseRun}
+          workspaceSlug="acme"
+          projectId="project-1"
+          onSelectRunCase={vi.fn()}
+          onBack={vi.fn()}
+          onResult={vi.fn()}
+          onClose={vi.fn()}
+          onCreateDefect={vi.fn()}
+          onListAttachments={vi.fn().mockResolvedValue([])}
+          onAttach={vi.fn()}
+          onDetach={vi.fn()}
+        />
+      </MemoryRouter>
     );
-    expect(html).not.toContain("Checkout defect (completed)");
+    expect(html).not.toContain("Checkout defect");
   });
 
   it("removes mutation controls after a run is closed", () => {
     const html = renderToStaticMarkup(
-      <ExecutionWorkspace
-        run={{ ...failedRun, status: "completed" }}
-        onSelectRunCase={vi.fn()}
-        onBack={vi.fn()}
-        onResult={vi.fn()}
-        onClose={vi.fn()}
-        onCreateDefect={vi.fn()}
-        onListAttachments={vi.fn().mockResolvedValue([])}
-        onAttach={vi.fn()}
-        onDetach={vi.fn()}
-      />
+      <MemoryRouter>
+        <ExecutionWorkspace
+          run={{ ...failedRun, status: "completed" }}
+          workspaceSlug="acme"
+          projectId="project-1"
+          onSelectRunCase={vi.fn()}
+          onBack={vi.fn()}
+          onResult={vi.fn()}
+          onClose={vi.fn()}
+          onCreateDefect={vi.fn()}
+          onListAttachments={vi.fn().mockResolvedValue([])}
+          onAttach={vi.fn()}
+          onDetach={vi.fn()}
+        />
+      </MemoryRouter>
     );
     expect(html).toContain("testing.execution.closed");
     expect(html).not.toContain("testing.execution.pass");

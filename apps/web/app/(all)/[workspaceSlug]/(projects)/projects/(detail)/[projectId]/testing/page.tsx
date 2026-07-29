@@ -10,6 +10,7 @@ import { AlertTriangle } from "lucide-react";
 import { NavLink, Outlet, useParams } from "react-router";
 import { useTranslation } from "@plane/i18n";
 import { PageHead } from "@/components/core/page-title";
+import { IssuePeekOverview } from "@/components/issues/peek-overview";
 import { useTesting } from "@/hooks/store/use-testing";
 import type { TTestingTab } from "./helpers";
 import { testingPath } from "./helpers";
@@ -53,6 +54,9 @@ function TestingPage() {
         )}
         <Outlet />
       </main>
+      {/* Lets a linked work item or defect open over Testing instead of
+          replacing it, so the open case and scroll position survive the trip. */}
+      <IssuePeekOverview />
     </>
   );
 }

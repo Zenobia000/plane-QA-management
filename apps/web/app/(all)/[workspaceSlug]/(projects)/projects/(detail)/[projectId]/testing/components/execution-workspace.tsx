@@ -13,9 +13,13 @@ import type { TTestResult, TTestResultAttachment, TTestResultInput, TTestResultS
 import { AlertModalCore } from "@plane/ui";
 import { MarkdownRenderer } from "@/components/ui/markdown-to-component";
 import { EvidenceComposer, type TResultEvidenceDraftFile } from "./evidence-composer";
+import { WorkItemLink } from "./work-item-link";
 
 type Props = {
   run: TTestRun;
+  /** Both only so a defect can be opened; every interaction still goes through a callback. */
+  workspaceSlug: string;
+  projectId: string;
   /** Absent means "no case addressed yet" -- the first open one is shown. */
   selectedRunCaseId?: string;
   onSelectRunCase: (runCaseId: string, options?: { replace?: boolean }) => void;
@@ -79,6 +83,8 @@ export const uploadResultEvidence = async (
 
 export function ExecutionWorkspace({
   run,
+  workspaceSlug,
+  projectId,
   selectedRunCaseId,
   onSelectRunCase,
   onBack,
@@ -460,13 +466,26 @@ export function ExecutionWorkspace({
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-12 font-semibold text-primary">{t("testing.execution.defect_heading")}</p>
-                    <p className="mt-1 text-11 text-secondary">
-                      {latestResult.defects.length
-                        ? latestResult.defects
-                            .map((defect) => `#${defect.sequence_id} ${defect.name} (${defect.state_group ?? "open"})`)
-                            .join(", ")
-                        : t("testing.execution.defect_hint")}
-                    </p>
+                    {latestResult.defects.length ? (
+                      <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-11">
+                        {latestResult.defects.map((defect) => (
+                          <li key={defect.id}>
+                            <WorkItemLink
+                              workspaceSlug={workspaceSlug}
+                              projectId={projectId}
+                              issueId={defect.id}
+                              sequenceId={defect.sequence_id}
+                              className="text-accent-primary hover:underline"
+                            >
+                              #{defect.sequence_id} {defect.name}
+                            </WorkItemLink>
+                            <span className="ml-1 text-tertiary">({defect.state_group ?? "open"})</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-1 text-11 text-secondary">{t("testing.execution.defect_hint")}</p>
+                    )}
                   </div>
                   {!latestResult.defects.length && (
                     <Button

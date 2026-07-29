@@ -213,17 +213,30 @@ def create_labels(workspace, project, owner):
 
 
 def create_estimate(project, workspace, owner):
-    """Story points, deliberately only meaningful at story level.
+    """Story points, and the aggregation axis they are read along.
 
-    Sizing and acceptance answer for the same unit of work, which is why both attach
-    where they do: an epic has no point value for the same reason it holds no contract
-    of its own -- both are decided one level down and read upward.
+    Only stories carry a point value, for the same reason only stories carry contracts:
+    both are decided at the level where a unit of work is small enough to judge.
+
+    Where the two part company is what happens above that level. Coverage rolls up the
+    **breakdown** -- a feature reports the contracts of its descendants. Estimates do not.
+    Nothing sums points to a parent; the aggregate Plane computes is per **cycle**, for
+    sprint burndown. So an epic shows no total, and asking "how big is this epic" is a
+    question the schema declines to answer.
+
+    Two mechanics worth knowing before reading any burndown number:
+
+    - `key` is a 1-based ordinal, `value` is the displayed figure. Plane's own Fibonacci
+      preset pairs key 1-6 with values 1, 2, 3, 5, 8, 13, and this seed matches it
+    - the burndown sums `key`, not `value`. A sprint holding 5 + 8 + 13 points reports
+      4 + 5 + 6 = 15, not 26. That is upstream behaviour and is left alone here, but it
+      means the figure orders sprints correctly while not being a point total
     """
     estimate = Estimate.objects.create(
         project=project,
         workspace=workspace,
         name="Fibonacci",
-        description="Story points. Only stories carry one; features and epics read the sum beneath them.",
+        description="Story points, on stories only. Aggregated per cycle for burndown, never to a parent.",
         type="points",
         last_used=True,
         created_by=owner,
@@ -233,7 +246,7 @@ def create_estimate(project, workspace, owner):
             estimate=estimate,
             project=project,
             workspace=workspace,
-            key=index,
+            key=index + 1,
             value=value,
             created_by=owner,
         )

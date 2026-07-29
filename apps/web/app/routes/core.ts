@@ -216,6 +216,12 @@ export const coreRoutes: RouteConfigEntry[] = [
               "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/intake/page.tsx"
             ),
           ]),
+          // Epics - the requirement hierarchy with each level reporting what
+          // sits beneath it, which the flat work-item list cannot show
+          route(
+            ":workspaceSlug/projects/:projectId/epics",
+            "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/epics/page.tsx"
+          ),
           // Testing - every entity is addressable so work items, defects and
           // runs can link straight at the thing they are talking about
           layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/testing/layout.tsx", [

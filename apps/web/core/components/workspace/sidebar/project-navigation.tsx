@@ -8,7 +8,7 @@ import React, { useCallback, useMemo } from "react";
 import { observer } from "mobx-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { FlaskConical } from "lucide-react";
+import { FlaskConical, Layers } from "lucide-react";
 import { EUserPermissionsLevel, EUserPermissions } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { CycleIcon, IntakeIcon, ModuleIcon, PageIcon, ViewsIcon, WorkItemsIcon } from "@plane/propel/icons";
@@ -132,6 +132,16 @@ export const ProjectNavigation = observer(function ProjectNavigation(props: TPro
         sortOrder: 6,
       },
       {
+        i18n_key: "sidebar.epics",
+        key: "epics",
+        name: "Epics",
+        href: `/${targetWorkspaceSlug}/projects/${targetProjectId}/epics`,
+        icon: Layers,
+        access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
+        shouldRender: true,
+        sortOrder: 7,
+      },
+      {
         i18n_key: "sidebar.testing",
         key: "testing",
         name: "Testing",
@@ -139,7 +149,7 @@ export const ProjectNavigation = observer(function ProjectNavigation(props: TPro
         icon: FlaskConical,
         access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
         shouldRender: true,
-        sortOrder: 7,
+        sortOrder: 8,
       },
     ],
     [project]

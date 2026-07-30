@@ -40,7 +40,7 @@ from plane.db.models import (
     WorkItemProperty,
     WorkItemPropertyOption,
 )
-from plane.db.models.state import DEFAULT_STATES
+from plane.db.models.state import SDLC_STATES
 
 PROJECT_NAME = "Shop-floor Quality Platform"
 PROJECT_DESCRIPTION = (
@@ -84,7 +84,7 @@ def create_project(workspace, owner, identifier):
                 default=state.get("default", False),
                 created_by=owner,
             )
-            for state in DEFAULT_STATES
+            for state in SDLC_STATES
         ]
     )
     role = ProjectMember.objects.filter(workspace=workspace).values_list("role", flat=True).first() or 20
@@ -199,6 +199,11 @@ LABEL_DEFINITIONS = (
     ("跨團隊相依", "#7C3AED", "需要平台組或 MES team 配合才能完成。"),
     ("需 UX 確認", "#2563EB", "介面行為未定案,實作前需設計確認。"),
     ("上期順延", "#CA8A04", "自上一個 sprint 未完成而捲動進來。"),
+    # The reference design carried this as a workflow state called "Resident", grouped with
+    # the completed ones. It cannot be a state: standing work never closes, so grouping it
+    # `completed` inflates every burndown and grouping it `started` parks it in WIP forever.
+    # "This never finishes" is a fact about the work, which is what a label is for.
+    ("常駐維運", "#0891B2", "長期維運項,沒有完成日;每個 sprint 都佔用固定產能。"),
 )
 
 

@@ -79,7 +79,10 @@ def purge(workspace, identifier):
 def seed(workspace, owner, identifier):
     """Create the demo project and return the pieces a caller may want to report on."""
     project = scaffolding.create_project(workspace, owner, identifier)
-    states = {state.group: state for state in State.objects.filter(project=project)}
+    # Keyed by name, not by group. With one state per group the two were interchangeable;
+    # the SDLC set puts nine states in `started`, so a group-keyed dict would silently keep
+    # whichever one the queryset happened to yield last and every item would land there.
+    states = {state.name: state for state in State.objects.filter(project=project)}
 
     # Classification first: nothing can be typed, tagged, sized or scheduled against a
     # checkpoint that does not exist yet.

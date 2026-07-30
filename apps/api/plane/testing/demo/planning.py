@@ -223,26 +223,26 @@ def create_hierarchy(workspace, project, owner, context):
 
     trace = item(
         "生產履歷與異常追溯能力", "讓 IE 能追查任一產品在各工站的處理結果與異常紀錄。",
-        "Epic", "started", "functional", module="生產履歷", plants=("CN21", "CN22"),
+        "Epic", "In progress", "functional", module="生產履歷", plants=("CN21", "CN22"),
         audited=True, labels=("法規稽核",),
     )
     inference = item(
         "AI 推論服務可靠性", "推論結果必須及時、穩定地回寫到工單,否則產線判讀失去依據。",
-        "Epic", "started", "non_functional", module="AI 推論服務", plants=("CN21", "CN22", "VN01"),
+        "Epic", "In progress", "non_functional", module="AI 推論服務", plants=("CN21", "CN22", "VN01"),
     )
     query = item(
         "工單與序號履歷查詢", "支援以工單編號或產品序號查詢完整站點履歷。",
-        "Feature", "started", "functional", parent=trace, module="生產履歷",
+        "Feature", "In progress", "functional", parent=trace, module="生產履歷",
         milestone="M1 履歷查詢上線", plants=("CN21", "CN22"), audited=True,
     )
     review = item(
         "NG 事件修正與審核", "IE 可修正 AI 誤判,主管審核後回寫 MES。",
-        "Feature", "started", "functional", parent=trace, module="生產履歷",
+        "Feature", "In progress", "functional", parent=trace, module="生產履歷",
         milestone="M2 NG 修正與回寫", labels=("跨團隊相依",),
     )
     latency = item(
         "推論結果即時性", "推論完成到工單可見的延遲必須可控。",
-        "Feature", "started", "non_functional", parent=inference, module="AI 推論服務",
+        "Feature", "In progress", "non_functional", parent=inference, module="AI 推論服務",
     )
 
     items = {
@@ -254,26 +254,26 @@ def create_hierarchy(workspace, project, owner, context):
         # --- Sprint 2026-07B, delivered ---
         "wo_query": item(
             "IE 以工單編號查詢生產履歷", "輸入工單編號後顯示各工站的進出站時間與推論結果。",
-            "Story", "completed", "functional", parent=query, cycle="previous", module="生產履歷",
+            "Story", "Done", "functional", parent=query, cycle="previous", module="生產履歷",
             milestone="M1 履歷查詢上線", points="5", plants=("CN21", "CN22"), audited=True, lines=6,
             labels=("法規稽核",),
         ),
         "sn_query": item(
             "IE 以產品序號查詢生產履歷", "輸入產品序號後顯示該件產品的完整履歷。",
-            "Story", "completed", "functional", parent=query, cycle="previous", module="生產履歷",
+            "Story", "Done", "functional", parent=query, cycle="previous", module="生產履歷",
             milestone="M1 履歷查詢上線", points="3", lines=6,
         ),
         # A quality constraint on the query feature. It is a story-shaped unit of work in
         # its own sprint, and non-functional -- the two axes are independent.
         "query_latency": item(
             "履歷查詢 P95 回應時間低於 2 秒", "在 1,000 萬筆履歷資料下,查詢 API 的 P95 不得超過 2,000 ms。",
-            "Story", "completed", "non_functional", parent=query, cycle="previous", module="生產履歷",
+            "Story", "Done", "non_functional", parent=query, cycle="previous", module="生產履歷",
             milestone="M1 履歷查詢上線", points="8", lines=6,
         ),
         # --- Carried into Sprint 2026-08A ---
         "export": item(
             "履歷匯出為稽核報表", "自 Sprint 2026-07B 順延:匯出格式未定案,重新排入本期。",
-            "Story", "started", "functional", parent=query, cycle="current", module="生產履歷",
+            "Story", "In Design", "functional", parent=query, cycle="current", module="生產履歷",
             milestone="M3 稽核報表與合規", priority="medium", points="5",
             audited=True, promised_in=45, lines=6,
             labels=("上期順延", "需 UX 確認", "法規稽核"),
@@ -281,12 +281,12 @@ def create_hierarchy(workspace, project, owner, context):
         # --- Sprint 2026-08A ---
         "mark_false": item(
             "IE 將誤判 NG 標記為誤報", "IE 可將誤判的 NG 標記為誤報並填寫原因。",
-            "Story", "started", "functional", parent=review, cycle="current", module="生產履歷",
+            "Story", "In developing", "functional", parent=review, cycle="current", module="生產履歷",
             milestone="M2 NG 修正與回寫", points="8", lines=4,
         ),
         "writeback": item(
             "修正結果回寫 MES", "審核通過的修正需在 30 秒內回寫 MES。",
-            "Story", "started", "functional", parent=review, cycle="current", module="生產履歷",
+            "Story", "Pending", "functional", parent=review, cycle="current", module="生產履歷",
             milestone="M2 NG 修正與回寫", points="13", lines=4,
             labels=("跨團隊相依", "技術債"),
         ),
@@ -294,24 +294,30 @@ def create_hierarchy(workspace, project, owner, context):
         # Definition-of-Ready violation the release gate has to catch.
         "supervisor": item(
             "主管審核修正紀錄", "已排入本期卻未建立任何驗收契約,示範 Definition of Ready 違規。",
-            "Story", "unstarted", "functional", parent=review, cycle="current", module="生產履歷",
+            "Story", "Todo", "functional", parent=review, cycle="current", module="生產履歷",
             milestone="M2 NG 修正與回寫", priority="medium", points="5", assign=False,
         ),
         "authorization": item(
             "使用者僅能存取授權廠區資料", "跨廠區查詢必須被拒絕並留下稽核紀錄。",
-            "Story", "started", "non_functional", parent=review, cycle="current", module="生產履歷",
+            "Story", "PR Reviewing", "non_functional", parent=review, cycle="current", module="生產履歷",
             priority="urgent", points="5", plants=("CN21", "CN22", "VN01"), audited=True, lines=12,
             labels=("法規稽核",),
         ),
         "inference_latency": item(
             "推論結果 5 秒內回寫工單", "推論完成後 5 秒內,工單頁面必須看得到結果。",
-            "Story", "started", "functional", parent=latency, cycle="current", module="AI 推論服務",
+            "Story", "In Diversity Testing", "functional", parent=latency, cycle="current", module="AI 推論服務",
             points="8", lines=12, promised_in=20, labels=("客戶承諾",),
         ),
+        # A rolling 24-hour failure rate is re-measured every sprint and never reaches a
+        # final state, which is what the `常駐維運` label records. The reference design
+        # carried that as a workflow state; keeping it a label leaves the story free to move
+        # through the same lifecycle as everything else while still being marked as work
+        # that reserves capacity indefinitely.
         "inference_failure": item(
             "推論服務失敗率低於 0.5%", "連續 24 小時的推論請求失敗率不得超過 0.5%。",
-            "Story", "unstarted", "non_functional", parent=latency, cycle="current", module="AI 推論服務",
+            "Story", "Todo", "non_functional", parent=latency, cycle="current", module="AI 推論服務",
             priority="medium", points="13", plants=("CN21", "CN22", "VN01"), lines=12,
+            labels=("常駐維運",),
         ),
     }
     return items

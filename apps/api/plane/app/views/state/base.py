@@ -58,7 +58,15 @@ class StateViewSet(BaseViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    # The odd one out among the mutating handlers: `create`, `mark_as_default` and `destroy`
+    # are all ADMIN-only and all invalidate the workspace state cache, while this one
+    # admitted GUEST and invalidated nothing. Both halves matter more now that a project can
+    # carry a whole delivery workflow: renaming a state renames a board column for everyone,
+    # and dragging one into another group changes what the release gate treats as resolved
+    # and what coverage treats as owing a contract. The web UI has always gated this screen
+    # on ADMIN, so this closes a gap between the two rather than removing a used capability.
+    @invalidate_cache(path="workspaces/:slug/states/", url_params=True, user=False)
+    @allow_permission([ROLE.ADMIN])
     def partial_update(self, request, slug, project_id, pk):
         try:
             state = State.objects.get(pk=pk, project_id=project_id, workspace__slug=slug)

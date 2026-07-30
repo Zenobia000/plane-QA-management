@@ -178,7 +178,11 @@ def close_the_loop(project, owner, runs, states):
     ).issue
     # The defect stays untyped and unclassified, exactly as the service leaves it. Typing
     # it would hide that the coverage report has to exclude defects itself.
-    Issue.objects.filter(id=defect.id).update(state=states["completed"])
+    #
+    # `Done` by name rather than by group. The gate counts a defect as open while its group
+    # is neither `completed` nor `cancelled`, and nine of this project's states now group
+    # `started` -- so "the completed one" is only unambiguous when it is named.
+    Issue.objects.filter(id=defect.id).update(state=states["Done"])
     record_test_result(
         run_case_id=current_cases["mark_false_happy"].id, project_id=project.id, status="passed",
         executed_by=owner,

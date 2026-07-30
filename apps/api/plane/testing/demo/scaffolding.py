@@ -14,8 +14,8 @@ Five mechanisms overlap here and the demo exists partly to keep them apart:
 - **estimate** sizes the work, and only ever at story level
 - **milestone** is a delivery checkpoint, which is neither a sprint nor a module
 
-Collapsing any two of these is the recurring modelling mistake. A plant is not a label,
-because "which plants does this affect" has a closed set of answers and wants a typed
+Collapsing any two of these is the recurring modelling mistake. A region is not a label,
+because "which regions does this affect" has a closed set of answers and wants a typed
 value; "needs legal review" is not a property, because nobody can enumerate the tags a
 team will want next quarter.
 """
@@ -42,9 +42,9 @@ from plane.db.models import (
 )
 from plane.db.models.state import SDLC_STATES
 
-PROJECT_NAME = "Shop-floor Quality Platform"
+PROJECT_NAME = "Order Service Platform"
 PROJECT_DESCRIPTION = (
-    "Production traceability and AI defect review. Three axes cross rather than nest: "
+    "Order history traceability and return-request review. Three axes cross rather than nest: "
     "the work breakdown runs epic to feature to story, every requirement is classified "
     "functional or non-functional independently of where it sits, and scheduling is three "
     "separate cross-sections -- sprint, module and milestone."
@@ -130,10 +130,10 @@ PROPERTY_DEFINITIONS = (
         (("Functional (FR)", "functional"), ("Non-functional (NFR)", "non_functional")),
     ),
     (
-        "目標廠區",
+        "目標區域",
         WorkItemProperty.Kind.MULTI_SELECT,
-        "這條需求要在哪些廠區生效。多選,因為同一條需求常同時涵蓋數個廠區。",
-        (("CN21 昆山", "CN21"), ("CN22 蘇州", "CN22"), ("VN01 河內", "VN01")),
+        "這條需求要在哪些營運區域生效。多選,因為同一條需求常同時涵蓋數個區域。",
+        (("TW 台灣", "TW"), ("JP 日本", "JP"), ("SEA 東南亞", "SEA")),
     ),
     (
         "需法規稽核",
@@ -148,9 +148,9 @@ PROPERTY_DEFINITIONS = (
         (),
     ),
     (
-        "影響產線數",
+        "影響服務數",
         WorkItemProperty.Kind.NUMBER,
-        "這條需求若失敗會影響幾條產線,用來排序風險。",
+        "這條需求若失敗會影響幾個下游服務,用來排序風險。",
         (),
     ),
 )
@@ -196,7 +196,7 @@ LABEL_DEFINITIONS = (
     ("法規稽核", "#DC2626", "受稽核規範約束,驗收紀錄需保留一年。"),
     ("客戶承諾", "#EA580C", "已對客戶承諾日期,延誤需對外說明。"),
     ("技術債", "#6B7280", "已知的權宜實作,排期償還。"),
-    ("跨團隊相依", "#7C3AED", "需要平台組或 MES team 配合才能完成。"),
+    ("跨團隊相依", "#7C3AED", "需要平台組或金流團隊配合才能完成。"),
     ("需 UX 確認", "#2563EB", "介面行為未定案,實作前需設計確認。"),
     ("上期順延", "#CA8A04", "自上一個 sprint 未完成而捲動進來。"),
     # The reference design carried this as a workflow state called "Resident", grouped with
@@ -284,9 +284,9 @@ def create_milestones(project, workspace, owner):
     """
     today = timezone.now().date()
     definitions = (
-        ("M1 履歷查詢上線", "completed", -7, "工單與序號查詢對 CN21 開放。"),
-        ("M2 NG 修正與回寫", "in_progress", 21, "IE 可修正誤判並回寫 MES,涵蓋兩個 sprint。"),
-        ("M3 稽核報表與合規", "planned", 60, "匯出稽核報表,滿足保留一年的法規要求。"),
+        ("M1 訂單查詢上線", "completed", -7, "訂單與物流單號查詢對 TW 開放。"),
+        ("M2 退貨審核與回寫", "in_progress", 21, "客服可更正誤擋並回寫金流系統,涵蓋兩個 sprint。"),
+        ("M3 對帳報表與合規", "planned", 60, "匯出對帳報表,滿足保留一年的法規要求。"),
     )
     return {
         name: Milestone.objects.create(

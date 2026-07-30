@@ -39,12 +39,12 @@ class TestSeededWorkflow:
         """A group-keyed lookup would put every started item in one arbitrary state."""
         by_name = {issue.name: issue.state.name for issue in Issue.issue_objects.filter(project=seeded)}
 
-        assert by_name["IE 以工單編號查詢生產履歷"] == "Done"
-        assert by_name["履歷匯出為稽核報表"] == "In Design"
-        assert by_name["修正結果回寫 MES"] == "Pending"
-        assert by_name["使用者僅能存取授權廠區資料"] == "PR Reviewing"
-        assert by_name["推論結果 5 秒內回寫工單"] == "In Diversity Testing"
-        assert by_name["主管審核修正紀錄"] == "Todo"
+        assert by_name["客服以訂單編號查詢處理歷程"] == "Done"
+        assert by_name["歷程匯出為對帳報表"] == "In Design"
+        assert by_name["審核結果回寫金流系統"] == "Pending"
+        assert by_name["使用者僅能存取授權區域訂單"] == "PR Reviewing"
+        assert by_name["通知 5 秒內送達使用者"] == "In Diversity Testing"
+        assert by_name["主管審核退貨紀錄"] == "Todo"
 
     def test_the_qa_handoff_is_spread_across_distinct_states(self, seeded):
         """The whole point: the board shows where work sits, not just "in progress"."""
@@ -61,7 +61,7 @@ class TestSeededWorkflow:
 
         label = Label.objects.get(project=seeded, name="常駐維運")
         tagged = Issue.issue_objects.filter(project=seeded, label_issue__label=label)
-        assert [issue.name for issue in tagged] == ["推論服務失敗率低於 0.5%"]
+        assert [issue.name for issue in tagged] == ["通知服務失敗率低於 0.5%"]
 
 
 @pytest.mark.unit

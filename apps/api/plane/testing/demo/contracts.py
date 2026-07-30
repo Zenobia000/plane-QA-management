@@ -25,36 +25,36 @@ def _step(action, expected):
 
 # case key -> work item key
 CONTRACT_LINKS = (
-    ("wo_happy", "wo_query"),
-    ("wo_notfound", "wo_query"),
-    ("api_contract", "wo_query"),
-    ("sn_happy", "sn_query"),
+    ("order_happy", "order_query"),
+    ("order_notfound", "order_query"),
+    ("api_contract", "order_query"),
+    ("shipment_happy", "shipment_query"),
     ("export_csv", "export"),
     ("query_p95", "query_latency"),
     ("mark_false_happy", "mark_false"),
     ("mark_false_audit", "mark_false"),
-    ("writeback_mes", "writeback"),
-    ("cross_site", "authorization"),
-    ("inference_visible", "inference_latency"),
-    ("inference_failure_rate", "inference_failure"),
+    ("writeback_payment", "writeback"),
+    ("cross_region", "authorization"),
+    ("notify_visible", "notify_latency"),
+    ("notify_failure_rate", "notify_failure"),
 )
 
 # case key -> (source, external id)
 AUTOMATION_LINKS = (
-    ("api_contract", "pytest", "tests/contract/test_trace_api.py::test_query_by_work_order"),
-    ("inference_visible", "pytest", "tests/e2e/test_inference.py::test_result_visible_within_5s"),
-    ("query_p95", "k6", "k6/trace-query-p95"),
-    ("inference_failure_rate", "prometheus", "inference_error_rate_24h"),
+    ("api_contract", "pytest", "tests/contract/test_order_history_api.py::test_query_by_order_number"),
+    ("notify_visible", "pytest", "tests/e2e/test_notification.py::test_delivered_within_5s"),
+    ("query_p95", "k6", "k6/order-history-p95"),
+    ("notify_failure_rate", "prometheus", "notification_error_rate_24h"),
 )
 
 
 def create_folders(project):
-    root = create_test_folder(project_id=project.id, name="生產履歷", sort_order=1000)
+    root = create_test_folder(project_id=project.id, name="訂單服務", sort_order=1000)
     return {
-        "query": create_test_folder(project_id=project.id, name="履歷查詢", parent_id=root.id, sort_order=1000),
-        "review": create_test_folder(project_id=project.id, name="NG 修正", parent_id=root.id, sort_order=2000),
+        "query": create_test_folder(project_id=project.id, name="歷程查詢", parent_id=root.id, sort_order=1000),
+        "review": create_test_folder(project_id=project.id, name="退貨審核", parent_id=root.id, sort_order=2000),
         "quality": create_test_folder(project_id=project.id, name="品質門檻", parent_id=root.id, sort_order=3000),
-        "inference": create_test_folder(project_id=project.id, name="AI 推論", parent_id=root.id, sort_order=4000),
+        "notify": create_test_folder(project_id=project.id, name="通知服務", parent_id=root.id, sort_order=4000),
     }
 
 
@@ -66,58 +66,58 @@ def _functional_cases(project, folders):
         )
 
     return {
-        "wo_happy": case(
-            "以有效工單編號查詢可顯示完整站點履歷", "query", ["functional", "manual", "smoke"],
+        "order_happy": case(
+            "以有效訂單編號查詢可顯示完整處理歷程", "query", ["functional", "manual", "smoke"],
             [
-                _step("輸入工單編號 WO-20260728-001 並查詢", "顯示該工單經歷的所有工站"),
-                _step("檢視站點列表", "每站顯示進站與離站時間"),
-                _step("展開任一工站", "顯示 AI 推論結果與人工修正紀錄"),
+                _step("輸入訂單編號 SO-20260728-001 並查詢", "顯示該訂單經歷的所有處理階段"),
+                _step("檢視階段列表", "每個階段顯示進入與完成時間"),
+                _step("展開任一階段", "顯示系統判定結果與人工更正紀錄"),
             ],
-            preconditions={"text": "工單 WO-20260728-001 已存在,使用者具 CN21 廠區權限"},
+            preconditions={"text": "訂單 SO-20260728-001 已存在,使用者具 TW 區域權限"},
         ),
-        "wo_notfound": case(
-            "查詢不存在的工單應顯示明確訊息", "query", ["functional", "manual", "negative"],
-            [_step("輸入不存在的工單編號並查詢", "顯示查無資料訊息,不出現錯誤畫面")], priority="medium",
+        "order_notfound": case(
+            "查詢不存在的訂單應顯示明確訊息", "query", ["functional", "manual", "negative"],
+            [_step("輸入不存在的訂單編號並查詢", "顯示查無資料訊息,不出現錯誤畫面")], priority="medium",
         ),
-        "sn_happy": case(
-            "以產品序號查詢可顯示該件產品履歷", "query", ["functional", "manual"],
-            [_step("輸入產品序號 SN-A1B2C3 並查詢", "顯示該序號的完整站點履歷")],
-            preconditions={"text": "序號 SN-A1B2C3 已完成三個工站"},
+        "shipment_happy": case(
+            "以物流單號查詢可顯示該筆配送歷程", "query", ["functional", "manual"],
+            [_step("輸入物流單號 LG-A1B2C3 並查詢", "顯示該單號的完整配送歷程")],
+            preconditions={"text": "物流單號 LG-A1B2C3 已完成三個配送階段"},
         ),
         "export_csv": case(
-            "履歷可匯出為稽核用 CSV", "query", ["functional", "manual"],
+            "歷程可匯出為對帳用 CSV", "query", ["functional", "manual"],
             [
-                _step("在履歷頁選擇匯出", "產生 CSV 下載"),
-                _step("開啟 CSV", "欄位含工單、序號、工站、進出站時間、推論結果、修正者"),
+                _step("在歷程頁選擇匯出", "產生 CSV 下載"),
+                _step("開啟 CSV", "欄位含訂單、物流單號、階段、進入與完成時間、判定結果、更正者"),
             ],
             priority="medium",
         ),
         "mark_false_happy": case(
-            "IE 可將誤判 NG 標記為誤報", "review", ["functional", "manual"],
+            "客服可將誤擋的退貨標記為誤判", "review", ["functional", "manual"],
             [
-                _step("開啟該 NG 事件並選擇標記為誤報", "顯示原因輸入欄位"),
-                _step("填寫原因並送出", "事件狀態變更為已修正並記錄修正者"),
+                _step("開啟該退貨申請並選擇標記為誤判", "顯示原因輸入欄位"),
+                _step("填寫原因並送出", "申請狀態變更為已更正並記錄更正者"),
             ],
-            preconditions={"text": "存在一筆 AI 判定為 NG 的事件"},
+            preconditions={"text": "存在一筆系統判定為退貨不成立的申請"},
         ),
         "mark_false_audit": case(
-            "修正操作必須留下稽核紀錄", "review", ["functional", "manual", "negative"],
-            [_step("完成一次誤報修正後檢視稽核紀錄", "紀錄含操作者、時間、修正前後值")], priority="medium",
+            "更正操作必須留下稽核紀錄", "review", ["functional", "manual", "negative"],
+            [_step("完成一次誤判更正後檢視稽核紀錄", "紀錄含操作者、時間、更正前後值")], priority="medium",
         ),
-        "writeback_mes": case(
-            "審核通過的修正 30 秒內回寫 MES", "review", ["functional", "manual"],
+        "writeback_payment": case(
+            "審核通過的更正 30 秒內回寫金流系統", "review", ["functional", "manual"],
             [
-                _step("主管審核通過一筆修正", "顯示已送出回寫"),
-                _step("查詢 MES 對應工單", "30 秒內可見更新後的判定結果"),
+                _step("主管審核通過一筆更正", "顯示已送出回寫"),
+                _step("查詢金流系統對應訂單", "30 秒內可見更新後的判定結果"),
             ],
         ),
-        "inference_visible": case(
-            "推論完成後 5 秒內工單可見結果", "inference", ["functional", "automated"],
-            [_step("送出一張待推論影像並輪詢工單", "5 秒內工單顯示推論結果")], priority="medium",
+        "notify_visible": case(
+            "事件發生後 5 秒內使用者可見通知", "notify", ["functional", "automated"],
+            [_step("觸發一次狀態變更並輪詢通知列表", "5 秒內通知列表顯示該筆通知")], priority="medium",
         ),
         "api_contract": case(
-            "履歷查詢 API 在有效請求下回應 200", "query", ["functional", "automated"],
-            [_step("GET /api/trace?wo=WO-20260728-001", "回應 200 且 payload 含 stations 陣列")],
+            "歷程查詢 API 在有效請求下回應 200", "query", ["functional", "automated"],
+            [_step("GET /api/orders/SO-20260728-001/history", "回應 200 且 payload 含 stages 陣列")],
             priority="medium",
         ),
     }
@@ -132,38 +132,42 @@ def _threshold_cases(project, folders):
     """
     cases = {}
     cases["query_p95"] = create_test_case(
-        project_id=project.id, title="履歷查詢 P95 回應時間低於 2,000 ms",
+        project_id=project.id, title="歷程查詢 P95 回應時間低於 2,000 ms",
         folder_id=folders["quality"].id, priority="high", case_type="performance",
         tags=["performance", "automated", "threshold"],
-        preconditions={"text": "資料庫含 1,000 萬筆履歷 · 200 VU · 持續 5 分鐘", "dataset_rows": 10_000_000, "vus": 200},
+        preconditions={
+            "text": "資料庫含 1,000 萬筆歷程 · 200 VU · 持續 5 分鐘",
+            "dataset_rows": 10_000_000,
+            "vus": 200,
+        },
         steps=[{
-            "action": {"text": "以隨機有效工單編號持續發送查詢請求", "tool": "k6"},
+            "action": {"text": "以隨機有效訂單編號持續發送查詢請求", "tool": "k6"},
             "expected_result": {
                 "text": "P95 回應時間 < 2,000 ms", "metric": "http_req_duration_p95",
                 "operator": "<", "threshold": 2000, "unit": "ms",
             },
         }],
     )
-    cases["inference_failure_rate"] = create_test_case(
-        project_id=project.id, title="推論服務 24 小時失敗率低於 0.5%",
+    cases["notify_failure_rate"] = create_test_case(
+        project_id=project.id, title="通知服務 24 小時失敗率低於 0.5%",
         folder_id=folders["quality"].id, priority="high", case_type="reliability",
         tags=["reliability", "automated", "threshold"],
-        preconditions={"text": "取樣連續 24 小時的推論請求", "window_hours": 24},
+        preconditions={"text": "取樣連續 24 小時的通知發送", "window_hours": 24},
         steps=[{
-            "action": {"text": "統計推論請求的失敗比例", "tool": "prometheus"},
+            "action": {"text": "統計通知發送的失敗比例", "tool": "prometheus"},
             "expected_result": {
-                "text": "失敗率 < 0.5%", "metric": "inference_error_rate",
+                "text": "失敗率 < 0.5%", "metric": "notification_error_rate",
                 "operator": "<", "threshold": 0.5, "unit": "%",
             },
         }],
     )
-    cases["cross_site"] = create_test_case(
-        project_id=project.id, title="跨廠區查詢應被拒絕並留下稽核紀錄",
+    cases["cross_region"] = create_test_case(
+        project_id=project.id, title="跨區域查詢應被拒絕並留下稽核紀錄",
         folder_id=folders["quality"].id, priority="urgent", case_type="security",
         tags=["security", "manual", "negative"],
-        preconditions={"text": "使用者僅具 CN21 廠區權限;工單 WO-20260728-999 屬於 CN22"},
+        preconditions={"text": "使用者僅具 TW 區域權限;訂單 SO-20260728-999 屬於 JP"},
         steps=[
-            _step("以 CN21 使用者查詢 CN22 的工單", "系統拒絕提供資料"),
+            _step("以 TW 使用者查詢 JP 的訂單", "系統拒絕提供資料"),
             _step("檢視稽核紀錄", "留下一筆未授權存取事件"),
         ],
     )

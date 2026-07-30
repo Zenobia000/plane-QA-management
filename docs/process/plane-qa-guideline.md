@@ -395,9 +395,9 @@ BDD 對應乾淨,直接用既有欄位:
 | 實際觀察    | `actual_result`(append-only 的 result 上) |
 
 ```
-Test case: NFR-PERF-001 生產履歷查詢 P95 < 2s
-  Given   資料庫有 1,000 萬筆履歷
-  When    以有效工單編號執行查詢(200 VU,持續 5 分鐘)
+Test case: NFR-PERF-001 訂單歷程查詢 P95 < 2s
+  Given   資料庫有 1,000 萬筆歷程
+  When    以有效訂單編號執行查詢(200 VU,持續 5 分鐘)
   Then    P95 回應時間 < 2000ms
 ```
 

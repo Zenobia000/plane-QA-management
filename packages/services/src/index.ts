@@ -23,5 +23,6 @@ export * from "./work-item-hierarchy";
 export * from "./project-overview";
 export * from "./project-view-publish";
 export * from "./issue-bulk-operations";
+export * from "./enterprise";
 export * from "./testing";
 export * from "./work-item-extensions";

@@ -22,6 +22,12 @@
 #   use plane.settings.test, which inherits from common and reads DATABASE_URL,
 #   REDIS_URL, RABBITMQ_* etc. from the environment.
 
+# Pinned so the suite gets its own Compose project. Without this the project
+# name defaults to the repo directory, which is the same project the live stack
+# in docker-compose.yml runs under — a teardown here would then report the
+# running api/web/db containers as orphans and offer to remove them.
+name: plane-qa-management-test
+
 services:
   test-db:
     image: postgres:15.7-alpine

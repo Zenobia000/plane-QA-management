@@ -179,6 +179,12 @@ class Command(BaseCommand):
             ),
             project_lead=owner,
             created_by=owner,
+            # Explicit for the same reason as the shop-floor seed: this demo creates
+            # cycles, modules and milestones, and a flipped-back default would hide all
+            # three behind a sidebar that never mentions them.
+            cycle_view=True,
+            module_view=True,
+            issue_views_view=True,
         )
         State.objects.bulk_create(
             [

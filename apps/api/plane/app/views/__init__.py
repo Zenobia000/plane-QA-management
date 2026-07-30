@@ -11,6 +11,14 @@ from .project.base import (
     ProjectArchiveUnarchiveEndpoint,
 )
 
+from .project.phase_d import (
+    StateTransitionViewSet,
+    WorklogViewSet,
+    WorklogSummaryEndpoint,
+    TemplateViewSet,
+    TemplateApplyEndpoint,
+)
+
 from .project.overview import (
     ProjectLinkViewSet,
     EntityUpdateViewSet,

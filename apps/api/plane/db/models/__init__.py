@@ -87,6 +87,12 @@ from .portfolio import Initiative, InitiativeProject, Milestone
 
 from .update import EntityUpdate
 
+from .workflow import StateTransition, StateTransitionApprover
+
+from .worklog import Worklog
+
+from .template import Template
+
 from .work_item_property import WorkItemProperty, WorkItemPropertyOption, WorkItemPropertyValue
 
 from .recent_visit import UserRecentVisit

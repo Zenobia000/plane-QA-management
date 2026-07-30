@@ -50,6 +50,7 @@ from plane.utils.content_validator import (
     validate_binary_data,
 )
 from plane.utils.work_item_hierarchy import hierarchy_violation
+from plane.utils.workflow import transition_violation
 
 
 class IssueFlatSerializer(BaseSerializer):
@@ -221,6 +222,18 @@ class IssueCreateSerializer(BaseSerializer):
         )
         if violation:
             raise serializers.ValidationError(violation)
+
+        # A state change is only a transition when there was a previous state; creation is
+        # not one. The actor comes from the context because a serializer has no request.
+        if instance is not None and "state" in attrs:
+            workflow_error = transition_violation(
+                self.context.get("project_id"),
+                instance.state_id,
+                attrs["state"].id if attrs["state"] else None,
+                self.context.get("actor_id"),
+            )
+            if workflow_error:
+                raise serializers.ValidationError(workflow_error)
 
         return attrs
 

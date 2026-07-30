@@ -23,6 +23,11 @@ from plane.app.views import (
     ProjectProgressEndpoint,
     ProjectActivityEndpoint,
     ProjectOverviewEndpoint,
+    StateTransitionViewSet,
+    WorklogViewSet,
+    WorklogSummaryEndpoint,
+    TemplateViewSet,
+    TemplateApplyEndpoint,
 )
 
 
@@ -168,5 +173,45 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/updates/<uuid:pk>/",
         EntityUpdateViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
         name="project-updates",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/state-transitions/",
+        StateTransitionViewSet.as_view({"get": "list", "post": "create"}),
+        name="project-state-transitions",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/state-transitions/<uuid:pk>/",
+        StateTransitionViewSet.as_view({"patch": "partial_update", "delete": "destroy"}),
+        name="project-state-transitions",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/worklogs/",
+        WorklogViewSet.as_view({"get": "list", "post": "create"}),
+        name="work-item-worklogs",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/worklogs/<uuid:pk>/",
+        WorklogViewSet.as_view({"patch": "partial_update", "delete": "destroy"}),
+        name="work-item-worklogs",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/worklog-summary/",
+        WorklogSummaryEndpoint.as_view(),
+        name="work-item-worklog-summary",
+    ),
+    path(
+        "workspaces/<str:slug>/templates/",
+        TemplateViewSet.as_view({"get": "list", "post": "create"}),
+        name="workspace-templates",
+    ),
+    path(
+        "workspaces/<str:slug>/templates/<uuid:pk>/",
+        TemplateViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="workspace-templates",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/templates/<uuid:template_id>/apply/",
+        TemplateApplyEndpoint.as_view(),
+        name="template-apply",
     ),
 ]

@@ -100,6 +100,8 @@ from .dashboard import Dashboard, DashboardWidget
 
 from .automation import Automation
 
+from .intake import IntakeIngestToken
+
 from .work_item_property import WorkItemProperty, WorkItemPropertyOption, WorkItemPropertyValue
 
 from .recent_visit import UserRecentVisit

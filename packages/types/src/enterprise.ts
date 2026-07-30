@@ -105,3 +105,13 @@ export type TDuplicateCandidate = {
   sequence_id: number;
   similarity: number | null;
 };
+
+/** A rule that acts on a work item when it enters a state group. */
+export type TAutomation = {
+  id: string;
+  name: string;
+  is_active: boolean;
+  trigger_state_group: string;
+  /** A fixed shape, not an expression. The engine applies exactly these keys. */
+  actions: { priority?: string; assignee_ids?: string[]; label_ids?: string[] };
+};

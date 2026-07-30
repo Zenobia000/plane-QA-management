@@ -28,6 +28,7 @@ from plane.app.views import (
     WorklogSummaryEndpoint,
     TemplateViewSet,
     TemplateApplyEndpoint,
+    AutomationViewSet,
 )
 
 
@@ -213,5 +214,15 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/templates/<uuid:template_id>/apply/",
         TemplateApplyEndpoint.as_view(),
         name="template-apply",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/automations/",
+        AutomationViewSet.as_view({"get": "list", "post": "create"}),
+        name="project-automations",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/automations/<uuid:pk>/",
+        AutomationViewSet.as_view({"patch": "partial_update", "delete": "destroy"}),
+        name="project-automations",
     ),
 ]

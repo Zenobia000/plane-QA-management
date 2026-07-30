@@ -6,6 +6,7 @@
 
 import { API_BASE_URL } from "@plane/constants";
 import type {
+  TAutomation,
   TDashboard,
   TDashboardWidget,
   TDashboardWidgetData,
@@ -181,6 +182,22 @@ export class EnterpriseService extends APIService {
   widgetData(workspaceSlug: string, dashboardId: string, widgetId: string): Promise<TDashboardWidgetData> {
     return this.unwrap(
       this.get(`/api/workspaces/${workspaceSlug}/dashboards/${dashboardId}/widgets/${widgetId}/data/`)
+    );
+  }
+
+  // Automations -----------------------------------------------------------
+
+  listAutomations(workspaceSlug: string, projectId: string): Promise<TAutomation[]> {
+    return this.unwrap(this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/automations/`));
+  }
+
+  createAutomation(workspaceSlug: string, projectId: string, payload: Partial<TAutomation>): Promise<TAutomation> {
+    return this.unwrap(this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/automations/`, payload));
+  }
+
+  deleteAutomation(workspaceSlug: string, projectId: string, automationId: string): Promise<void> {
+    return this.unwrap(
+      this.delete(`/api/workspaces/${workspaceSlug}/projects/${projectId}/automations/${automationId}/`)
     );
   }
 

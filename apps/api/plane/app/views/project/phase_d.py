@@ -25,6 +25,7 @@ from plane.app.permissions import ProjectEntityPermission, allow_permission, ROL
 from plane.app.serializers.base import BaseSerializer
 from plane.app.views.base import BaseAPIView, BaseViewSet
 from plane.db.models import (
+    Automation,
     Issue,
     Project,
     StateTransition,
@@ -262,3 +263,36 @@ class TemplateApplyEndpoint(BaseAPIView):
             {"id": str(issue.id), "name": issue.name, "dropped": dropped},
             status=status.HTTP_201_CREATED,
         )
+
+
+class AutomationSerializer(BaseSerializer):
+    class Meta:
+        model = Automation
+        fields = "__all__"
+        read_only_fields = ["workspace", "project"]
+
+    def validate_actions(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Actions must be an object.")
+        # The engine applies a fixed set. Accepting anything else would promise an
+        # expressiveness that does not exist and fail silently at run time.
+        unknown = set(value) - {"priority", "assignee_ids", "label_ids"}
+        if unknown:
+            raise serializers.ValidationError(f"Unsupported actions: {', '.join(sorted(unknown))}.")
+        return value
+
+
+class AutomationViewSet(BaseViewSet):
+    permission_classes = [ProjectEntityPermission]
+    model = Automation
+    serializer_class = AutomationSerializer
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(workspace__slug=self.kwargs.get("slug"), project_id=self.kwargs.get("project_id"))
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(project_id=self.kwargs.get("project_id"))

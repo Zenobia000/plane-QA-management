@@ -17,6 +17,7 @@ from .project.phase_d import (
     WorklogSummaryEndpoint,
     TemplateViewSet,
     TemplateApplyEndpoint,
+    AutomationViewSet,
 )
 
 from .project.overview import (
@@ -223,6 +224,8 @@ from .estimate.base import (
     BulkEstimatePointEndpoint,
     EstimatePointEndpoint,
 )
+
+from .intake.ingest import IntakeIngestTokenViewSet, IntakeIngestEndpoint
 
 from .intake.base import (
     IntakeViewSet,

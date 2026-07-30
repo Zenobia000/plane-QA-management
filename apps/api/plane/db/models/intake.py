@@ -37,6 +37,11 @@ class Intake(ProjectBaseModel):
 
 class SourceType(models.TextChoices):
     IN_APP = "IN_APP"
+    # Arrived through the ingestion endpoint rather than the in-app form. The two are kept
+    # apart because a triager reads them differently: an in-app submission comes from someone
+    # who is already a member and can be asked, an emailed one may not.
+    EMAIL = "EMAIL"
+    FORM = "FORM"
 
 
 class IntakeIssueStatus(models.IntegerChoices):
@@ -82,3 +87,30 @@ class IntakeIssue(ProjectBaseModel):
     def __str__(self):
         """Return name of the Issue"""
         return f"{self.issue.name} <{self.intake.name}>"
+
+
+class IntakeIngestToken(ProjectBaseModel):
+    """A shared secret that lets an outside sender file into one intake.
+
+    Scoped to a single intake rather than to the project, so revoking a mail route cannot
+    take down an unrelated one, and so the address a token backs is the thing the token names.
+
+    The secret is stored hashed. An ingestion token is a credential -- anything holding it can
+    file work items -- and a table of readable credentials is the kind of thing that ends up
+    in a support ticket screenshot.
+    """
+
+    intake = models.ForeignKey("db.Intake", related_name="ingest_tokens", on_delete=models.CASCADE)
+    label = models.CharField(max_length=255)
+    token_hash = models.CharField(max_length=128, db_index=True)
+    is_active = models.BooleanField(default=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Intake Ingest Token"
+        verbose_name_plural = "Intake Ingest Tokens"
+        db_table = "intake_ingest_tokens"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.label} ({self.intake_id})"

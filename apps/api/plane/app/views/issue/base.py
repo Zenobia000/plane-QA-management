@@ -69,6 +69,7 @@ from plane.utils.grouper import (
     issue_on_results,
     issue_queryset_grouper,
 )
+from plane.utils.automation import apply_automations
 from plane.utils.host import base_host
 from plane.utils.issue_filters import issue_filters
 from plane.utils.order_queryset import order_issue_queryset
@@ -687,8 +688,12 @@ class IssueViewSet(BaseViewSet):
             # `actor_id` is what the workflow rule checks approvers against.
             context={"project_id": project_id, "actor_id": request.user.id},
         )
+        previous_state_group = issue.state.group if issue.state else None
         if serializer.is_valid():
             serializer.save()
+            # Rules run after the write and write fields directly, never back through this
+            # path -- which is what makes a pair of rules that undo each other unable to loop.
+            apply_automations(issue, previous_state_group, request.user)
             # Check if the update is a migration description update
             is_migration_description_update = skip_activity and is_description_update
             # Log all the updates

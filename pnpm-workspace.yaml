@@ -1,3 +1,7 @@
+# Don't auto-run "pnpm install" before scripts: it breaks non-TTY contexts
+# (git hooks, CI) whenever node_modules drifts from the lockfile.
+verifyDepsBeforeRun: false
+
 packages:
   - apps/*
   - packages/*

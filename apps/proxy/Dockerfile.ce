@@ -1,5 +1,9 @@
 FROM caddy:2.11.3-builder-alpine AS caddy-builder
 
+# Cap Go build parallelism: heavily threaded compiles deadlock on mmap_lock
+# under WSL2 kernel 6.18 (threads wedge in lock_mm_and_find_vma).
+ENV GOMAXPROCS=4 GOFLAGS=-p=4
+
 RUN xcaddy build \
         --with github.com/caddy-dns/cloudflare@v0.2.1 \
         --with github.com/caddy-dns/digitalocean@04bde2867106aa1b44c2f9da41a285fa02e629c5 \

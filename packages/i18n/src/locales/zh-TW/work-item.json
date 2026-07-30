@@ -65,6 +65,7 @@
       },
       "extra": {
         "show_sub_issues": "顯示子工作事項",
+        "only_actionable_work": "僅顯示可執行工作事項",
         "show_empty_groups": "顯示空群組"
       }
     },

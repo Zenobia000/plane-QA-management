@@ -65,6 +65,7 @@
       },
       "extra": {
         "show_sub_issues": "하위 작업 항목 표시",
+        "only_actionable_work": "실행 가능한 작업 항목만 표시",
         "show_empty_groups": "빈 그룹 표시"
       }
     },

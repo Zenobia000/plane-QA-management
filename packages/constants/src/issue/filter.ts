@@ -230,7 +230,7 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
         },
         extra_options: {
           access: true,
-          values: ["show_empty_groups", "sub_issue"],
+          values: ["show_empty_groups", "sub_issue", "leaf_only"],
         },
       },
       kanban: {
@@ -243,7 +243,7 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
         },
         extra_options: {
           access: true,
-          values: ["show_empty_groups", "sub_issue"],
+          values: ["show_empty_groups", "sub_issue", "leaf_only"],
         },
       },
       calendar: {
@@ -253,7 +253,7 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
         },
         extra_options: {
           access: true,
-          values: ["sub_issue"],
+          values: ["sub_issue", "leaf_only"],
         },
       },
       spreadsheet: {
@@ -264,7 +264,7 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
         },
         extra_options: {
           access: true,
-          values: ["sub_issue"],
+          values: ["sub_issue", "leaf_only"],
         },
       },
       gantt_chart: {
@@ -275,7 +275,7 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
         },
         extra_options: {
           access: true,
-          values: ["sub_issue"],
+          values: ["sub_issue", "leaf_only"],
         },
       },
     },

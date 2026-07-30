@@ -229,6 +229,12 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
         ...scope,
         state: z.string().optional(),
         priority: z.string().optional(),
+        leaf_only: z
+          .boolean()
+          .optional()
+          .describe(
+            "Return only work items that summarise nothing, which is what the work-item list shows by default. An epic or feature holding live children is excluded: its state is a hand-set summary and its estimate is blank, so it answers 'how is this going' rather than 'what should I pick up'. Use the epic hierarchy for the summary view."
+          ),
         per_page: z.number().int().min(1).max(100).default(50),
       }),
       annotations: readAnnotations,

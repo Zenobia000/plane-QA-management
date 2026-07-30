@@ -51,6 +51,38 @@ describe("plane-qa CLI", () => {
     expect(output.stdout.join("")).not.toContain(environment.PLANE_API_KEY);
   });
 
+  it("passes --leaf-only through as a boolean so agents see the same list as the UI", async () => {
+    const output = capture();
+    const listIssues = vi.fn().mockResolvedValue({ results: [] });
+    const resolveProject = vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" });
+    const client = { listIssues, resolveProject } as unknown as PlaneQAClient;
+
+    const code = await runCLI({
+      argv: ["issue", "list", "--leaf-only"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(code).toBe(0);
+    expect(listIssues).toHaveBeenCalledWith("sunny", "p1", expect.objectContaining({ leaf_only: true }));
+  });
+
+  it("omits leaf_only entirely when the flag is absent, leaving the server default", async () => {
+    const output = capture();
+    const listIssues = vi.fn().mockResolvedValue({ results: [] });
+    const resolveProject = vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" });
+    const client = { listIssues, resolveProject } as unknown as PlaneQAClient;
+
+    await runCLI({ argv: ["issue", "list"], environment, io: output.io, createClient: () => client });
+
+    expect(listIssues).toHaveBeenCalledWith(
+      "sunny",
+      "p1",
+      expect.not.objectContaining({ leaf_only: expect.anything() })
+    );
+  });
+
   it("refuses destructive commands without explicit confirmation", async () => {
     const output = capture();
     const client = {

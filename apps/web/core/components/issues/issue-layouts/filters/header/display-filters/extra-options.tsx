@@ -21,6 +21,10 @@ const ISSUE_EXTRA_OPTIONS: {
     titleTranslationKey: "issue.display.extra.show_sub_issues",
   }, // in spreadsheet its always false
   {
+    key: "leaf_only",
+    titleTranslationKey: "issue.display.extra.only_actionable_work",
+  }, // resolved server-side; drops nodes that summarise other nodes
+  {
     key: "show_empty_groups",
     titleTranslationKey: "issue.display.extra.show_empty_groups",
   }, // filter on front-end
@@ -29,6 +33,7 @@ const ISSUE_EXTRA_OPTIONS: {
 type Props = {
   selectedExtraOptions: {
     sub_issue: boolean;
+    leaf_only: boolean;
     show_empty_groups: boolean;
   };
   handleUpdate: (key: keyof IIssueDisplayFilterOptions, val: boolean) => void;
@@ -49,7 +54,7 @@ export const FilterExtraOptions = observer(function FilterExtraOptions(props: Pr
         return (
           <FilterOption
             key={option.key}
-            isChecked={selectedExtraOptions?.[option.key] ? true : false}
+            isChecked={Boolean(selectedExtraOptions?.[option.key])}
             onClick={() => handleUpdate(option.key, !selectedExtraOptions?.[option.key])}
             title={t(option.titleTranslationKey)}
           />

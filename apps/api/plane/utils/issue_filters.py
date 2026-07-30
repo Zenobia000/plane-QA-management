@@ -389,6 +389,57 @@ def filter_sub_issue_toggle(params, issue_filter, method, prefix=""):
     return issue_filter
 
 
+def leaf_work_item_ids():
+    """Work items that summarise nothing, as a subquery.
+
+    "Not a summary" is defined here exactly as `sub_issues_count` defines it everywhere else
+    -- a live child, per `Issue.issue_objects`, so an archived or draft or soft-deleted child
+    leaves its parent a leaf. One definition rather than two: the app API reaches it through
+    `issue_filters`, the token API applies it directly, and if they diverged the number on a
+    row would stop agreeing with whether the row is shown.
+
+    Expressed as a complement because callers apply it as a positive `pk__in`. The inner
+    query is the set of nodes holding a live child; this is everything else.
+    """
+    from plane.db.models import Issue
+
+    summarising = Issue.issue_objects.filter(parent__isnull=False).values("parent_id")
+    return Issue.issue_objects.exclude(pk__in=summarising).values("pk")
+
+
+def wants_leaf_only(params):
+    """Whether a request asked for actionable work only. Query strings carry booleans as text."""
+    return str(params.get("leaf_only", "false")).lower() in ("true", "1")
+
+
+def filter_leaf_only(params, issue_filter, method, prefix=""):
+    """Keep only the nodes that are not summaries of other nodes.
+
+    `sub_issue` is the neighbouring toggle and it does the opposite of what this needs:
+    `sub_issue=false` sets `parent__isnull=True`, which keeps the roots and drops every
+    descendant. Asking for a to-do list means dropping the roots instead -- an epic's own
+    state is a hand-set summary of the work its stories represent, its estimate is blank
+    because points attach to stories, and `plane/app/views/issue/epic.py` already has to
+    ignore both to keep from counting a summary beside the thing it summarises. A field the
+    reporting layer must disregard does not belong in a list of what to work on.
+
+    "Not a summary" is defined here exactly as `sub_issues_count` defines it everywhere else
+    -- a live child, per `Issue.issue_objects`, so an archived or draft or soft-deleted child
+    leaves its parent a leaf. Sharing one definition is the point: two would drift, and the
+    number on the row would stop agreeing with whether the row is shown.
+
+    Defects survive, which is intended. They are parentless and nobody breaks them down, so
+    they are leaves -- and a defect is precisely a thing somebody has to do.
+    """
+    if not wants_leaf_only(params):
+        return issue_filter
+
+    # A positive `pk__in`, because `issue_filters` returns kwargs for `.filter(**filters)`
+    # and a kwargs dict cannot carry a negation.
+    issue_filter[f"{prefix}pk__in"] = leaf_work_item_ids()
+    return issue_filter
+
+
 def filter_subscribed_issues(params, issue_filter, method, prefix=""):
     if method == "GET":
         subscribers = [item for item in params.get("subscriber").split(",") if item != "null"]
@@ -452,6 +503,7 @@ def issue_filters(query_params, method, prefix=""):
         "intake_status": filter_intake_status,
         "inbox_status": filter_inbox_status,
         "sub_issue": filter_sub_issue_toggle,
+        "leaf_only": filter_leaf_only,
         "subscriber": filter_subscribed_issues,
         "start_target_date": filter_start_target_date_issues,
     }

@@ -65,6 +65,7 @@
       },
       "extra": {
         "show_sub_issues": "Afișează sub-activitățile",
+        "only_actionable_work": "Doar activitățile care pot fi preluate",
         "show_empty_groups": "Afișează grupurile goale"
       }
     },

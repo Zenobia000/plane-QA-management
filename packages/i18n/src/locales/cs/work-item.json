@@ -65,6 +65,7 @@
       },
       "extra": {
         "show_sub_issues": "Zobrazit podřízené položky",
+        "only_actionable_work": "Pouze položky k řešení",
         "show_empty_groups": "Zobrazit prázdné skupiny"
       }
     },

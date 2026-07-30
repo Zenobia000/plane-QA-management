@@ -65,6 +65,7 @@
       },
       "extra": {
         "show_sub_issues": "Show sub-work items",
+        "only_actionable_work": "Only actionable work items",
         "show_empty_groups": "Show empty groups"
       }
     },

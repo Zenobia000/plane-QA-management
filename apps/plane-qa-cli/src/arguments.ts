@@ -64,6 +64,20 @@ export const numberOption = (options: ParsedArguments["options"], name: string):
   return parsed;
 };
 
+/**
+ * A flag, whether written bare (`--leaf-only`) or with a value (`--leaf-only=false`).
+ * Returns undefined when absent so callers can leave the server default in place.
+ */
+export const booleanOption = (options: ParsedArguments["options"], name: string): boolean | undefined => {
+  const value = options[name];
+  if (value === undefined) return undefined;
+  if (typeof value === "boolean") return value;
+  const normalized = value.trim().toLowerCase();
+  if (["true", "1", "yes"].includes(normalized)) return true;
+  if (["false", "0", "no"].includes(normalized)) return false;
+  throw new Error(`--${name.replaceAll("_", "-")} must be a boolean.`);
+};
+
 export const commaListOption = (options: ParsedArguments["options"], name: string): string[] =>
   (optionString(options, name) ?? "")
     .split(",")

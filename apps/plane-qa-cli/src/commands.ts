@@ -11,6 +11,7 @@ import type {
 } from "@plane/qa-sdk";
 
 import {
+  booleanOption,
   commaListOption,
   jsonOption,
   numberOption,
@@ -187,8 +188,9 @@ export const executeCommand = async (
         compact({
           state: optionString(args.options, "state"),
           priority: optionString(args.options, "priority"),
+          leaf_only: booleanOption(args.options, "leaf_only"),
           per_page: numberOption(args.options, "per_page"),
-        }) as Record<string, string | number>
+        }) as Record<string, string | number | boolean>
       );
     }
     if (action === "create") {

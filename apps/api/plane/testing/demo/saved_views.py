@@ -118,12 +118,12 @@ def create_views(workspace, project, owner, context):
         _display(group_by="priority", order_by="target_date"),
         project=project,
     )
-    views["inference_module"] = _view(
+    views["notify_module"] = _view(
         workspace, owner,
-        "AI 推論服務(模組)",
+        "通知服務(模組)",
         "依模組切,而非依 sprint 或 epic。同一個模組的項目散落在不同 epic 與不同 sprint 裡,"
         "這正是模組不是階層的證據。",
-        {"module": [str(context["modules"]["AI 推論服務"].id)]},
+        {"module": [str(context["modules"]["通知服務"].id)]},
         _display(group_by="state"),
         project=project,
     )

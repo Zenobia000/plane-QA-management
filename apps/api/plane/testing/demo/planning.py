@@ -39,7 +39,7 @@ from plane.db.models import (
     WorkItemPropertyValue,
 )
 
-MODULE_NAMES = ("生產履歷", "AI 推論服務")
+MODULE_NAMES = ("訂單查詢", "通知服務")
 
 
 def _as_datetime(day):
@@ -55,10 +55,10 @@ def create_initiative(workspace, project, owner):
     """
     initiative = Initiative.objects.create(
         workspace=workspace,
-        name="生產品質數位化",
+        name="訂單體驗數位化",
         description=(
-            "把產線品質判讀從人工紙本轉為可追溯的數位流程。跨專案:本專案負責履歷與 AI 判讀,"
-            "MES 整合由另一個專案承接。"
+            "把訂單查詢與退貨處理從人工客服轉為可追溯的自助流程。跨專案:本專案負責歷程與退貨審核,"
+            "金流整合由另一個專案承接。"
         ),
         status="in_progress",
         target_date=timezone.now().date() + datetime.timedelta(days=120),
@@ -153,9 +153,9 @@ class _ItemBuilder:
         priority="high",
         labels=(),
         points=None,
-        plants=("CN21",),
+        regions=("TW",),
         audited=False,
-        lines=None,
+        services=None,
         promised_in=None,
         assign=True,
     ):
@@ -176,10 +176,10 @@ class _ItemBuilder:
         )
 
         self._set_property(issue, "Requirement kind", kind)
-        self._set_property(issue, "目標廠區", list(plants))
+        self._set_property(issue, "目標區域", list(regions))
         self._set_property(issue, "需法規稽核", audited)
-        if lines is not None:
-            self._set_property(issue, "影響產線數", lines)
+        if services is not None:
+            self._set_property(issue, "影響服務數", services)
         if promised_in is not None:
             self._set_property(
                 issue,
@@ -222,96 +222,96 @@ def create_hierarchy(workspace, project, owner, context):
     item = builder.build
 
     trace = item(
-        "生產履歷與異常追溯能力", "讓 IE 能追查任一產品在各工站的處理結果與異常紀錄。",
-        "Epic", "started", "functional", module="生產履歷", plants=("CN21", "CN22"),
+        "訂單歷程與退貨追溯能力", "讓客服能追查任一筆訂單在各處理階段的結果與異常紀錄。",
+        "Epic", "started", "functional", module="訂單查詢", regions=("TW", "JP"),
         audited=True, labels=("法規稽核",),
     )
-    inference = item(
-        "AI 推論服務可靠性", "推論結果必須及時、穩定地回寫到工單,否則產線判讀失去依據。",
-        "Epic", "started", "non_functional", module="AI 推論服務", plants=("CN21", "CN22", "VN01"),
+    notify = item(
+        "通知服務可靠性", "通知必須及時、穩定地送達使用者,否則客服失去溝通依據。",
+        "Epic", "started", "non_functional", module="通知服務", regions=("TW", "JP", "SEA"),
     )
     query = item(
-        "工單與序號履歷查詢", "支援以工單編號或產品序號查詢完整站點履歷。",
-        "Feature", "started", "functional", parent=trace, module="生產履歷",
-        milestone="M1 履歷查詢上線", plants=("CN21", "CN22"), audited=True,
+        "訂單與物流單號查詢", "支援以訂單編號或物流單號查詢完整處理歷程。",
+        "Feature", "started", "functional", parent=trace, module="訂單查詢",
+        milestone="M1 訂單查詢上線", regions=("TW", "JP"), audited=True,
     )
     review = item(
-        "NG 事件修正與審核", "IE 可修正 AI 誤判,主管審核後回寫 MES。",
-        "Feature", "started", "functional", parent=trace, module="生產履歷",
-        milestone="M2 NG 修正與回寫", labels=("跨團隊相依",),
+        "退貨申請與審核", "客服可更正誤擋的退貨,主管審核後回寫金流系統。",
+        "Feature", "started", "functional", parent=trace, module="訂單查詢",
+        milestone="M2 退貨審核與回寫", labels=("跨團隊相依",),
     )
     latency = item(
-        "推論結果即時性", "推論完成到工單可見的延遲必須可控。",
-        "Feature", "started", "non_functional", parent=inference, module="AI 推論服務",
+        "通知送達即時性", "事件發生到使用者收到通知的延遲必須可控。",
+        "Feature", "started", "non_functional", parent=notify, module="通知服務",
     )
 
     items = {
         "epic_trace": trace,
-        "epic_inference": inference,
+        "epic_notify": notify,
         "feature_query": query,
         "feature_review": review,
         "feature_latency": latency,
         # --- Sprint 2026-07B, delivered ---
-        "wo_query": item(
-            "IE 以工單編號查詢生產履歷", "輸入工單編號後顯示各工站的進出站時間與推論結果。",
-            "Story", "completed", "functional", parent=query, cycle="previous", module="生產履歷",
-            milestone="M1 履歷查詢上線", points="5", plants=("CN21", "CN22"), audited=True, lines=6,
+        "order_query": item(
+            "客服以訂單編號查詢處理歷程", "輸入訂單編號後顯示各處理階段的進入與完成時間與系統判定結果。",
+            "Story", "completed", "functional", parent=query, cycle="previous", module="訂單查詢",
+            milestone="M1 訂單查詢上線", points="5", regions=("TW", "JP"), audited=True, services=6,
             labels=("法規稽核",),
         ),
-        "sn_query": item(
-            "IE 以產品序號查詢生產履歷", "輸入產品序號後顯示該件產品的完整履歷。",
-            "Story", "completed", "functional", parent=query, cycle="previous", module="生產履歷",
-            milestone="M1 履歷查詢上線", points="3", lines=6,
+        "shipment_query": item(
+            "客服以物流單號查詢處理歷程", "輸入物流單號後顯示該筆配送的完整歷程。",
+            "Story", "completed", "functional", parent=query, cycle="previous", module="訂單查詢",
+            milestone="M1 訂單查詢上線", points="3", services=6,
         ),
         # A quality constraint on the query feature. It is a story-shaped unit of work in
         # its own sprint, and non-functional -- the two axes are independent.
         "query_latency": item(
-            "履歷查詢 P95 回應時間低於 2 秒", "在 1,000 萬筆履歷資料下,查詢 API 的 P95 不得超過 2,000 ms。",
-            "Story", "completed", "non_functional", parent=query, cycle="previous", module="生產履歷",
-            milestone="M1 履歷查詢上線", points="8", lines=6,
+            "歷程查詢 P95 回應時間低於 2 秒", "在 1,000 萬筆歷程資料下,查詢 API 的 P95 不得超過 2,000 ms。",
+            "Story", "completed", "non_functional", parent=query, cycle="previous", module="訂單查詢",
+            milestone="M1 訂單查詢上線", points="8", services=6,
         ),
         # --- Carried into Sprint 2026-08A ---
         "export": item(
-            "履歷匯出為稽核報表", "自 Sprint 2026-07B 順延:匯出格式未定案,重新排入本期。",
-            "Story", "started", "functional", parent=query, cycle="current", module="生產履歷",
-            milestone="M3 稽核報表與合規", priority="medium", points="5",
-            audited=True, promised_in=45, lines=6,
+            "歷程匯出為對帳報表", "自 Sprint 2026-07B 順延:匯出格式未定案,重新排入本期。",
+            "Story", "started", "functional", parent=query, cycle="current", module="訂單查詢",
+            milestone="M3 對帳報表與合規", priority="medium", points="5",
+            audited=True, promised_in=45, services=6,
             labels=("上期順延", "需 UX 確認", "法規稽核"),
         ),
         # --- Sprint 2026-08A ---
         "mark_false": item(
-            "IE 將誤判 NG 標記為誤報", "IE 可將誤判的 NG 標記為誤報並填寫原因。",
-            "Story", "started", "functional", parent=review, cycle="current", module="生產履歷",
-            milestone="M2 NG 修正與回寫", points="8", lines=4,
+            "客服將誤擋的退貨標記為誤判", "客服可將誤擋的退貨標記為誤判並填寫原因。",
+            "Story", "started", "functional", parent=review, cycle="current", module="訂單查詢",
+            milestone="M2 退貨審核與回寫", points="8", services=4,
         ),
         "writeback": item(
-            "修正結果回寫 MES", "審核通過的修正需在 30 秒內回寫 MES。",
-            "Story", "started", "functional", parent=review, cycle="current", module="生產履歷",
-            milestone="M2 NG 修正與回寫", points="13", lines=4,
+            "審核結果回寫金流系統", "審核通過的更正需在 30 秒內回寫金流系統。",
+            "Story", "started", "functional", parent=review, cycle="current", module="訂單查詢",
+            milestone="M2 退貨審核與回寫", points="13", services=4,
             labels=("跨團隊相依", "技術債"),
         ),
         # Scheduled into the sprint with no acceptance contract at all -- the
         # Definition-of-Ready violation the release gate has to catch.
         "supervisor": item(
-            "主管審核修正紀錄", "已排入本期卻未建立任何驗收契約,示範 Definition of Ready 違規。",
-            "Story", "unstarted", "functional", parent=review, cycle="current", module="生產履歷",
-            milestone="M2 NG 修正與回寫", priority="medium", points="5", assign=False,
+            "主管審核退貨紀錄", "已排入本期卻未建立任何驗收契約,示範 Definition of Ready 違規。",
+            "Story", "unstarted", "functional", parent=review, cycle="current", module="訂單查詢",
+            milestone="M2 退貨審核與回寫", priority="medium", points="5", assign=False,
         ),
         "authorization": item(
-            "使用者僅能存取授權廠區資料", "跨廠區查詢必須被拒絕並留下稽核紀錄。",
-            "Story", "started", "non_functional", parent=review, cycle="current", module="生產履歷",
-            priority="urgent", points="5", plants=("CN21", "CN22", "VN01"), audited=True, lines=12,
+            "使用者僅能存取授權區域訂單", "跨區域查詢必須被拒絕並留下稽核紀錄。",
+            "Story", "started", "non_functional", parent=review, cycle="current", module="訂單查詢",
+            priority="urgent", points="5", regions=("TW", "JP", "SEA"), audited=True, services=12,
             labels=("法規稽核",),
         ),
-        "inference_latency": item(
-            "推論結果 5 秒內回寫工單", "推論完成後 5 秒內,工單頁面必須看得到結果。",
-            "Story", "started", "functional", parent=latency, cycle="current", module="AI 推論服務",
-            points="8", lines=12, promised_in=20, labels=("客戶承諾",),
+        "notify_latency": item(
+            "通知 5 秒內送達使用者", "事件發生後 5 秒內,使用者必須收到通知。",
+            "Story", "started", "functional", parent=latency, cycle="current", module="通知服務",
+            points="8", services=12, promised_in=20, labels=("客戶承諾",),
         ),
-        "inference_failure": item(
-            "推論服務失敗率低於 0.5%", "連續 24 小時的推論請求失敗率不得超過 0.5%。",
-            "Story", "unstarted", "non_functional", parent=latency, cycle="current", module="AI 推論服務",
-            priority="medium", points="13", plants=("CN21", "CN22", "VN01"), lines=12,
+        "notify_failure": item(
+            "通知服務失敗率低於 0.5%", "連續 24 小時的通知發送失敗率不得超過 0.5%。",
+            "Story", "unstarted", "non_functional", parent=latency, cycle="current", module="通知服務",
+            priority="medium", points="13", regions=("TW", "JP", "SEA"), services=12,
         ),
     }
     return items
@@ -319,10 +319,10 @@ def create_hierarchy(workspace, project, owner, context):
 
 # (issue key, related key, relation type, why)
 RELATIONS = (
-    ("writeback", "mark_false", "blocked_by", "沒有標記誤報的動作,就沒有可回寫的修正。"),
-    ("supervisor", "mark_false", "blocked_by", "審核的對象是修正紀錄,修正先於審核。"),
-    ("inference_failure", "inference_latency", "relates_to", "同一個推論服務的兩種品質面向。"),
-    ("export", "authorization", "relates_to", "匯出必須沿用查詢的廠區授權規則。"),
+    ("writeback", "mark_false", "blocked_by", "沒有標記誤判的動作,就沒有可回寫的更正。"),
+    ("supervisor", "mark_false", "blocked_by", "審核的對象是更正紀錄,更正先於審核。"),
+    ("notify_failure", "notify_latency", "relates_to", "同一個通知服務的兩種品質面向。"),
+    ("export", "authorization", "relates_to", "匯出必須沿用查詢的區域授權規則。"),
 )
 
 
@@ -346,11 +346,11 @@ def create_relations(workspace, project, owner, items):
 
 # (issue key, title, url)
 EXTERNAL_LINKS = (
-    ("query_latency", "k6 負載測試腳本", "https://git.internal/quality/k6/trace-query-p95.js"),
-    ("query_latency", "Grafana:查詢延遲", "https://grafana.internal/d/trace-query-latency"),
-    ("inference_failure", "Grafana:推論失敗率", "https://grafana.internal/d/inference-error-rate"),
-    ("export", "稽核報表欄位規格(草稿)", "https://wiki.internal/quality/audit-export-spec"),
-    ("authorization", "廠區授權矩陣", "https://wiki.internal/security/plant-authorization"),
+    ("query_latency", "k6 負載測試腳本", "https://git.internal/quality/k6/order-history-p95.js"),
+    ("query_latency", "Grafana:查詢延遲", "https://grafana.internal/d/order-query-latency"),
+    ("notify_failure", "Grafana:通知失敗率", "https://grafana.internal/d/notification-error-rate"),
+    ("export", "對帳報表欄位規格(草稿)", "https://wiki.internal/quality/reconciliation-export-spec"),
+    ("authorization", "區域授權矩陣", "https://wiki.internal/security/region-authorization"),
 )
 
 
@@ -382,7 +382,7 @@ COMMENTS = (
     ),
     (
         "writeback",
-        "RD:MES 測試環境目前回 503,回寫路徑驗不了。已開缺陷追蹤,不是實作問題。",
+        "RD:金流測試環境目前回 503,回寫路徑驗不了。已開缺陷追蹤,不是實作問題。",
     ),
 )
 

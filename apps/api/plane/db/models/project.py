@@ -17,6 +17,7 @@ from django.db.models import Q
 from plane.db.mixins import AuditModel
 
 from .base import BaseModel
+from .choices import PortfolioStatus
 
 ROLE_CHOICES = ((20, "Admin"), (15, "Member"), (5, "Guest"))
 
@@ -120,6 +121,21 @@ class Project(BaseModel):
     logo_props = models.JSONField(default=dict)
     default_state = models.ForeignKey("db.State", on_delete=models.SET_NULL, null=True, related_name="default_state")
     archived_at = models.DateTimeField(null=True)
+    # What the overview's properties panel reports. `state` shares the portfolio vocabulary
+    # rather than defining a fourth one, and `priority` reuses the work-item scale rather
+    # than a parallel set of words meaning the same thing. See ADR 0005 for why these are
+    # columns instead of a per-workspace `ProjectState` table.
+    PRIORITY_CHOICES = (
+        ("urgent", "Urgent"),
+        ("high", "High"),
+        ("medium", "Medium"),
+        ("low", "Low"),
+        ("none", "None"),
+    )
+    state = models.CharField(max_length=32, choices=PortfolioStatus.choices, null=True, blank=True)
+    priority = models.CharField(max_length=30, choices=PRIORITY_CHOICES, default="none")
+    start_date = models.DateField(null=True, blank=True)
+    target_date = models.DateField(null=True, blank=True)
     # timezone
     TIMEZONE_CHOICES = tuple(zip(pytz.common_timezones, pytz.common_timezones))
     timezone = models.CharField(max_length=255, default="UTC", choices=TIMEZONE_CHOICES)
@@ -195,6 +211,28 @@ class ProjectBaseModel(BaseModel):
     def save(self, *args, **kwargs):
         self.workspace = self.project.workspace
         super(ProjectBaseModel, self).save(*args, **kwargs)
+
+
+class ProjectLink(ProjectBaseModel):
+    """A resource the overview points at -- a design doc, a dashboard, a runbook.
+
+    Shaped after `ModuleLink` and `IssueLink` rather than differently, because it is the
+    same thing at a different scope and a third spelling would make the three impossible to
+    render with one component.
+    """
+
+    title = models.CharField(max_length=255, blank=True, null=True)
+    url = models.URLField()
+    metadata = models.JSONField(default=dict)
+
+    class Meta:
+        verbose_name = "Project Link"
+        verbose_name_plural = "Project Links"
+        db_table = "project_links"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.project.name} {self.url}"
 
 
 class ProjectMemberInvite(ProjectBaseModel):

@@ -166,15 +166,10 @@ implementer: S ≈ days, M ≈ 1–2 weeks, L ≈ 3–4 weeks, XL ≈ 6+ weeks.
   description; resource links; progress metrics broken down backlog/unstarted/started/completed;
   a properties side panel carrying state, priority, lead, members, start and target dates; project
   updates as status posts; and a chronological activity feed.
-- **Backend gap.** The largest in this document. `Project` (`db/models/project.py:70-128`) has no
-  `state`, `priority`, `start_date` or `target_date`. There is no `ProjectState`, `ProjectLink`,
-  `ProjectUpdate` or `ProjectAttachment` model. Activity feed needs a project-scoped activity stream;
-  `IssueActivity` is the pattern to copy.
-- **Frontend gap.** No `overview` route under
-  `app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/`. Partial scaffolding exists in
-  the theme and project stores and already names `milestones` as a collapsible section, which is this
-  fork's own concept — the overview should surface it.
-- **Size.** L
+- **Status.** Closed by Phase B. Attributes, links, updates, progress, activity and the milestones
+  panel all ship, in one migration (`0131_project_overview`) and one new page.
+- **Not done.** Nothing in the region list. The overview reports and edits all six.
+- **Size.** L — spent.
 
 ### 3.3 Work Item Updates
 
@@ -344,13 +339,13 @@ Grouped because none justifies its own family:
 
 ## 4. Programme governance
 
-| WBS | Work package             | Depends on | Deliverable / acceptance                                                                           | Tests                                       | Status                      |
-| --- | ------------------------ | ---------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------- |
-| 0.1 | Pin the CE↔EE seam       | —          | This document, section 0; alias and stub inventory recorded                                        | `grep -c` reproduces the stub count         | DONE                        |
-| 0.2 | ADRs for D1–D4           | 0.1        | Four accepted ADRs under `docs/architecture/decisions/`                                            | ADR review                                  | READY                       |
-| 0.3 | Feature-family inventory | 0.1        | Section 3; every family has backend gap, frontend gap and mount points                             | Documentation review                        | DONE                        |
-| 0.4 | Fork-divergence policy   | 0.1        | Written rule for reconciling upstream changes to filled `ce/` stubs; recorded in `CONTRIBUTING.md` | Rebase rehearsal against upstream `preview` | READY                       |
-| 0.5 | Phasing agreed           | 0.3        | Section 5 signed off                                                                               | —                                           | BLOCKED — awaiting decision |
+| WBS | Work package                       | Depends on | Deliverable / acceptance                                                                           | Tests                                       | Status                      |
+| --- | ---------------------------------- | ---------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------- |
+| 0.1 | Pin the CE↔EE seam                 | —          | This document, section 0; alias and stub inventory recorded                                        | `grep -c` reproduces the stub count         | DONE                        |
+| 0.2 | ADRs for the programme's decisions | 0.1        | ADR 0005 accepted (Phase B model shape). D1–D4 are recorded in section 1 and still want ADR files  | ADR review                                  | PARTIAL                     |
+| 0.3 | Feature-family inventory           | 0.1        | Section 3; every family has backend gap, frontend gap and mount points                             | Documentation review                        | DONE                        |
+| 0.4 | Fork-divergence policy             | 0.1        | Written rule for reconciling upstream changes to filled `ce/` stubs; recorded in `CONTRIBUTING.md` | Rebase rehearsal against upstream `preview` | READY                       |
+| 0.5 | Phasing agreed                     | 0.3        | Section 5 signed off                                                                               | —                                           | BLOCKED — awaiting decision |
 
 ---
 
@@ -390,19 +385,37 @@ cannot carry, and one that silently dropped untyped items would be worse than it
 
 The two families that share a model, done together. First migrations of the programme.
 
-| WBS | Work package                        | Depends on | Deliverable / acceptance                                                                               | Tests                    | Status        |
-| --- | ----------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------ | ------------------------ | ------------- |
-| B.1 | ADR: project attributes and updates | A.7        | Decide `ProjectState` as a model vs. a choices field; decide whether updates are one polymorphic model | ADR review               | READY         |
-| B.2 | Project attribute migration         | B.1        | `state`, `priority`, `start_date`, `target_date` on `Project`                                          | Model + serializer tests | BLOCKED — B.1 |
-| B.3 | `ProjectLink` model and API         | B.2        | Resource links CRUD, project-scoped                                                                    | Contract tests           | BLOCKED       |
-| B.4 | `EntityUpdate` model and API        | B.1        | Status posts on project and on work item, one model                                                    | Contract tests           | BLOCKED       |
-| B.5 | Project activity stream             | B.2        | Project-scoped activity, following the `IssueActivity` pattern                                         | Query tests              | BLOCKED       |
-| B.6 | Overview route and layout           | B.2–B.5    | `/projects/:projectId/overview` renders header, metrics, properties, links, updates, activity          | Component tests          | BLOCKED       |
-| B.7 | Milestones on the overview          | B.6        | This fork's `Milestone` model surfaces in the overview's existing collapsible slot                     | Component tests          | BLOCKED       |
-| B.8 | Work-item Updates widget            | B.4        | `issue-detail-widgets/collapsibles.tsx` renders the Updates thread                                     | Component tests          | BLOCKED       |
+| WBS  | Work package                        | Depends on | Deliverable / acceptance                                                                                                                   | Tests                         | Status |
+| ---- | ----------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- | ------ |
+| B.1  | ADR: project attributes and updates | A.7        | ADR 0005 accepted: choices field over a `ProjectState` table, one `EntityUpdate` over two tables, `IssueActivity` reused over a new stream | ADR review                    | DONE   |
+| B.2  | Project attribute migration         | B.1        | `state`, `priority`, `start_date`, `target_date` on `Project`; `PortfolioStatus` extracted so the vocabulary has one definition            | Contract tests, 3 cases       | DONE   |
+| B.3  | `ProjectLink` model and API         | B.2        | Project-scoped CRUD, shaped after `ModuleLink`                                                                                             | Contract tests, 2 cases       | DONE   |
+| B.4  | `EntityUpdate` model and API        | B.1        | Status posts on project and work item from one model; target validated in-project; updates reaped with their entity                        | Contract tests, 5 cases       | DONE   |
+| B.5  | Project activity stream             | B.2        | `IssueActivity` filtered by project, no new table                                                                                          | Covered by the overview cases | DONE   |
+| B.6  | Overview route and layout           | B.2–B.5    | `/projects/:projectId/overview` with banner, icon, progress, properties, links, updates, activity; sidebar entry at sortOrder 0            | `tsc`, web suite              | DONE   |
+| B.7  | Milestones on the overview          | B.6        | `Milestone` surfaces with per-milestone done/total counts                                                                                  | Contract test                 | DONE   |
+| B.8  | Work-item Updates widget            | B.4        | `issue-detail-widgets/collapsibles.tsx` renders the same `UpdatesPanel` with `entity_name=work_item`, replies included                     | `tsc`                         | DONE   |
+| B.9  | Update replies                      | B.4        | The list is the top of the thread; `?parent=<id>` fetches one update's replies, loaded on expand                                           | Contract tests, 2 cases       | DONE   |
+| B.10 | Banner and icon editing             | B.6        | The create form's two pickers, reused over the existing `cover_image_asset` and `logo_props`. No migration                                 | `tsc`                         | DONE   |
+| B.11 | Locale coverage                     | B.6        | `sidebar.overview` translated in all 19 locales per the `translate` skill, not left as an English fill                                     | `check:sync`                  | DONE   |
 
 Exit gate: a project has a landing page that reports its own health, and status updates exist at both
 project and work-item level from one model.
+
+Exit evidence: 622 API tests and 36 web tests pass; `apps/web` type-checks clean; `check:lint` reports
+no errors; migration `0131_project_overview` is additive throughout; all 19 locales in sync.
+
+**Two traps worth recording, both found by tests rather than by reading.**
+
+_Two aggregates over one multi-valued relation cross-join._ Annotating `Milestone` with an unfiltered
+`Count("work_items")` and a filtered one made Django reuse a join for the first and add a second for
+the other, reporting one-of-two-done as two-of-two. Both milestone counts and the project progress bar
+therefore group in a single pass and total in Python, which is also what
+`plane/app/views/issue/epic.py` already does.
+
+_`Issue.save()` back-fills a missing state from the project._ A fixture that created a work item with
+no state in a project whose only state was "Done" produced a silently complete item. Test data has to
+name states explicitly.
 
 ### Phase C — cheap wins
 

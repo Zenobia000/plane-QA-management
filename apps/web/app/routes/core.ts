@@ -216,6 +216,12 @@ export const coreRoutes: RouteConfigEntry[] = [
               "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/intake/page.tsx"
             ),
           ]),
+          // Overview - how the project is going, answered by computing over the
+          // work beneath it rather than by trusting a field set by hand
+          route(
+            ":workspaceSlug/projects/:projectId/overview",
+            "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/overview/page.tsx"
+          ),
           // Epics - the requirement hierarchy with each level reporting what
           // sits beneath it, which the flat work-item list cannot show
           route(

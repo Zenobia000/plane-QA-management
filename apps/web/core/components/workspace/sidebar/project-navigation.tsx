@@ -8,7 +8,7 @@ import React, { useCallback, useMemo } from "react";
 import { observer } from "mobx-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { FlaskConical, Layers } from "lucide-react";
+import { FlaskConical, Layers, LayoutDashboard } from "lucide-react";
 import { EUserPermissionsLevel, EUserPermissions } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { CycleIcon, IntakeIcon, ModuleIcon, PageIcon, ViewsIcon, WorkItemsIcon } from "@plane/propel/icons";
@@ -71,6 +71,18 @@ export const ProjectNavigation = observer(function ProjectNavigation(props: TPro
 
   const baseNavigation = useCallback(
     (targetWorkspaceSlug: string, targetProjectId: string): TNavigationItem[] => [
+      {
+        // First, because it is the page that answers "how is this going" and every other
+        // entry answers a narrower question.
+        i18n_key: "sidebar.overview",
+        key: "overview",
+        name: "Overview",
+        href: `/${targetWorkspaceSlug}/projects/${targetProjectId}/overview`,
+        icon: LayoutDashboard,
+        access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
+        shouldRender: true,
+        sortOrder: 0,
+      },
       {
         i18n_key: "sidebar.work_items",
         key: "work_items",

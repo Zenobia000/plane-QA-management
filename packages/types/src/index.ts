@@ -20,6 +20,7 @@ export * from "./description_version";
 export * from "./editor";
 export * from "./enums";
 export * from "./work-item-hierarchy";
+export * from "./project-overview";
 export * from "./estimate";
 export * from "./favorite";
 export * from "./file";

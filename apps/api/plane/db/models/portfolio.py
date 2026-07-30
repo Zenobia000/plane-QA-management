@@ -6,17 +6,17 @@ from django.db import models
 from django.db.models import Q
 
 from .base import BaseModel
+from .choices import PortfolioStatus
 from .project import ProjectBaseModel
+
+# `Milestone.Status` and `Initiative.Status` are spellings callers and tests already use.
+# They now alias the one definition instead of each carrying a copy of it.
 
 
 class Milestone(ProjectBaseModel):
     """A project delivery checkpoint that can contain many work items."""
 
-    class Status(models.TextChoices):
-        PLANNED = "planned", "Planned"
-        IN_PROGRESS = "in_progress", "In progress"
-        COMPLETED = "completed", "Completed"
-        CANCELLED = "cancelled", "Cancelled"
+    Status = PortfolioStatus
 
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -39,11 +39,7 @@ class Milestone(ProjectBaseModel):
 class Initiative(BaseModel):
     """A workspace-level strategic outcome spanning one or more projects."""
 
-    class Status(models.TextChoices):
-        PLANNED = "planned", "Planned"
-        IN_PROGRESS = "in_progress", "In progress"
-        COMPLETED = "completed", "Completed"
-        CANCELLED = "cancelled", "Cancelled"
+    Status = PortfolioStatus
 
     workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="initiatives")
     name = models.CharField(max_length=255)

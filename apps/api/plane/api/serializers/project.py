@@ -92,6 +92,12 @@ class ProjectCreateSerializer(BaseSerializer):
             "external_id",
             "is_issue_type_enabled",
             "is_time_tracking_enabled",
+            # What the overview's properties panel reports. Additive and optional, so a
+            # client that pins an older field set is unaffected.
+            "state",
+            "priority",
+            "start_date",
+            "target_date",
         ]
 
         read_only_fields = [

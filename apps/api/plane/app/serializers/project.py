@@ -14,7 +14,10 @@ from django.db.models import Max
 from plane.app.serializers.workspace import WorkspaceLiteSerializer
 from plane.app.serializers.user import UserLiteSerializer, UserAdminLiteSerializer
 from plane.db.models import (
+    EntityUpdate,
+    Issue,
     Project,
+    ProjectLink,
     ProjectMember,
     ProjectMemberInvite,
     ProjectIdentifier,
@@ -259,3 +262,54 @@ class ProjectPublicMemberSerializer(BaseSerializer):
         model = ProjectPublicMember
         fields = "__all__"
         read_only_fields = ["workspace", "project", "member"]
+
+
+class ProjectLinkSerializer(BaseSerializer):
+    class Meta:
+        model = ProjectLink
+        fields = "__all__"
+        read_only_fields = ["workspace", "project", "created_by", "updated_by", "created_at", "updated_at"]
+
+    def to_internal_value(self, data):
+        # Same leniency `ModuleLinkSerializer` applies, so a link pasted without a scheme
+        # behaves the same wherever it is pasted.
+        url = data.get("url", "")
+        if url and not url.startswith(("http://", "https://")):
+            data["url"] = "http://" + url
+
+        return super().to_internal_value(data)
+
+
+class EntityUpdateSerializer(BaseSerializer):
+    actor_detail = UserLiteSerializer(source="actor", read_only=True)
+    reply_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = EntityUpdate
+        fields = "__all__"
+        read_only_fields = ["workspace", "project", "actor", "created_by", "updated_by", "created_at", "updated_at"]
+
+    def validate(self, data):
+        """Resolve the target inside the request's project before anything is written.
+
+        The model keys its target by `entity_name` plus a bare UUID, which buys one table
+        for two entities and costs referential integrity. That cost is paid here: without
+        this check an update could be filed against another project's work item, and the
+        database would happily store it.
+        """
+        project_id = self.context.get("project_id")
+        entity_name = data.get("entity_name", getattr(self.instance, "entity_name", None))
+        entity_identifier = data.get("entity_identifier", getattr(self.instance, "entity_identifier", None))
+
+        if entity_name == EntityUpdate.EntityName.PROJECT:
+            if str(entity_identifier) != str(project_id):
+                raise serializers.ValidationError("A project update must name the project it belongs to.")
+        elif entity_name == EntityUpdate.EntityName.WORK_ITEM:
+            if not Issue.objects.filter(pk=entity_identifier, project_id=project_id).exists():
+                raise serializers.ValidationError("The work item does not exist in this project.")
+
+        parent = data.get("parent")
+        if parent and parent.project_id != project_id:
+            raise serializers.ValidationError("A reply has to belong to the same project as the update.")
+
+        return data

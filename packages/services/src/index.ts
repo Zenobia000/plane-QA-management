@@ -20,5 +20,6 @@ export * from "./label";
 export * from "./state";
 export * from "./issue";
 export * from "./work-item-hierarchy";
+export * from "./project-overview";
 export * from "./testing";
 export * from "./work-item-extensions";

@@ -99,10 +99,40 @@ def soft_delete_related_objects(app_label, model_name, instance_pk, using=None):
                 print(f"Error handling relation {related_name}: {str(e)}")
                 continue
 
+    _soft_delete_polymorphic_children(model_name, instance_pk)
+
     # Finally, soft delete the instance itself if it hasn't been deleted yet
     if hasattr(instance, "deleted_at") and not instance.deleted_at:
         instance.deleted_at = timezone.now()
         instance.save()
+
+
+# Models that something points at by a bare UUID rather than by a foreign key, mapped to the
+# name that column stores. The relation walk above is driven by Django's reverse accessors,
+# so it cannot see these -- an `EntityUpdate` would outlive the work item it describes.
+POLYMORPHIC_UPDATE_TARGETS = {"project": "project", "issue": "work_item"}
+
+
+def _soft_delete_polymorphic_children(model_name, instance_pk):
+    """Soft delete the updates filed against an entity that is going away.
+
+    Restricted to the two models that can be targets so the query uses `EntityUpdate`'s
+    composite index rather than scanning on `entity_identifier` alone, and so every other
+    model's delete pays nothing.
+
+    Known limitation, shared with the relation walk above: a queryset-level
+    `.delete()` sets `deleted_at` in bulk without calling `SoftDeleteModel.delete()`, so
+    bulk paths reach neither this nor the existing cascade.
+    """
+    entity_name = POLYMORPHIC_UPDATE_TARGETS.get(model_name)
+    if not entity_name:
+        return
+
+    from plane.db.models import EntityUpdate
+
+    EntityUpdate.objects.filter(entity_name=entity_name, entity_identifier=instance_pk).update(
+        deleted_at=timezone.now()
+    )
 
 
 # @shared_task

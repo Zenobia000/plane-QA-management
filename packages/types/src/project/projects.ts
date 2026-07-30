@@ -6,6 +6,8 @@
 
 import type { TLogoProps } from "../common";
 import type { TUserPermissions } from "../enums";
+import type { TIssuePriorities } from "../issues";
+import type { TPortfolioStatus } from "../project-overview";
 import type { TStateGroups } from "../state";
 import type { IUser, IUserLite } from "../users";
 import type { IWorkspace } from "../workspace";
@@ -59,6 +61,12 @@ export interface IProject extends IPartialProject {
   members?: string[];
   timezone?: string;
   next_work_item_sequence?: number;
+  // What the overview's properties panel reports. Optional because they are additive:
+  // a project created before them, or by a client that does not send them, is still valid.
+  state?: TPortfolioStatus | null;
+  priority?: TIssuePriorities;
+  start_date?: string | null;
+  target_date?: string | null;
 }
 
 export type TProjectAnalyticsCountParams = {

@@ -18,6 +18,11 @@ from plane.app.views import (
     UserProjectRolesEndpoint,
     ProjectArchiveUnarchiveEndpoint,
     ProjectMemberPreferenceEndpoint,
+    ProjectLinkViewSet,
+    EntityUpdateViewSet,
+    ProjectProgressEndpoint,
+    ProjectActivityEndpoint,
+    ProjectOverviewEndpoint,
 )
 
 
@@ -128,5 +133,40 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/preferences/member/<uuid:member_id>/",
         ProjectMemberPreferenceEndpoint.as_view(),
         name="project-member-preference",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/overview/",
+        ProjectOverviewEndpoint.as_view(),
+        name="project-overview",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/progress/",
+        ProjectProgressEndpoint.as_view(),
+        name="project-progress",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/activity/",
+        ProjectActivityEndpoint.as_view(),
+        name="project-activity",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/links/",
+        ProjectLinkViewSet.as_view({"get": "list", "post": "create"}),
+        name="project-links",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/links/<uuid:pk>/",
+        ProjectLinkViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="project-links",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/updates/",
+        EntityUpdateViewSet.as_view({"get": "list", "post": "create"}),
+        name="project-updates",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/updates/<uuid:pk>/",
+        EntityUpdateViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="project-updates",
     ),
 ]

@@ -109,7 +109,7 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
         canScroll: ({ source }) => source.data.dragInstanceId === "GANTT_REORDER",
       })
     );
-  }, [ganttContainerRef?.current]);
+  }, []);
 
   // handling scroll functionality
   const onScroll = (e: React.UIEvent<HTMLDivElement, UIEvent>) => {
@@ -218,7 +218,7 @@ export const GanttChartMainContent = observer(function GanttChartMainContent(pro
                       selectionHelpers={helpers}
                       ganttContainerRef={ganttContainerRef}
                     />
-                    <TimelineDependencyPaths isEpic={isEpic} />
+                    <TimelineDependencyPaths blockIds={blockIds} isEpic={isEpic} />
                     <TimelineDraggablePath />
                     <GanttAdditionalLayers itemsContainerWidth={itemsContainerWidth} blockCount={blockIds.length} />
                     <GanttChartBlocksList

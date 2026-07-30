@@ -29,6 +29,7 @@ from plane.app.views import (
     IssueAttachmentV2Endpoint,
     IssueBulkUpdateDateEndpoint,
     IssueBulkUpdateEndpoint,
+    WorkItemDeDupeEndpoint,
     IssueVersionEndpoint,
     WorkItemDescriptionVersionEndpoint,
     IssueMetaEndpoint,
@@ -305,5 +306,10 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/bulk-update-issues/",
         IssueBulkUpdateEndpoint.as_view(),
         name="project-issues-bulk-update",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/de-dupe/",
+        WorkItemDeDupeEndpoint.as_view(),
+        name="work-item-de-dupe",
     ),
 ]

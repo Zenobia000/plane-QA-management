@@ -68,6 +68,7 @@ from .user import Account, Profile, User, BotTypeEnum
 from .view import IssueView
 from .webhook import Webhook, WebhookLog
 from .workspace import (
+    Team,
     Workspace,
     WorkspaceBaseModel,
     WorkspaceMember,
@@ -92,6 +93,8 @@ from .workflow import StateTransition, StateTransitionApprover
 from .worklog import Worklog
 
 from .template import Template
+
+from .teamspace import TeamMember, TeamProject
 
 from .work_item_property import WorkItemProperty, WorkItemPropertyOption, WorkItemPropertyValue
 

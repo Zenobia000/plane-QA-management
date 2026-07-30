@@ -63,6 +63,14 @@ from .workspace.draft import WorkspaceDraftIssueViewSet
 
 from .workspace.home import WorkspaceHomePreferenceViewSet
 
+from .workspace.portfolio import (
+    InitiativeViewSet,
+    InitiativeProjectEndpoint,
+    InitiativeProgressEndpoint,
+    TeamViewSet,
+    TeamMembershipEndpoint,
+)
+
 from .workspace.favorite import (
     WorkspaceFavoriteEndpoint,
     WorkspaceFavoriteGroupEndpoint,
@@ -167,6 +175,7 @@ from .issue.relation import IssueRelationViewSet
 from .issue.reaction import IssueReactionViewSet
 
 from .issue.epic import ProjectEpicHierarchyEndpoint, WorkItemHierarchyEndpoint
+from .issue.dedupe import WorkItemDeDupeEndpoint
 from .issue.sub_issue import SubIssuesEndpoint
 
 from .issue.subscriber import IssueSubscriberViewSet

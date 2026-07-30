@@ -6,6 +6,11 @@ from django.urls import path
 
 
 from plane.app.views import (
+    InitiativeViewSet,
+    InitiativeProjectEndpoint,
+    InitiativeProgressEndpoint,
+    TeamViewSet,
+    TeamMembershipEndpoint,
     UserWorkspaceInvitationsViewSet,
     WorkSpaceViewSet,
     WorkspaceJoinEndpoint,
@@ -256,5 +261,40 @@ urlpatterns = [
         "workspaces/<str:slug>/sidebar-preferences/",
         WorkspaceUserPreferenceViewSet.as_view(),
         name="workspace-user-preference",
+    ),
+    path(
+        "workspaces/<str:slug>/initiatives/",
+        InitiativeViewSet.as_view({"get": "list", "post": "create"}),
+        name="workspace-initiatives",
+    ),
+    path(
+        "workspaces/<str:slug>/initiatives/<uuid:pk>/",
+        InitiativeViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="workspace-initiatives",
+    ),
+    path(
+        "workspaces/<str:slug>/initiatives/<uuid:initiative_id>/projects/",
+        InitiativeProjectEndpoint.as_view(),
+        name="initiative-projects",
+    ),
+    path(
+        "workspaces/<str:slug>/initiatives/<uuid:initiative_id>/progress/",
+        InitiativeProgressEndpoint.as_view(),
+        name="initiative-progress",
+    ),
+    path(
+        "workspaces/<str:slug>/teamspaces/",
+        TeamViewSet.as_view({"get": "list", "post": "create"}),
+        name="workspace-teamspaces",
+    ),
+    path(
+        "workspaces/<str:slug>/teamspaces/<uuid:pk>/",
+        TeamViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="workspace-teamspaces",
+    ),
+    path(
+        "workspaces/<str:slug>/teamspaces/<uuid:team_id>/membership/",
+        TeamMembershipEndpoint.as_view(),
+        name="teamspace-membership",
     ),
 ]

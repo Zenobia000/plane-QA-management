@@ -63,6 +63,12 @@ from .workspace.draft import WorkspaceDraftIssueViewSet
 
 from .workspace.home import WorkspaceHomePreferenceViewSet
 
+from .workspace.dashboard import (
+    DashboardViewSet,
+    DashboardWidgetViewSet,
+    DashboardWidgetDataEndpoint,
+)
+
 from .workspace.portfolio import (
     InitiativeViewSet,
     InitiativeProjectEndpoint,

@@ -48,7 +48,7 @@ from .issue import (
 )
 from .module import Module, ModuleIssue, ModuleLink, ModuleMember, ModuleUserProperties
 from .notification import EmailNotificationLog, Notification, UserNotificationPreference
-from .page import Page, PageLabel, PageLog, ProjectPage, PageVersion
+from .page import Page, PageLabel, PageLog, PageShare, ProjectPage, PageVersion
 from .choices import PortfolioStatus, UpdateStatus
 from .project import (
     Project,
@@ -95,6 +95,8 @@ from .worklog import Worklog
 from .template import Template
 
 from .teamspace import TeamMember, TeamProject
+
+from .dashboard import Dashboard, DashboardWidget
 
 from .work_item_property import WorkItemProperty, WorkItemPropertyOption, WorkItemPropertyValue
 

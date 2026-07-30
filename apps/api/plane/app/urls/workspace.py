@@ -6,6 +6,9 @@ from django.urls import path
 
 
 from plane.app.views import (
+    DashboardViewSet,
+    DashboardWidgetViewSet,
+    DashboardWidgetDataEndpoint,
     InitiativeViewSet,
     InitiativeProjectEndpoint,
     InitiativeProgressEndpoint,
@@ -296,5 +299,30 @@ urlpatterns = [
         "workspaces/<str:slug>/teamspaces/<uuid:team_id>/membership/",
         TeamMembershipEndpoint.as_view(),
         name="teamspace-membership",
+    ),
+    path(
+        "workspaces/<str:slug>/dashboards/",
+        DashboardViewSet.as_view({"get": "list", "post": "create"}),
+        name="workspace-dashboards",
+    ),
+    path(
+        "workspaces/<str:slug>/dashboards/<uuid:pk>/",
+        DashboardViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
+        name="workspace-dashboards",
+    ),
+    path(
+        "workspaces/<str:slug>/dashboards/<uuid:dashboard_id>/widgets/",
+        DashboardWidgetViewSet.as_view({"get": "list", "post": "create"}),
+        name="dashboard-widgets",
+    ),
+    path(
+        "workspaces/<str:slug>/dashboards/<uuid:dashboard_id>/widgets/<uuid:pk>/",
+        DashboardWidgetViewSet.as_view({"patch": "partial_update", "delete": "destroy"}),
+        name="dashboard-widgets",
+    ),
+    path(
+        "workspaces/<str:slug>/dashboards/<uuid:dashboard_id>/widgets/<uuid:widget_id>/data/",
+        DashboardWidgetDataEndpoint.as_view(),
+        name="dashboard-widget-data",
     ),
 ]

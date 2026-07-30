@@ -180,3 +180,36 @@ class PageVersion(BaseModel):
             else strip_tags(self.description_html)
         )
         super(PageVersion, self).save(*args, **kwargs)
+
+
+class PageShare(models.Model):
+    """Who may reach a page beyond its project's members.
+
+    A page's `access` field is already Public/Private *within* its project. Sharing is the
+    question one level out -- naming a specific member of the workspace who is not in the
+    project. Modelled as an explicit grant rather than a widened `access` value, because
+    "everyone in the workspace" and "these three people" are different statements and
+    collapsing them loses the one that needed saying.
+    """
+
+    class Role(models.TextChoices):
+        VIEWER = "viewer", "Viewer"
+        EDITOR = "editor", "Editor"
+
+    id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True, primary_key=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    page = models.ForeignKey("db.Page", on_delete=models.CASCADE, related_name="shares")
+    workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="page_shares")
+    member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shared_pages")
+    role = models.CharField(max_length=30, choices=Role.choices, default=Role.VIEWER)
+
+    class Meta:
+        verbose_name = "Page Share"
+        verbose_name_plural = "Page Shares"
+        db_table = "page_shares"
+        constraints = [
+            models.UniqueConstraint(fields=["page", "member"], name="page_share_unique_page_member")
+        ]
+
+    def __str__(self):
+        return f"{self.page_id} <- {self.member_id}"

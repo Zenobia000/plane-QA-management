@@ -13,6 +13,9 @@ from .project import ProjectBaseModel
 class EstimateType(models.TextChoices):
     CATEGORIES = "categories", "Categories"
     POINTS = "points", "Points"
+    # Stored as whole minutes. A decimal of hours reads as 1.75h, which is a number someone
+    # has to convert before acting on it, and summing thirds of an hour is not exact.
+    TIME = "time", "Time"
 
 
 class Estimate(ProjectBaseModel):

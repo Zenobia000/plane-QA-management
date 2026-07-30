@@ -182,9 +182,21 @@ export class ProjectPageService extends APIService {
       });
   }
 
-  async move(workspaceSlug: string, projectId: string, pageId: string, newProjectId: string): Promise<void> {
+  /**
+   * Move a page, and everything beneath it, to another project in the same workspace.
+   *
+   * The membership row is swapped rather than the page copied, so versions, labels and the
+   * description stay attached to the same page. This method predates the endpoint it calls:
+   * it shipped sending `new_project_id` to a URL that did not exist server-side.
+   */
+  async move(
+    workspaceSlug: string,
+    projectId: string,
+    pageId: string,
+    newProjectId: string
+  ): Promise<{ moved: number; project_id: string }> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/pages/${pageId}/move/`, {
-      new_project_id: newProjectId,
+      project_id: newProjectId,
     })
       .then((response) => response?.data)
       .catch((error) => {

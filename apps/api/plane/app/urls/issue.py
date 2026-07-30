@@ -28,6 +28,7 @@ from plane.app.views import (
     IssueDetailEndpoint,
     IssueAttachmentV2Endpoint,
     IssueBulkUpdateDateEndpoint,
+    IssueBulkUpdateEndpoint,
     IssueVersionEndpoint,
     WorkItemDescriptionVersionEndpoint,
     IssueMetaEndpoint,
@@ -299,5 +300,10 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/epic-hierarchy/",
         WorkItemHierarchyEndpoint.as_view(),
         name="project-epic-hierarchy",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/bulk-update-issues/",
+        IssueBulkUpdateEndpoint.as_view(),
+        name="project-issues-bulk-update",
     ),
 ]

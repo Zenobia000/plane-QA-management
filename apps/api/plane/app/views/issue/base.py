@@ -10,6 +10,7 @@ import json
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import ArrayField
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import transaction
 from django.db.models import (
     Count,
     Exists,
@@ -1368,3 +1369,118 @@ class IssueDetailIdentifierEndpoint(BaseAPIView):
         # Serialize the issue
         serializer = IssueDetailSerializer(issue, expand=self.expand)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class IssueBulkUpdateEndpoint(BaseAPIView):
+    """Change one property across many work items in a single request.
+
+    The neighbouring `IssueBulkUpdateDateEndpoint` does this for dates only, and it takes a
+    per-item payload because each item gets its own dates. Bulk operations are the other
+    shape: one value applied to a selection, which is what a multi-select toolbar produces.
+
+    Only the properties a toolbar can offer are writable here. Everything else -- name,
+    description, parent, type -- is per-item by nature, and a bulk endpoint that accepted
+    them would be a way to set fifty work items to the same title.
+
+    Labels and assignees are additive rather than replacing, because "add a label to these"
+    is the operation people mean; replacing would silently strip labels the selection
+    already had.
+    """
+
+    SCALAR_FIELDS = ("state_id", "priority", "estimate_point_id", "target_date", "start_date")
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    def post(self, request, slug, project_id):
+        issue_ids = request.data.get("issue_ids", [])
+        properties = request.data.get("properties", {})
+
+        if not issue_ids:
+            return Response({"error": "Work item IDs are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        unknown = set(properties) - set(self.SCALAR_FIELDS) - {"label_ids", "assignee_ids"}
+        if unknown:
+            return Response(
+                {"error": f"These properties cannot be set in bulk: {', '.join(sorted(unknown))}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        issues = list(Issue.objects.filter(id__in=issue_ids, workspace__slug=slug, project_id=project_id))
+        if not issues:
+            return Response({"error": "No work items matched."}, status=status.HTTP_400_BAD_REQUEST)
+
+        scalars = {key: value for key, value in properties.items() if key in self.SCALAR_FIELDS}
+        epoch = int(timezone.now().timestamp())
+
+        with transaction.atomic():
+            if scalars:
+                for issue in issues:
+                    for key, value in scalars.items():
+                        setattr(issue, key, value)
+                Issue.objects.bulk_update(issues, list(scalars), batch_size=100)
+
+            # Existing pairs are read and skipped rather than left to `ignore_conflicts`:
+            # neither join table carries a unique constraint on (issue, label/assignee), so
+            # the database has nothing to conflict on and a repeated bulk apply would add a
+            # second row for a label the item already had.
+            if properties.get("label_ids"):
+                self._add_links(
+                    IssueLabel,
+                    "label_id",
+                    properties["label_ids"],
+                    issues,
+                    project_id,
+                    request.user,
+                )
+
+            if properties.get("assignee_ids"):
+                self._add_links(
+                    IssueAssignee,
+                    "assignee_id",
+                    properties["assignee_ids"],
+                    issues,
+                    project_id,
+                    request.user,
+                )
+
+        for issue in issues:
+            issue_activity.delay(
+                type="issue.activity.updated",
+                requested_data=json.dumps(properties, cls=DjangoJSONEncoder),
+                actor_id=str(request.user.id),
+                issue_id=str(issue.id),
+                project_id=str(project_id),
+                current_instance=None,
+                epoch=epoch,
+                notification=False,
+                origin=base_host(request=request, is_app=True),
+            )
+
+        return Response({"updated": len(issues)}, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _add_links(model, field, target_ids, issues, project_id, actor):
+        """Attach each target to each work item, skipping pairs that already exist."""
+        issue_ids = [issue.id for issue in issues]
+        # Compared as strings on both sides: the ids arrive from JSON as text while the
+        # column returns UUIDs, and the mismatch made every existing pair look absent.
+        existing = {
+            (str(issue_id), str(target_id))
+            for issue_id, target_id in model.objects.filter(
+                issue_id__in=issue_ids, **{f"{field}__in": target_ids}
+            ).values_list("issue_id", field)
+        }
+        model.objects.bulk_create(
+            [
+                model(
+                    issue=issue,
+                    project_id=project_id,
+                    workspace_id=issue.workspace_id,
+                    created_by=actor,
+                    **{field: target_id},
+                )
+                for issue in issues
+                for target_id in target_ids
+                if (str(issue.id), str(target_id)) not in existing
+            ],
+            batch_size=100,
+        )

@@ -426,14 +426,27 @@ serializer, and publishing was one endpoint that names an entity type `DeployBoa
 carried. No migration, 5 contract tests, and the four `ce/` stubs filled against their existing
 prop contracts.
 
-| WBS | Work package                       | Depends on | Deliverable / acceptance                                                                                                                | Tests                      | Status |
-| --- | ---------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ------ |
-| C.1 | Views access control and publish   | —          | `IssueView.access` made writable and surfaced; `ProjectViewPublishEndpoint` over the existing `DeployBoard` `"view"` type. No migration | Contract tests, 5 cases    | DONE   |
-| C.2 | Pages: lock, move, share           | —          | Three header controls over existing `Page` fields                                                                                       | Contract + component tests | READY  |
-| C.3 | Pages: nesting and navigation pane | C.2        | Page tree over existing `Page.parent`                                                                                                   | Component tests            | READY  |
-| C.4 | Bulk operations                    | —          | Bulk-update endpoint; multi-select toolbar                                                                                              | Contract + component tests | READY  |
-| C.5 | Gantt dependencies                 | —          | Draw and persist blocked-by over existing `IssueRelation`                                                                               | Component tests            | READY  |
-| C.6 | Estimates: time input              | —          | Time-denominated estimate type                                                                                                          | Unit tests                 | READY  |
+Three findings from the rest of the phase, each of which changed what got built:
+
+- **`ignore_conflicts` needs a constraint to ignore.** The bulk label/assignee apply used it and
+  produced duplicate rows, because neither join table carries a unique constraint on
+  (issue, label). Existing pairs are now read and skipped. The first fix was still wrong -- the
+  ids arrive from JSON as text and the column returns UUIDs, so every existing pair looked absent
+  until both sides were compared as strings.
+- **`ProjectPageService.move` already existed and pointed at nothing.** It shipped posting
+  `new_project_id` to a `/move/` URL that had no server-side route. The endpoint now exists and
+  the method was aligned to it rather than a second one added beside it.
+- **Page sharing needs an ACL model**, which makes it a migration and therefore not a Phase C
+  item. Moved to Phase D.
+
+| WBS | Work package                       | Depends on | Deliverable / acceptance                                                                                                                | Tests                               | Status                                                                                   |
+| --- | ---------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| C.1 | Views access control and publish   | —          | `IssueView.access` made writable and surfaced; `ProjectViewPublishEndpoint` over the existing `DeployBoard` `"view"` type. No migration | Contract tests, 5 cases             | DONE                                                                                     |
+| C.2 | Pages: move between projects       | —          | `PageViewSet.move` swaps the `ProjectPage` membership; descendants follow. The client method predated the endpoint and now reaches it   | Contract tests, 4 cases             | PARTIAL — lock already shipped, move done, share needs an ACL and is deferred to Phase D |
+| C.3 | Pages: nesting and navigation pane | C.2        | Page tree over existing `Page.parent`                                                                                                   | Component tests                     | READY                                                                                    |
+| C.4 | Bulk operations                    | —          | `IssueBulkUpdateEndpoint` applies one value to a selection; labels and assignees add rather than replace                                | Contract tests, 6 cases             | DONE                                                                                     |
+| C.5 | Gantt dependencies                 | —          | Draw and persist blocked-by over existing `IssueRelation`                                                                               | Component tests                     | READY                                                                                    |
+| C.6 | Estimates: time input              | —          | `EstimateType.TIME`, stored as whole minutes; hours/minutes input                                                                       | Migration `0132_estimate_time_type` | DONE                                                                                     |
 
 ### Phase D — the hard families
 

@@ -8,7 +8,7 @@ from datetime import datetime
 from django.core.serializers.json import DjangoJSONEncoder
 
 # Django imports
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import (
     Exists,
     OuterRef,
@@ -267,6 +267,68 @@ class PageViewSet(BaseViewSet):
         page.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    def move(self, request, slug, project_id, page_id):
+        """Move a page to another project in the same workspace.
+
+        `ProjectPage` is the membership row and `Page.moved_to_project` is the forwarding
+        note the old location leaves behind -- both have been in the schema all along. The
+        move is one row swapped rather than a copy, so versions, labels and the description
+        stay attached to the same page.
+
+        Descendants follow their parent. A page tree split across two projects would leave
+        `Page.parent` pointing across a boundary that every other query assumes it does not
+        cross.
+        """
+        target_project_id = request.data.get("project_id")
+        if not target_project_id:
+            return Response({"error": "A destination project is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if str(target_project_id) == str(project_id):
+            return Response({"error": "The page is already in that project."}, status=status.HTTP_400_BAD_REQUEST)
+
+        page = Page.objects.filter(pk=page_id, workspace__slug=slug, project_pages__project_id=project_id).first()
+        if not page:
+            return Response({"error": "The page does not exist in this project."}, status=status.HTTP_404_NOT_FOUND)
+
+        target = Project.objects.filter(
+            pk=target_project_id,
+            workspace__slug=slug,
+            project_projectmember__member=request.user,
+            project_projectmember__is_active=True,
+        ).first()
+        if not target:
+            return Response(
+                {"error": "You are not a member of the destination project."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        def descendants(root_id):
+            found = []
+            frontier = [root_id]
+            while frontier:
+                children = list(Page.objects.filter(parent_id__in=frontier).values_list("id", flat=True))
+                found.extend(children)
+                frontier = children
+            return found
+
+        page_ids = [page.id, *descendants(page.id)]
+
+        with transaction.atomic():
+            ProjectPage.objects.filter(page_id__in=page_ids, project_id=project_id).delete()
+            ProjectPage.objects.bulk_create(
+                [
+                    ProjectPage(page_id=moved_id, project=target, workspace=target.workspace)
+                    for moved_id in page_ids
+                ],
+                batch_size=100,
+            )
+            Page.objects.filter(id__in=page_ids).update(moved_to_project=target.id)
+
+        return Response(
+            {"moved": len(page_ids), "project_id": str(target.id)},
+            status=status.HTTP_200_OK,
+        )
 
     def access(self, request, slug, project_id, page_id):
         access = request.data.get("access", 0)

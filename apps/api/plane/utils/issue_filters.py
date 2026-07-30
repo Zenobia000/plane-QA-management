@@ -159,6 +159,29 @@ def filter_labels(params, issue_filter, method, prefix=""):
     return issue_filter
 
 
+def filter_issue_type(params, issue_filter, method, prefix=""):
+    """Work item type, which is a different question from `type`.
+
+    `type` was already taken by the backlog/active state-group shortcut long before types
+    existed, so the key the frontend has always sent for this is `issue_type`. Until now
+    nothing consumed it server-side and the parameter was silently dropped -- which is why
+    filtering a project list by Epic returned everything.
+
+    "None" selects untyped work items, matching how labels and assignees spell it.
+    """
+    if method == "GET":
+        types = [item for item in params.get("issue_type").split(",") if item != "null"]
+        if "None" in types:
+            issue_filter[f"{prefix}type__isnull"] = True
+        types = filter_valid_uuids(types)
+        if len(types) and "" not in types:
+            issue_filter[f"{prefix}type__in"] = types
+    else:
+        if params.get("issue_type", None) and len(params.get("issue_type")) and params.get("issue_type") != "null":
+            issue_filter[f"{prefix}type__in"] = params.get("issue_type")
+    return issue_filter
+
+
 def filter_assignees(params, issue_filter, method, prefix=""):
     if method == "GET":
         assignees = [item for item in params.get("assignees").split(",") if item != "null"]
@@ -440,6 +463,24 @@ def filter_leaf_only(params, issue_filter, method, prefix=""):
     return issue_filter
 
 
+def filter_epic(params, issue_filter, method, prefix=""):
+    """Keep only work items whose type carries `is_epic`.
+
+    A boolean rather than a type id, because "the epics" is a question about the flag, and
+    the caller asking it -- the epics list -- has no reason to know which id happens to
+    carry the flag in this workspace. `issue_type` remains the way to filter by a specific
+    type; this is the way to filter by the role a type plays.
+
+    Only the positive direction is supported. "Everything that is not an epic" has to
+    include untyped work items, which is `type IS NULL OR is_epic = false` -- an OR that a
+    kwargs dict returned for `.filter(**filters)` cannot carry. Nothing needs it today, and
+    an `epic=false` that quietly dropped every untyped item would be worse than its absence.
+    """
+    if str(params.get("epic", "false")).lower() in ("true", "1"):
+        issue_filter[f"{prefix}type__is_epic"] = True
+    return issue_filter
+
+
 def filter_subscribed_issues(params, issue_filter, method, prefix=""):
     if method == "GET":
         subscribers = [item for item in params.get("subscriber").split(",") if item != "null"]
@@ -497,6 +538,8 @@ def issue_filters(query_params, method, prefix=""):
         "target_date": filter_target_date,
         "completed_at": filter_completed_at,
         "type": filter_issue_state_type,
+        "issue_type": filter_issue_type,
+        "epic": filter_epic,
         "project": filter_project,
         "cycle": filter_cycle,
         "module": filter_module,

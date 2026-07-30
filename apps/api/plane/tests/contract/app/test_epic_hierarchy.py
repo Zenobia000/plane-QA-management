@@ -36,13 +36,20 @@ def testing_project(db, workspace, create_user):
     return project
 
 
-@pytest.mark.contract
-@pytest.mark.django_db
-class TestEpicHierarchy:
-    """Each level has to report what sits beneath it, or the tree is just indented noise."""
+class HierarchyFixtures:
+    """URLs and the two-level skeleton both hierarchy suites build on."""
 
     def _url(self, workspace, project):
         return f"/api/workspaces/{workspace.slug}/projects/{project.id}/epic-hierarchy/"
+
+    def _roots_url(self, workspace, project):
+        return f"/api/workspaces/{workspace.slug}/projects/{project.id}/work-item-hierarchy/"
+
+    def _item_url(self, workspace, project, issue_id):
+        return (
+            f"/api/workspaces/{workspace.slug}/projects/{project.id}"
+            f"/work-items/{issue_id}/hierarchy/"
+        )
 
     def _state(self, workspace, project, name, group):
         return State.objects.create(
@@ -57,6 +64,12 @@ class TestEpicHierarchy:
             workspace=workspace, project=project, name="Feature", state=started, parent=epic
         )
         return epic, feature, started, done
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+class TestEpicHierarchy(HierarchyFixtures):
+    """Each level has to report what sits beneath it, or the tree is just indented noise."""
 
     def test_rollup_aggregates_state_and_points_across_every_depth(
         self, session_client, workspace, testing_project
@@ -225,3 +238,107 @@ class TestEpicHierarchy:
     def test_non_member_cannot_read_the_hierarchy(self, api_client, workspace, testing_project):
         response = api_client.get(self._url(workspace, testing_project))
         assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+class TestWorkItemSubtreeHierarchy(HierarchyFixtures):
+    """The same computation, asked of one node instead of every root."""
+
+    def test_a_subtree_reports_what_the_full_tree_reported_for_that_node(
+        self, session_client, workspace, testing_project
+    ):
+        epic, feature, started, _done = self._tree(workspace, testing_project)
+        for name in ("Story A", "Story B"):
+            Issue.objects.create(
+                workspace=workspace, project=testing_project, name=name, state=started, parent=feature
+            )
+
+        from_root = session_client.get(self._roots_url(workspace, testing_project)).json()["nodes"]
+        from_feature = session_client.get(
+            self._item_url(workspace, testing_project, feature.id)
+        ).json()["nodes"]
+
+        # A feature is not an epic and has never needed a second endpoint to say so.
+        assert [node["name"] for node in from_feature] == ["Feature"]
+        assert from_feature[0] == from_root[0]["children"][0]
+        assert from_feature[0]["rollup"]["leaves"] == 2
+
+    def test_a_leaf_is_a_legitimate_subject_and_reports_an_empty_rollup(
+        self, session_client, workspace, testing_project
+    ):
+        _epic, feature, started, _done = self._tree(workspace, testing_project)
+        story = Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Story", state=started, parent=feature
+        )
+
+        nodes = session_client.get(self._item_url(workspace, testing_project, story.id)).json()["nodes"]
+
+        # A leaf summarises nothing, so its rollup is empty by construction rather than by
+        # special case -- the numbers it produces belong to its ancestors.
+        assert nodes[0]["is_leaf"] is True
+        assert nodes[0]["rollup"]["leaves"] == 0
+        assert nodes[0]["rollup"]["descendants"] == 0
+
+    def test_the_epic_alias_answers_identically_to_the_rootless_url(
+        self, session_client, workspace, testing_project
+    ):
+        _epic, feature, started, _done = self._tree(workspace, testing_project)
+        Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Story", state=started, parent=feature
+        )
+
+        legacy = session_client.get(self._url(workspace, testing_project))
+        current = session_client.get(self._roots_url(workspace, testing_project))
+
+        assert legacy.status_code == status.HTTP_200_OK
+        assert legacy.json() == current.json()
+
+    def test_a_defect_is_absent_from_the_hierarchy_rather_than_an_empty_subtree(
+        self, session_client, workspace, testing_project, create_user
+    ):
+        _epic, feature, started, _done = self._tree(workspace, testing_project)
+        story = Issue.objects.create(
+            workspace=workspace, project=testing_project, name="Story", state=started, parent=feature
+        )
+        case = create_test_case(project_id=testing_project.id, title="Contract")
+        link_test_case_to_work_item(
+            test_case_id=case.id, issue_id=story.id, project_id=testing_project.id
+        )
+        run = create_fixed_test_run(
+            project_id=testing_project.id, name="Run", test_case_ids=[case.id], build="b1"
+        )
+        run_case = run.run_cases.first()
+        failure = record_test_result(
+            run_case_id=run_case.id, project_id=testing_project.id, status="failed",
+            actual_result={"text": "boom"},
+        )
+        # The factory returns the result-to-issue link, so the defect is its `issue_id`.
+        defect_link = create_defect_from_result(
+            result_id=failure.id, run_case_id=run_case.id, project_id=testing_project.id,
+            created_by=create_user,
+        )
+
+        response = session_client.get(
+            self._item_url(workspace, testing_project, defect_link.issue_id)
+        )
+
+        # Defects are evidence, not requirements. The tree excludes them, so asking one for
+        # its rollup has to say "not here" rather than hand back a hollow node that would
+        # read as "verified nothing".
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_a_work_item_from_another_project_is_not_reachable(
+        self, session_client, workspace, testing_project, create_user
+    ):
+        other = Project.objects.create(
+            name="Other", identifier="OTHR", workspace=workspace, created_by=create_user
+        )
+        ProjectMember.objects.create(
+            workspace=workspace, project=other, member=create_user, role=20, is_active=True
+        )
+        elsewhere = Issue.objects.create(workspace=workspace, project=other, name="Elsewhere")
+
+        response = session_client.get(self._item_url(workspace, testing_project, elsewhere.id))
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND

@@ -9,6 +9,15 @@ carries only its own fields. That is fine for operating on one item and useless 
 "how is this epic doing", because the answer is a property of the descendants, not of the
 epic row. Every number below is therefore computed downward from each node.
 
+**Nothing here is Epic-specific.** An epic is an ordinary work item whose type carries
+`is_epic`; the hierarchy it sits at the top of is the same `parent` chain every other item
+uses. So the question "how is this doing" is asked of a node, not of an epic, and the
+endpoint takes an optional work-item id to say which node. Asking without one returns every
+root, which is what the Epics page wants; asking with one returns that item's own subtree,
+which is what a feature or a story wants. The two answers are the same shape because they
+are the same computation -- restricting the endpoint to epics would have forced a second
+one the first time a feature needed the same numbers.
+
 **A node's rollup describes its leaf descendants, and never itself.** That rule is doing
 more work than it looks. A feature's state is a hand-set summary of the same work its
 stories represent, so counting the feature alongside its own stories states one fact twice.
@@ -37,7 +46,9 @@ Four aggregates, deliberately from four different axes:
   stories straddle three sprints is a scheduling fact the tree would otherwise hide
 
 Defects are excluded from the tree entirely. They are parentless, so they would otherwise
-render as roots beside the epics, and they are evidence rather than requirements.
+render as roots beside the epics, and they are evidence rather than requirements. A
+consequence worth stating: asking for a defect's subtree reports it as absent, because for
+the purpose of this endpoint it is.
 """
 
 # Python imports
@@ -47,6 +58,7 @@ from collections import defaultdict
 from django.db.models import F, Prefetch
 
 # Third party imports
+from rest_framework import status
 from rest_framework.response import Response
 
 # Module imports
@@ -156,7 +168,24 @@ def _serialize(rollup):
     return serialized
 
 
-def build_hierarchy(project_id):
+def _find_node(nodes, node_id):
+    for node in nodes:
+        if node["id"] == node_id:
+            return node
+        found = _find_node(node["children"], node_id)
+        if found is not None:
+            return found
+    return None
+
+
+def build_hierarchy(project_id, root_id=None):
+    """Every root of the project, or the single subtree beneath `root_id`.
+
+    The subtree is located in the finished tree rather than by querying downward from the
+    root, so it inherits the cycle guard, the defect exclusion and the coverage join for
+    free. A node's rollup already describes only what sits beneath it, so the subtree needs
+    no recomputation to be correct in isolation -- it is the same object the full tree holds.
+    """
     coverage_by_item = {row["work_item_id"]: row for row in requirement_coverage(project_id)}
 
     defect_ids = set(
@@ -244,13 +273,33 @@ def build_hierarchy(project_id):
     ordered = sorted(
         roots, key=lambda item: (item.type_level if item.type_level is not None else 99, item.sequence_id)
     )
-    return [strip(built) for built in (node(issue, frozenset()) for issue in ordered) if built]
+    nodes = [strip(built) for built in (node(issue, frozenset()) for issue in ordered) if built]
+
+    if root_id is None:
+        return nodes
+    found = _find_node(nodes, str(root_id))
+    return [found] if found is not None else []
 
 
-class ProjectEpicHierarchyEndpoint(BaseAPIView):
-    """Epic to feature to story, with each level reporting what sits beneath it."""
+class WorkItemHierarchyEndpoint(BaseAPIView):
+    """The hierarchy beneath a work item, or beneath every root when none is named.
+
+    Registered at two URLs. `/epic-hierarchy/` is the older spelling and is kept because
+    callers exist; it is the no-root form and nothing about it is Epic-specific.
+    """
 
     permission_classes = [ProjectEntityPermission]
 
-    def get(self, request, slug, project_id):
-        return Response({"nodes": build_hierarchy(project_id)})
+    def get(self, request, slug, project_id, issue_id=None):
+        nodes = build_hierarchy(project_id, root_id=issue_id)
+        if issue_id is not None and not nodes:
+            return Response(
+                {"error": "The work item does not exist in this project's hierarchy."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response({"nodes": nodes})
+
+
+# The name the URL conf and `views/__init__` imported before the endpoint stopped being
+# about epics. Same view, same behaviour when no work item is named.
+ProjectEpicHierarchyEndpoint = WorkItemHierarchyEndpoint

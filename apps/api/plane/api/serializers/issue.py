@@ -35,6 +35,7 @@ from plane.utils.content_validator import (
     validate_html_content,
     validate_binary_data,
 )
+from plane.utils.work_item_hierarchy import hierarchy_violation
 
 from .base import BaseSerializer
 from .cycle import CycleLiteSerializer, CycleSerializer
@@ -164,6 +165,15 @@ class IssueSerializer(BaseSerializer):
             project_id=self.context.get("project_id"), pk=data["milestone"].id, deleted_at__isnull=True
         ).exists():
             raise serializers.ValidationError("Milestone is not valid for this project")
+
+        # Both sides fall back to the stored values, because an inversion can be created by
+        # moving an item under a new parent *or* by retyping an item that already has one.
+        violation = hierarchy_violation(
+            data.get("parent", self.instance.parent if self.instance else None),
+            data.get("type", self.instance.type if self.instance else None),
+        )
+        if violation:
+            raise serializers.ValidationError(violation)
 
         if "properties" in data:
             self._validate_properties(data["properties"])

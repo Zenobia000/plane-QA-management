@@ -6,11 +6,11 @@
 
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import type { TEpicNode, TEpicStateGroup } from "@plane/types";
+import type { TWorkItemNode, TWorkItemStateGroup } from "@plane/types";
 
-const STATE_ORDER: TEpicStateGroup[] = ["backlog", "unstarted", "started", "completed", "cancelled"];
+const STATE_ORDER: TWorkItemStateGroup[] = ["backlog", "unstarted", "started", "completed", "cancelled"];
 
-const STATE_COLOR: Record<TEpicStateGroup, string> = {
+const STATE_COLOR: Record<TWorkItemStateGroup, string> = {
   backlog: "bg-layer-3",
   unstarted: "bg-neutral-400",
   started: "bg-warning-solid",
@@ -42,7 +42,7 @@ function StatusChip({ status }: { status: string | null }) {
  * distinction matters: an empty bar would read as "no progress" when the honest statement
  * is "this is the work, not a summary of work".
  */
-function ProgressCell({ node }: { node: TEpicNode }) {
+function ProgressCell({ node }: { node: TWorkItemNode }) {
   if (node.is_leaf) {
     return <span className="truncate text-11 text-secondary">{node.state ? node.state.name : "—"}</span>;
   }
@@ -71,7 +71,7 @@ function ProgressCell({ node }: { node: TEpicNode }) {
 }
 
 /** Coverage: a ratio over leaves for a parent, and a plain verdict for a leaf. */
-function CoverageCell({ node }: { node: TEpicNode }) {
+function CoverageCell({ node }: { node: TWorkItemNode }) {
   if (node.is_leaf) {
     return (
       <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ function CoverageCell({ node }: { node: TEpicNode }) {
 }
 
 /** Points: the leaf's own estimate, or the sum of the leaves beneath. */
-function PointsCell({ node }: { node: TEpicNode }) {
+function PointsCell({ node }: { node: TWorkItemNode }) {
   if (node.is_leaf) {
     return <span className="text-right text-11 text-secondary">{node.estimate_point ?? "—"}</span>;
   }
@@ -113,9 +113,9 @@ function PointsCell({ node }: { node: TEpicNode }) {
 }
 
 type TreeRowProps = {
-  node: TEpicNode;
+  node: TWorkItemNode;
   depth: number;
-  onOpen: (node: TEpicNode) => void;
+  onOpen: (node: TWorkItemNode) => void;
 };
 
 export function TreeRow({ node, depth, onOpen }: TreeRowProps) {

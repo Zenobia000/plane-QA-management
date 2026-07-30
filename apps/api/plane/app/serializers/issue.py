@@ -49,6 +49,7 @@ from plane.utils.content_validator import (
     validate_html_content,
     validate_binary_data,
 )
+from plane.utils.work_item_hierarchy import hierarchy_violation
 
 
 class IssueFlatSerializer(BaseSerializer):
@@ -210,6 +211,16 @@ class IssueCreateSerializer(BaseSerializer):
             ).exists()
         ):
             raise serializers.ValidationError("Work item type is not enabled for this project")
+
+        # Both sides fall back to the stored values, because an inversion can be created by
+        # moving an item under a new parent *or* by retyping an item that already has one.
+        instance = getattr(self, "instance", None)
+        violation = hierarchy_violation(
+            attrs.get("parent", instance.parent if instance else None),
+            attrs.get("type", instance.type if instance else None),
+        )
+        if violation:
+            raise serializers.ValidationError(violation)
 
         return attrs
 

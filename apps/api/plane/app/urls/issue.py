@@ -7,7 +7,7 @@ from django.urls import path
 from plane.app.views import (
     BulkCreateIssueLabelsEndpoint,
     BulkDeleteIssuesEndpoint,
-    ProjectEpicHierarchyEndpoint,
+    WorkItemHierarchyEndpoint,
     SubIssuesEndpoint,
     IssueLinkViewSet,
     IssueAttachmentEndpoint,
@@ -285,8 +285,19 @@ urlpatterns = [
         name="issue-detail-identifier",
     ),
     path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/work-item-hierarchy/",
+        WorkItemHierarchyEndpoint.as_view(),
+        name="project-work-item-hierarchy",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/work-items/<uuid:issue_id>/hierarchy/",
+        WorkItemHierarchyEndpoint.as_view(),
+        name="work-item-hierarchy",
+    ),
+    # The spelling that shipped first. Same view, no root named.
+    path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/epic-hierarchy/",
-        ProjectEpicHierarchyEndpoint.as_view(),
+        WorkItemHierarchyEndpoint.as_view(),
         name="project-epic-hierarchy",
     ),
 ]

@@ -19,7 +19,7 @@ export * from "./de-dupe";
 export * from "./description_version";
 export * from "./editor";
 export * from "./enums";
-export * from "./epics";
+export * from "./work-item-hierarchy";
 export * from "./estimate";
 export * from "./favorite";
 export * from "./file";

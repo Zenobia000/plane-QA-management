@@ -19,6 +19,6 @@ export * from "./file";
 export * from "./label";
 export * from "./state";
 export * from "./issue";
-export * from "./epic";
+export * from "./work-item-hierarchy";
 export * from "./testing";
 export * from "./work-item-extensions";

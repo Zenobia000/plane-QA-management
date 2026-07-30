@@ -28,6 +28,7 @@ from plane.utils.timezone_converter import user_timezone_converter
 from collections import defaultdict
 from plane.utils.host import base_host
 from plane.utils.order_queryset import order_issue_queryset
+from plane.utils.work_item_hierarchy import hierarchy_violation
 
 
 class SubIssuesEndpoint(BaseAPIView):
@@ -203,7 +204,7 @@ class SubIssuesEndpoint(BaseAPIView):
 
     # Assign multiple sub issues
     def post(self, request, slug, project_id, issue_id):
-        parent_issue = Issue.issue_objects.get(pk=issue_id)
+        parent_issue = Issue.issue_objects.select_related("type").get(pk=issue_id)
         sub_issue_ids = request.data.get("sub_issue_ids", [])
 
         if not len(sub_issue_ids):
@@ -213,7 +214,20 @@ class SubIssuesEndpoint(BaseAPIView):
             )
 
         # Scope to workspace to prevent cross-tenant IDOR
-        sub_issues = Issue.issue_objects.filter(id__in=sub_issue_ids, workspace__slug=slug)
+        sub_issues = Issue.issue_objects.filter(id__in=sub_issue_ids, workspace__slug=slug).select_related("type")
+
+        # This path assigns `parent` directly rather than through a serializer, so without
+        # the same check it is simply the way around it. The batch is refused whole: a
+        # partial reparent leaves the caller with no way to know what happened.
+        violations = sorted(
+            {
+                violation
+                for violation in (hierarchy_violation(parent_issue, sub_issue.type) for sub_issue in sub_issues)
+                if violation
+            }
+        )
+        if violations:
+            return Response({"error": " ".join(violations)}, status=status.HTTP_400_BAD_REQUEST)
 
         for sub_issue in sub_issues:
             sub_issue.parent = parent_issue

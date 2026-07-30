@@ -81,6 +81,7 @@ export type TIssueParams =
   | "type"
   | "sub_issue"
   | "leaf_only"
+  | "epic"
   | "show_empty_groups"
   | "cursor"
   | "per_page"

@@ -4,4 +4,4 @@
  * See the LICENSE file for details.
  */
 
-export * from "./epic.service";
+export * from "./work-item-hierarchy.service";

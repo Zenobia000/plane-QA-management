@@ -7,13 +7,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { useParams } from "react-router";
-import { EpicService } from "@plane/services";
-import type { TEpicHierarchy, TEpicNode } from "@plane/types";
+import { WorkItemHierarchyService } from "@plane/services";
+import type { TWorkItemHierarchy, TWorkItemNode } from "@plane/types";
 import { PageHead } from "@/components/core/page-title";
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 import { TreeRow } from "./tree-row";
 
-const epicService = new EpicService();
+const hierarchyService = new WorkItemHierarchyService();
 
 /**
  * The requirement hierarchy, which the work-item list cannot show.
@@ -33,15 +33,15 @@ const epicService = new EpicService();
  */
 export default function EpicsPage() {
   const { workspaceSlug, projectId } = useParams();
-  const [hierarchy, setHierarchy] = useState<TEpicHierarchy | null>(null);
+  const [hierarchy, setHierarchy] = useState<TWorkItemHierarchy | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { setPeekIssue } = useIssueDetail();
 
   useEffect(() => {
     if (!workspaceSlug || !projectId) return;
     let cancelled = false;
-    epicService
-      .getHierarchy(workspaceSlug.toString(), projectId.toString())
+    hierarchyService
+      .getProjectHierarchy(workspaceSlug.toString(), projectId.toString())
       .then((data) => {
         if (!cancelled) setHierarchy(data);
         return data;
@@ -55,7 +55,7 @@ export default function EpicsPage() {
   }, [workspaceSlug, projectId]);
 
   const openPeek = useCallback(
-    (node: TEpicNode) => {
+    (node: TWorkItemNode) => {
       if (!workspaceSlug || !projectId) return;
       setPeekIssue({
         workspaceSlug: workspaceSlug.toString(),
@@ -74,7 +74,7 @@ export default function EpicsPage() {
     let items = 0;
     let points = 0;
     let uncovered = 0;
-    const visit = (node: TEpicNode) => {
+    const visit = (node: TWorkItemNode) => {
       items += 1;
       if (node.is_leaf) {
         points += node.estimate_point ?? 0;

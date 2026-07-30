@@ -228,6 +228,28 @@ class TestProjectAPIPost(TestProjectBase):
         assert response_data["description"] == project_data["description"]
         assert response_data["network"] == project_data["network"]
 
+    @pytest.mark.django_db
+    def test_create_project_enables_scheduling_and_view_axes_by_default(self, session_client, workspace):
+        """A project created without feature flags can still reach cycles, modules and views.
+
+        Upstream defaults these three off. The reports this fork adds are all read along
+        those axes, so a project that starts without them cannot answer any of the
+        questions it exists to answer -- and the demo seed proved the failure mode by
+        creating two sprints, two modules and seven saved views behind a sidebar that
+        showed none of them. `intake_view` stays off; a public submission form is a
+        genuine opt-in rather than a missing half of the model.
+        """
+        url = self.get_project_url(workspace.slug)
+
+        response = session_client.post(url, {"name": "Axes On", "identifier": "AXON"}, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        project = Project.objects.get(pk=response.json()["id"])
+        assert project.cycle_view is True
+        assert project.module_view is True
+        assert project.issue_views_view is True
+        assert project.intake_view is False
+
 
 @pytest.mark.contract
 class TestProjectAPIGet(TestProjectBase):

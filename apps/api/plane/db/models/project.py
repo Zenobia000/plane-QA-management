@@ -90,9 +90,17 @@ class Project(BaseModel):
     )
     emoji = models.CharField(max_length=255, null=True, blank=True)
     icon_prop = models.JSONField(null=True)
-    module_view = models.BooleanField(default=False)
-    cycle_view = models.BooleanField(default=False)
-    issue_views_view = models.BooleanField(default=False)
+    # Upstream 0105 turned these three off so a new project starts minimal and the team
+    # opts in. That is the wrong default here: the breakdown axis is useless on its own.
+    # A requirement has to be schedulable (cycle), groupable by capability (module) and
+    # queryable by a standing question (view) before any of the reports this fork adds --
+    # coverage, the release gate, the epic rollup -- describe anything. Shipping them off
+    # meant the demo seeded two sprints, two modules and seven saved views that nothing in
+    # the sidebar could reach. `intake_view` stays off: a public submission form is a real
+    # opt-in, not a missing half of the model.
+    module_view = models.BooleanField(default=True)
+    cycle_view = models.BooleanField(default=True)
+    issue_views_view = models.BooleanField(default=True)
     page_view = models.BooleanField(default=True)
     intake_view = models.BooleanField(default=False)
     is_time_tracking_enabled = models.BooleanField(default=False)

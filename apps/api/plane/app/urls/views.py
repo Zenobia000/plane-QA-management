@@ -7,6 +7,7 @@ from django.urls import path
 
 from plane.app.views import (
     IssueViewViewSet,
+    ProjectViewPublishEndpoint,
     WorkspaceViewViewSet,
     WorkspaceViewIssuesViewSet,
     IssueViewFavoriteViewSet,
@@ -62,5 +63,10 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/user-favorite-views/<uuid:view_id>/",
         IssueViewFavoriteViewSet.as_view({"delete": "destroy"}),
         name="user-favorite-view",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/views/<uuid:view_id>/publish/",
+        ProjectViewPublishEndpoint.as_view(),
+        name="project-view-publish",
     ),
 ]

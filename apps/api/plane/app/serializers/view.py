@@ -59,12 +59,15 @@ class IssueViewSerializer(DynamicBaseSerializer):
     class Meta:
         model = IssueView
         fields = "__all__"
+        # `access` is writable: a view being private or public is the whole of the access
+        # feature, and leaving the column read-only is what gated it. The column, its
+        # choices and its default have been on `IssueView` all along. Who may change it is
+        # enforced in the viewset, which is where the requesting user is known.
         read_only_fields = [
             "workspace",
             "project",
             "query",
             "owned_by",
-            "access",
             "is_locked",
         ]
 

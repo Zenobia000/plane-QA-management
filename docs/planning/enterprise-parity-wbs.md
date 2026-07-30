@@ -421,14 +421,19 @@ name states explicitly.
 
 Families whose schema already exists. Highest ratio of visible capability to risk.
 
-| WBS | Work package                       | Depends on | Deliverable / acceptance                                                                                    | Tests                      | Status |
-| --- | ---------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------- | -------------------------- | ------ |
-| C.1 | Views access control and publish   | —          | Surface the existing `IssueView.access`; publish via the existing `DeployBoard` `"view"` type. No migration | Component tests            | READY  |
-| C.2 | Pages: lock, move, share           | —          | Three header controls over existing `Page` fields                                                           | Contract + component tests | READY  |
-| C.3 | Pages: nesting and navigation pane | C.2        | Page tree over existing `Page.parent`                                                                       | Component tests            | READY  |
-| C.4 | Bulk operations                    | —          | Bulk-update endpoint; multi-select toolbar                                                                  | Contract + component tests | READY  |
-| C.5 | Gantt dependencies                 | —          | Draw and persist blocked-by over existing `IssueRelation`                                                   | Component tests            | READY  |
-| C.6 | Estimates: time input              | —          | Time-denominated estimate type                                                                              | Unit tests                 | READY  |
+C.1 confirmed the premise: the whole of view access control was one `read_only` entry on a
+serializer, and publishing was one endpoint that names an entity type `DeployBoard` already
+carried. No migration, 5 contract tests, and the four `ce/` stubs filled against their existing
+prop contracts.
+
+| WBS | Work package                       | Depends on | Deliverable / acceptance                                                                                                                | Tests                      | Status |
+| --- | ---------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ------ |
+| C.1 | Views access control and publish   | —          | `IssueView.access` made writable and surfaced; `ProjectViewPublishEndpoint` over the existing `DeployBoard` `"view"` type. No migration | Contract tests, 5 cases    | DONE   |
+| C.2 | Pages: lock, move, share           | —          | Three header controls over existing `Page` fields                                                                                       | Contract + component tests | READY  |
+| C.3 | Pages: nesting and navigation pane | C.2        | Page tree over existing `Page.parent`                                                                                                   | Component tests            | READY  |
+| C.4 | Bulk operations                    | —          | Bulk-update endpoint; multi-select toolbar                                                                                              | Contract + component tests | READY  |
+| C.5 | Gantt dependencies                 | —          | Draw and persist blocked-by over existing `IssueRelation`                                                                               | Component tests            | READY  |
+| C.6 | Estimates: time input              | —          | Time-denominated estimate type                                                                                                          | Unit tests                 | READY  |
 
 ### Phase D — the hard families
 

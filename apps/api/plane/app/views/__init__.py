@@ -97,6 +97,7 @@ from .view.base import (
     WorkspaceViewIssuesViewSet,
     IssueViewViewSet,
     IssueViewFavoriteViewSet,
+    ProjectViewPublishEndpoint,
 )
 from .cycle.base import (
     CycleViewSet,

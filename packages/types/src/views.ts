@@ -72,3 +72,12 @@ export type TViewFilters = {
   sortBy: TViewFiltersSortBy;
   filters?: TViewFilterProps;
 };
+
+/** A published view's anchor and its public-page toggles, as `DeployBoard` stores them. */
+export type TViewPublishSettings = {
+  id: string;
+  anchor: string;
+  is_comments_enabled: boolean;
+  is_reactions_enabled: boolean;
+  is_votes_enabled: boolean;
+};

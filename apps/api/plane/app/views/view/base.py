@@ -23,9 +23,10 @@ from rest_framework import status
 from rest_framework.response import Response
 
 # Module imports
-from plane.app.permissions import allow_permission, ROLE
-from plane.app.serializers import IssueViewSerializer, ViewIssueListSerializer
+from plane.app.permissions import allow_permission, ProjectEntityPermission, ROLE
+from plane.app.serializers import DeployBoardSerializer, IssueViewSerializer, ViewIssueListSerializer
 from plane.db.models import (
+    DeployBoard,
     Issue,
     FileAsset,
     IssueLink,
@@ -43,7 +44,7 @@ from plane.db.models import (
 from plane.utils.issue_filters import issue_filters
 from plane.utils.order_queryset import VIEW_ORDER_BY_ALLOWLIST, order_issue_queryset, sanitize_order_by
 from plane.bgtasks.recent_visited_task import recent_visited_task
-from .. import BaseViewSet
+from .. import BaseAPIView, BaseViewSet
 from plane.db.models import UserFavorite
 from plane.utils.filters import ComplexFilterBackend
 from plane.utils.filters import IssueFilterSet
@@ -436,4 +437,69 @@ class IssueViewFavoriteViewSet(BaseViewSet):
             entity_identifier=view_id,
         )
         view_favorite.delete(soft=False)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProjectViewPublishEndpoint(BaseAPIView):
+    """Publish a saved view to a public anchor, or take it down.
+
+    `DeployBoard` already models "this entity is published at this anchor" and its
+    `TYPE_CHOICES` already includes `"view"` -- publishing a view needed no schema, only an
+    endpoint that names the entity. `DeployBoardViewSet` cannot serve this because it hard-
+    codes `entity_name="project"`.
+
+    Only the view's owner may publish it, matching who may change its access. A view that is
+    private and published would be a contradiction the anchor silently resolves in favour of
+    public, so publishing makes it public rather than leaving the two to disagree.
+    """
+
+    permission_classes = [ProjectEntityPermission]
+
+    def _board(self, slug, view_id):
+        return DeployBoard.objects.filter(
+            entity_name="view", entity_identifier=view_id, workspace__slug=slug
+        ).first()
+
+    def get(self, request, slug, project_id, view_id):
+        board = self._board(slug, view_id)
+        if not board:
+            return Response({}, status=status.HTTP_200_OK)
+        return Response(DeployBoardSerializer(board).data, status=status.HTTP_200_OK)
+
+    def post(self, request, slug, project_id, view_id):
+        issue_view = IssueView.objects.filter(pk=view_id, project_id=project_id, workspace__slug=slug).first()
+        if not issue_view:
+            return Response({"error": "The view does not exist in this project."}, status=status.HTTP_404_NOT_FOUND)
+        if issue_view.owned_by_id != request.user.id:
+            return Response(
+                {"error": "Only the owner of the view can publish it."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        board, _ = DeployBoard.objects.get_or_create(
+            entity_name="view",
+            entity_identifier=view_id,
+            project_id=project_id,
+            workspace=issue_view.workspace,
+        )
+        board.is_comments_enabled = request.data.get("is_comments_enabled", board.is_comments_enabled)
+        board.is_reactions_enabled = request.data.get("is_reactions_enabled", board.is_reactions_enabled)
+        board.is_votes_enabled = request.data.get("is_votes_enabled", board.is_votes_enabled)
+        board.save()
+
+        # Publishing a private view would leave the anchor and the access flag disagreeing.
+        if issue_view.access != 1:
+            issue_view.access = 1
+            issue_view.save(update_fields=["access"])
+
+        return Response(DeployBoardSerializer(board).data, status=status.HTTP_200_OK)
+
+    def delete(self, request, slug, project_id, view_id):
+        issue_view = IssueView.objects.filter(pk=view_id, project_id=project_id, workspace__slug=slug).first()
+        if issue_view and issue_view.owned_by_id != request.user.id:
+            return Response(
+                {"error": "Only the owner of the view can unpublish it."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        board = self._board(slug, view_id)
+        if board:
+            board.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

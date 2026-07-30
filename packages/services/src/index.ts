@@ -21,5 +21,6 @@ export * from "./state";
 export * from "./issue";
 export * from "./work-item-hierarchy";
 export * from "./project-overview";
+export * from "./project-view-publish";
 export * from "./testing";
 export * from "./work-item-extensions";

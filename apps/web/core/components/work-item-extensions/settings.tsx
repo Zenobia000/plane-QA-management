@@ -6,6 +6,7 @@
 import { useMemo, useState } from "react";
 import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 import type { TWorkItemProperty, TWorkItemPropertyKind } from "@plane/types";
+import { CustomSelect } from "@plane/ui";
 import { WorkItemTypeBadge } from "./type-badge";
 import {
   useProjectWorkItemTypes,
@@ -20,8 +21,19 @@ const fieldClass =
   "h-9 rounded border border-subtle bg-surface-1 px-2 text-12 text-primary outline-none focus:border-accent-strong";
 const buttonClass =
   "inline-flex h-8 items-center justify-center gap-1.5 rounded px-3 text-12 font-medium disabled:cursor-not-allowed disabled:opacity-50";
+const selectButtonClass = `${fieldClass} w-full justify-between font-normal`;
 
-const propertyKinds: TWorkItemPropertyKind[] = ["text", "number", "date", "boolean", "url", "select", "multi_select"];
+const propertyKindLabels: Record<TWorkItemPropertyKind, string> = {
+  text: "Text",
+  number: "Number",
+  date: "Date",
+  boolean: "Boolean",
+  url: "URL",
+  select: "Select",
+  multi_select: "Multi select",
+};
+
+const propertyKinds = Object.keys(propertyKindLabels) as TWorkItemPropertyKind[];
 
 const errorMessage = (error: unknown) => {
   if (error && typeof error === "object" && "error" in error) return String(error.error);
@@ -244,18 +256,24 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
 
           {availableTypes.length > 0 && (
             <div className="flex gap-2 border-t border-subtle pt-4">
-              <select
-                className={`${fieldClass} min-w-56`}
+              <CustomSelect
+                className="min-w-56"
                 value={typeToEnable}
-                onChange={(event) => setTypeToEnable(event.target.value)}
+                label={
+                  <span className="truncate">
+                    {availableTypes.find((item) => item.id === typeToEnable)?.name ?? "Choose a workspace type"}
+                  </span>
+                }
+                onChange={(value: string) => setTypeToEnable(value)}
+                buttonClassName={selectButtonClass}
+                maxHeight="lg"
               >
-                <option value="">Choose a workspace type</option>
                 {availableTypes.map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <CustomSelect.Option key={item.id} value={item.id}>
                     {item.name}
-                  </option>
+                  </CustomSelect.Option>
                 ))}
-              </select>
+              </CustomSelect>
               <button
                 type="button"
                 className={`${buttonClass} bg-accent-primary text-on-color`}
@@ -316,7 +334,9 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
             <div key={definition.id} className="flex items-center gap-3 rounded border border-subtle p-3">
               <span className="min-w-0 flex-1">
                 <span className="font-medium text-primary">{definition.name}</span>
-                <span className="ml-2 rounded bg-layer-2 px-1.5 py-0.5 text-10 text-secondary">{definition.kind}</span>
+                <span className="ml-2 rounded bg-layer-2 px-1.5 py-0.5 text-10 text-secondary">
+                  {propertyKindLabels[definition.kind] ?? definition.kind}
+                </span>
                 {definition.is_required && <span className="ml-2 text-10 text-danger-primary">Required</span>}
                 {!definition.is_active && <span className="ml-2 text-10 text-tertiary">Inactive</span>}
                 {definition.description && (
@@ -373,18 +393,20 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
                 onChange={(event) => setPropertyDescription(event.target.value)}
                 placeholder="Description"
               />
-              <select
-                className={fieldClass}
+              <CustomSelect
+                className="w-full"
                 value={propertyKind}
-                onChange={(event) => setPropertyKind(event.target.value as TWorkItemPropertyKind)}
-                disabled={Boolean(propertyId)}
+                label={<span className="truncate">{propertyKindLabels[propertyKind]}</span>}
+                onChange={(value: TWorkItemPropertyKind) => setPropertyKind(value)}
+                buttonClassName={selectButtonClass}
+                maxHeight="lg"
               >
                 {propertyKinds.map((kind) => (
-                  <option key={kind} value={kind}>
-                    {kind.replace("_", " ")}
-                  </option>
+                  <CustomSelect.Option key={kind} value={kind}>
+                    {propertyKindLabels[kind]}
+                  </CustomSelect.Option>
                 ))}
-              </select>
+              </CustomSelect>
               {(propertyKind === "select" || propertyKind === "multi_select") && (
                 <input
                   className={fieldClass}

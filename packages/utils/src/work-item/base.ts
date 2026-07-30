@@ -282,6 +282,10 @@ export const getComputedDisplayFilters = (
     group_by: filters?.group_by || null,
     sub_group_by: filters?.sub_group_by || null,
     sub_issue: filters?.sub_issue || false,
+    // Defaults on: the work-item list answers "what is there to do", and a node with
+    // children is a summary of other rows rather than a row you can pick up. Turning it off
+    // returns the flat projection, which is still the right view for auditing the breakdown.
+    leaf_only: filters?.leaf_only ?? true,
     show_empty_groups: filters?.show_empty_groups || false,
   };
 };

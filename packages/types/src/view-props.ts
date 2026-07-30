@@ -58,7 +58,7 @@ export type TIssueOrderByOptions =
 
 export type TIssueGroupingFilters = "active" | "backlog";
 
-export type TIssueExtraOptions = "show_empty_groups" | "sub_issue";
+export type TIssueExtraOptions = "show_empty_groups" | "sub_issue" | "leaf_only";
 
 export type TIssueParams =
   | "priority"
@@ -80,6 +80,7 @@ export type TIssueParams =
   | "order_by"
   | "type"
   | "sub_issue"
+  | "leaf_only"
   | "show_empty_groups"
   | "cursor"
   | "per_page"
@@ -158,6 +159,11 @@ export interface IIssueDisplayFilterOptions {
   order_by?: TIssueOrderByOptions;
   show_empty_groups?: boolean;
   sub_issue?: boolean;
+  /**
+   * Hide nodes that summarise other nodes, leaving a list of work someone can pick up.
+   * The opposite selection from `sub_issue: false`, which keeps roots and drops descendants.
+   */
+  leaf_only?: boolean;
 }
 export interface IIssueDisplayProperties {
   assignee?: boolean;

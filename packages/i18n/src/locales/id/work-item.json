@@ -65,6 +65,7 @@
       },
       "extra": {
         "show_sub_issues": "Tampilkan sub-item kerja",
+        "only_actionable_work": "Hanya item kerja yang dapat dikerjakan",
         "show_empty_groups": "Tampilkan grup kosong"
       }
     },

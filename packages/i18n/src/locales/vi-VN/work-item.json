@@ -65,6 +65,7 @@
       },
       "extra": {
         "show_sub_issues": "Hiển thị mục công việc con",
+        "only_actionable_work": "Chỉ hiển thị mục công việc có thể thực hiện",
         "show_empty_groups": "Hiển thị nhóm trống"
       }
     },

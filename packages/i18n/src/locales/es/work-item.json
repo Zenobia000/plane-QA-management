@@ -65,6 +65,7 @@
       },
       "extra": {
         "show_sub_issues": "Mostrar sub-elementos",
+        "only_actionable_work": "Solo elementos accionables",
         "show_empty_groups": "Mostrar grupos vacíos"
       }
     },

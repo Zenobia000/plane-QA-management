@@ -65,6 +65,7 @@
       },
       "extra": {
         "show_sub_issues": "サブ作業項目を表示",
+        "only_actionable_work": "対応可能な作業項目のみを表示",
         "show_empty_groups": "空のグループを表示"
       }
     },

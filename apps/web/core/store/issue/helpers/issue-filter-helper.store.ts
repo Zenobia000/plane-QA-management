@@ -68,8 +68,6 @@ export interface IIssueFilterHelperStore {
 }
 
 export class IssueFilterHelperStore implements IIssueFilterHelperStore {
-  constructor() {}
-
   /**
    * @description This method is used to apply the display filters on the issues
    * @param {IIssueFilters} filters
@@ -101,6 +99,9 @@ export class IssueFilterHelperStore implements IIssueFilterHelperStore {
         : undefined,
       order_by: displayFilters?.order_by || undefined,
       sub_issue: displayFilters?.sub_issue ?? true,
+      // Defaults on for the project work-item list, where the question is "what is there to
+      // do". A node with children answers a different question and has a surface of its own.
+      leaf_only: displayFilters?.leaf_only ?? false,
     };
 
     const issueFiltersParams: Partial<Record<TIssueParams, boolean | string>> = {};
@@ -265,7 +266,9 @@ export class IssueFilterHelperStore implements IIssueFilterHelperStore {
    * @returns
    */
   getShouldReFetchIssues = (displayFilters: IIssueDisplayFilterOptions) => {
-    const NON_SERVER_DISPLAY_FILTERS = ["order_by", "sub_issue", "type"];
+    // Misnamed upstream: these are exactly the filters that DO need a refetch, because the
+    // server resolves them. `leaf_only` joins them for the same reason `sub_issue` is here.
+    const NON_SERVER_DISPLAY_FILTERS = ["order_by", "sub_issue", "leaf_only", "type"];
     const displayFilterKeys = Object.keys(displayFilters);
 
     return NON_SERVER_DISPLAY_FILTERS.some((serverDisplayfilter: string) =>

@@ -97,6 +97,8 @@ export type TProjectMilestoneSummary = {
 export type TProjectOverview = {
   progress: TProjectProgress;
   links: TProjectOverviewLink[];
+  /** The newest few. `updates_total` says how many the thread actually holds. */
   updates: TEntityUpdate[];
+  updates_total: number;
   milestones: TProjectMilestoneSummary[];
 };

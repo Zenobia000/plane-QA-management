@@ -13,6 +13,7 @@ application's job, and both are pinned here. The rest is ordinary project-scoped
 import pytest
 from rest_framework import status
 
+from plane.app.views.project.overview import ProjectOverviewEndpoint
 from plane.bgtasks.deletion_task import soft_delete_related_objects
 from plane.db.models import EntityUpdate, Issue, Milestone, Project, ProjectMember, State
 
@@ -373,10 +374,35 @@ class TestOverviewComposite:
 
         assert response.status_code == status.HTTP_200_OK
         body = response.json()
-        assert set(body) == {"progress", "links", "updates", "milestones"}
+        assert set(body) == {"progress", "links", "updates", "updates_total", "milestones"}
         assert len(body["links"]) == 1
         assert len(body["updates"]) == 1
+        # The embedded list is capped; the count is how the client knows whether it is
+        # looking at the whole thread or the newest slice of one.
+        assert body["updates_total"] == 1
         assert body["progress"]["completion_percentage"] == 0
+
+    def test_a_long_thread_is_capped_but_says_how_long_it_is(
+        self, session_client, workspace, overview_project
+    ):
+        """Truncating without saying so reads as the thread having stopped."""
+        embedded = ProjectOverviewEndpoint.EMBEDDED_UPDATES
+        for index in range(embedded + 3):
+            session_client.post(
+                updates_url(workspace, overview_project),
+                data={
+                    "entity_name": "project",
+                    "entity_identifier": str(overview_project.id),
+                    "status": "on_track",
+                    "description": f"update {index}",
+                },
+                content_type="application/json",
+            )
+
+        body = session_client.get(overview_url(workspace, overview_project)).json()
+
+        assert len(body["updates"]) == embedded
+        assert body["updates_total"] == embedded + 3
 
     def test_milestones_arrive_with_the_counts_that_make_them_worth_showing(
         self, session_client, workspace, overview_project

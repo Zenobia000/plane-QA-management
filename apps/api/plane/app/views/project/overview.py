@@ -211,10 +211,16 @@ class ProjectOverviewEndpoint(BaseAPIView):
 
     permission_classes = [ProjectEntityPermission]
 
+    # The overview embeds the newest updates rather than the whole thread, which on a long
+    # running project is most of a page on its own. `updates_total` tells the client what it
+    # is not being shown, so it can offer the rest through the updates endpoint instead of
+    # silently truncating.
+    EMBEDDED_UPDATES = 10
+
     def get(self, request, slug, project_id):
         progress = ProjectProgressEndpoint().get(request, slug, project_id).data
         links = ProjectLink.objects.filter(project_id=project_id, workspace__slug=slug).order_by("-created_at")
-        updates = (
+        thread = (
             EntityUpdate.objects.filter(
                 project_id=project_id,
                 workspace__slug=slug,
@@ -224,14 +230,16 @@ class ProjectOverviewEndpoint(BaseAPIView):
             )
             .select_related("actor")
             .annotate(reply_count=Count("replies", distinct=True))
-            .order_by("-created_at")[:10]
+            .order_by("-created_at")
         )
+        updates = thread[: self.EMBEDDED_UPDATES]
 
         return Response(
             {
                 "progress": progress,
                 "links": ProjectLinkSerializer(links, many=True).data,
                 "updates": EntityUpdateSerializer(updates, many=True).data,
+                "updates_total": thread.count(),
                 "milestones": self._milestones(slug, project_id),
             },
             status=status.HTTP_200_OK,

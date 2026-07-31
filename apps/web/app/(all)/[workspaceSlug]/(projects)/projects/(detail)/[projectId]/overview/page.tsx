@@ -107,6 +107,9 @@ export default observer(function ProjectOverviewPage() {
     await load();
   };
 
+  /** The whole thread, when the reader asks past the newest few the overview embeds. */
+  const loadAllUpdates = async () => (slug && id ? overviewService.listUpdates(slug, id, "project", id) : []);
+
   const loadReplies = async (updateId: string) =>
     slug && id ? overviewService.listReplies(slug, id, updateId, "project", id) : [];
 
@@ -175,10 +178,12 @@ export default observer(function ProjectOverviewPage() {
               <UpdatesPanel
                 entityName="project"
                 updates={overview.updates}
+                total={overview.updates_total}
                 disabled={!canEdit}
                 onPost={postUpdate}
                 onLoadReplies={loadReplies}
                 onReply={postReply}
+                onLoadAll={loadAllUpdates}
               />
               <ActivityPanel
                 activities={activities}

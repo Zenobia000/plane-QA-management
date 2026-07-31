@@ -7,6 +7,9 @@
 import React from "react";
 // plane imports
 import type { TIssueServiceType, TWorkItemWidgets } from "@plane/types";
+import { EIssueServiceType } from "@plane/types";
+// plane web imports
+import { EpicProgressSection } from "@/plane-web/components/epics/progress-section";
 // local imports
 import { IssueDetailWidgetActionButtons } from "./action-buttons";
 import { IssueDetailWidgetCollapsibles } from "./issue-detail-widget-collapsibles";
@@ -36,6 +39,10 @@ export function IssueDetailWidgets(props: Props) {
   return (
     <>
       <div className="flex flex-col space-y-4">
+        {/* Epics only: the rollup an epic's own row cannot report. */}
+        {issueServiceType === EIssueServiceType.EPICS && (
+          <EpicProgressSection workspaceSlug={workspaceSlug} projectId={projectId} epicId={issueId} />
+        )}
         <IssueDetailWidgetActionButtons
           workspaceSlug={workspaceSlug}
           projectId={projectId}

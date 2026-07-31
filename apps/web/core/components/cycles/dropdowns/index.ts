@@ -6,3 +6,4 @@
 
 export * from "./filters";
 export * from "./estimate-type-dropdown";
+export * from "./plot-type-dropdown";

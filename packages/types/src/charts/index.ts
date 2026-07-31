@@ -23,8 +23,9 @@ export type TChartMargin = {
 };
 
 export type TChartData<K extends string, T extends string> = {
-  // required key
-  [key in K]: string | number;
+  // required key. null marks a point with no data, which recharts renders as a gap
+  // in the series rather than plotting it as zero.
+  [key in K]: string | number | null;
 } & Record<T, any>;
 
 export type TBaseChartProps<K extends string, T extends string> = {
@@ -127,7 +128,12 @@ export type TScatterChartProps<K extends string, T extends string> = TAxisChartP
 export type TAreaItem<T extends string> = {
   key: T;
   label: string;
-  stackId: string;
+  /**
+   * Areas sharing a stackId are stacked on top of each other. Omit it to plot the
+   * series on its own — stacked series coerce null points to zero, which would hide
+   * the gaps that mark "no data yet" (e.g. future dates in a burn-down chart).
+   */
+  stackId?: string;
   fill: string;
   fillOpacity: number;
   showDot: boolean;

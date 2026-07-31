@@ -8,13 +8,13 @@ import { Fragment } from "react";
 import { observer } from "mobx-react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
-import type { TCycleEstimateType } from "@plane/types";
+import type { TCycleEstimateType, TCyclePlotType } from "@plane/types";
 import { Loader } from "@plane/ui";
 import { getDate } from "@plane/utils";
 // components
 import ProgressChart from "@/components/core/sidebar/progress-chart";
 import { validateCycleSnapshot } from "@/components/cycles/analytics-sidebar/issue-progress";
-import { EstimateTypeDropdown } from "@/components/cycles/dropdowns";
+import { EstimateTypeDropdown, PlotTypeDropdown } from "@/components/cycles/dropdowns";
 // hooks
 import { useCycle } from "@/hooks/store/use-cycle";
 
@@ -27,8 +27,15 @@ export const SidebarChart = observer(function SidebarChart(props: ProgressChartP
   const { workspaceSlug, projectId, cycleId } = props;
 
   // hooks
-  const { getEstimateTypeByCycleId, getCycleById, fetchCycleDetails, fetchArchivedCycleDetails, setEstimateType } =
-    useCycle();
+  const {
+    getEstimateTypeByCycleId,
+    getPlotTypeByCycleId,
+    getCycleById,
+    fetchCycleDetails,
+    fetchArchivedCycleDetails,
+    setEstimateType,
+    setPlotType,
+  } = useCycle();
   const { t } = useTranslation();
 
   // derived data
@@ -38,6 +45,7 @@ export const SidebarChart = observer(function SidebarChart(props: ProgressChartP
   const totalEstimatePoints = cycleDetails?.total_estimate_points || 0;
   const totalIssues = cycleDetails?.total_issues || 0;
   const estimateType = getEstimateTypeByCycleId(cycleId);
+  const plotType: TCyclePlotType = getPlotTypeByCycleId(cycleId);
 
   const chartDistributionData =
     estimateType === "points" ? cycleDetails?.estimate_distribution : cycleDetails?.distribution || undefined;
@@ -66,6 +74,7 @@ export const SidebarChart = observer(function SidebarChart(props: ProgressChartP
   return (
     <div>
       <div className="relative flex items-center justify-between gap-2 pt-4">
+        <PlotTypeDropdown value={plotType} onChange={(value) => setPlotType(cycleId, value)} />
         <EstimateTypeDropdown value={estimateType} onChange={onChange} cycleId={cycleId} projectId={projectId} />
       </div>
       <div className="py-4">
@@ -76,6 +85,7 @@ export const SidebarChart = observer(function SidebarChart(props: ProgressChartP
                 distribution={completionChartDistributionData}
                 totalIssues={estimateType === "points" ? totalEstimatePoints : totalIssues}
                 plotTitle={estimateType === "points" ? t("points") : t("work_items")}
+                plotType={plotType}
               />
             </Fragment>
           ) : (

@@ -132,6 +132,7 @@ export class CycleStore implements ICycleStore {
       currentProjectActiveCycle: computed,
 
       // actions
+      setPlotType: action,
       setEstimateType: action,
       fetchWorkspaceCycles: action,
       fetchAllCycles: action,

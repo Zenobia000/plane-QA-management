@@ -47,6 +47,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          # Full history so the action can find the merge base with `main` and
+          # report only what the PR introduces. The default shallow checkout has
+          # no merge base, and the action then falls back to listing *every*
+          # issue in the changed files -- pre-existing ones included -- which
+          # reads as a regression the PR did not cause.
+          fetch-depth: 0
 
       - uses: millionco/react-doctor@v2
         # Common configuration knobs — uncomment any to override the default.

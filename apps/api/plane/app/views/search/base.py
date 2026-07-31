@@ -344,6 +344,7 @@ class SearchEndpoint(BaseAPIView):
                                         Value("/api/assets/v2/static/"),
                                         "member__avatar_asset",
                                         Value("/"),
+                                        output_field=models.CharField(),
                                     ),
                                 ),
                                 When(
@@ -555,6 +556,7 @@ class SearchEndpoint(BaseAPIView):
                                         Value("/api/assets/v2/static/"),
                                         "member__avatar_asset",
                                         Value("/"),
+                                        output_field=models.CharField(),
                                     ),
                                 ),
                                 When(

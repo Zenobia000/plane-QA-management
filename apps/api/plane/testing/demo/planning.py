@@ -41,6 +41,12 @@ from plane.db.models import (
 
 MODULE_NAMES = ("訂單查詢", "通知服務")
 
+# Owned here because this is where it is created. `purge()` deletes by this name, and
+# holding a second copy of it there is what broke re-seeding: renaming the initiative in
+# this file left the purge looking for a name nothing created any more, so `--force`
+# fell over on the active-name uniqueness constraint instead of replacing the demo.
+INITIATIVE_NAME = "訂單體驗數位化"
+
 
 def _as_datetime(day):
     return timezone.make_aware(datetime.datetime.combine(day, datetime.time.min))
@@ -55,7 +61,7 @@ def create_initiative(workspace, project, owner):
     """
     initiative = Initiative.objects.create(
         workspace=workspace,
-        name="訂單體驗數位化",
+        name=INITIATIVE_NAME,
         description=(
             "把訂單查詢與退貨處理從人工客服轉為可追溯的自助流程。跨專案:本專案負責歷程與退貨審核,"
             "金流整合由另一個專案承接。"
@@ -278,7 +284,22 @@ def create_hierarchy(workspace, project, owner, context):
             audited=True, promised_in=45, services=6,
             labels=("上期順延", "需 UX 確認", "法規稽核"),
         ),
-        # --- Sprint 2026-08A ---
+        # --- Sprint 2026-08A, already delivered ---
+        # A sprint whose every item is still open draws a burn-down that is a flat line at
+        # its opening total, which demonstrates nothing. These two are the enabling work a
+        # team genuinely closes in the first days of a sprint, so the chart has a descent to
+        # show while the sprint is still running.
+        "review_form": item(
+            "退貨審核表單與稽核欄位", "審核畫面提供更正原因與稽核欄位,作為後續回寫的輸入。",
+            "Story", "Done", "functional", parent=review, cycle="current", module="訂單查詢",
+            milestone="M2 退貨審核與回寫", points="3", services=4,
+        ),
+        "notify_metrics": item(
+            "通知送達延遲的量測管線", "先建立延遲量測與告警管線,後續的 5 秒目標才有判定依據。",
+            "Story", "Done", "non_functional", parent=latency, cycle="current", module="通知服務",
+            priority="medium", points="2", services=12,
+        ),
+        # --- Sprint 2026-08A, in flight ---
         "mark_false": item(
             "客服將誤擋的退貨標記為誤判", "客服可將誤擋的退貨標記為誤判並填寫原因。",
             "Story", "In developing", "functional", parent=review, cycle="current", module="訂單查詢",
@@ -321,6 +342,48 @@ def create_hierarchy(workspace, project, owner, context):
         ),
     }
     return items
+
+
+# Which items each sprint delivered, in the order they were finished.
+DELIVERED = {
+    "previous": ("order_query", "shipment_query", "query_latency"),
+    "current": ("review_form", "notify_metrics"),
+}
+
+# How far into the sprint each of those completions landed, as a fraction of the window.
+# Only the spread matters: distinct, ordered values are what turn the burn-down into a
+# staircase rather than a single cliff.
+DELIVERY_POINTS = (0.3, 0.55, 0.8)
+
+
+def settle_completion_dates(cycles, items):
+    """Move each delivered item's `completed_at` inside the sprint that delivered it.
+
+    `Issue.save()` stamps `completed_at` with the current time whenever an item enters a
+    completed state. A seed therefore records every completion as happening the moment it
+    ran, which for a sprint that is supposed to have closed last week puts the entire
+    delivery after the sprint ended.
+
+    That is not cosmetic. `burndown_plot` buckets completions by date and counts only the
+    ones falling on or before each day of the sprint window, so completions stamped outside
+    the window are never counted at all: the chart holds flat at the opening total however
+    much of the sprint is marked done. Before this ran, Sprint 2026-07B had all three of its
+    stories closed and still reported a horizontal line.
+
+    Uses `update()` rather than `save()` deliberately -- `save()` re-runs the very stamping
+    this is correcting.
+    """
+    now = timezone.now()
+    for cycle_key, item_keys in DELIVERED.items():
+        cycle = cycles[cycle_key]
+        # A sprint still in flight has only its elapsed days available to place a
+        # completion in; dating one into the future would hide it from every bucket.
+        finish = min(cycle.end_date, now)
+        span = finish - cycle.start_date
+        for fraction, item_key in zip(DELIVERY_POINTS, item_keys):
+            Issue.objects.filter(pk=items[item_key].id).update(
+                completed_at=cycle.start_date + span * fraction
+            )
 
 
 # (issue key, related key, relation type, why)

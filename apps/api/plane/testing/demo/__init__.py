@@ -23,8 +23,11 @@ from django.db import transaction
 from plane.db.models import Initiative, IssueView, Project, State
 from plane.testing.demo import contracts, evidence, execution, planning, saved_views, scaffolding
 
-DEMO_INITIATIVE_NAME = "生產品質數位化"
-DEMO_WORKSPACE_VIEW_NAME = "跨專案:urgent 未完成"
+# Read from the modules that create them rather than restated here. Both were duplicated
+# literals until a rename in planning.py left this file purging a name nothing created,
+# which broke `--force` re-seeding on the initiative's active-name uniqueness constraint.
+DEMO_INITIATIVE_NAME = planning.INITIATIVE_NAME
+DEMO_WORKSPACE_VIEW_NAME = saved_views.WORKSPACE_VIEW_NAME
 
 
 def purge(workspace, identifier):
@@ -58,12 +61,20 @@ def purge(workspace, identifier):
     projects = Project.objects.filter(workspace=workspace, identifier=identifier)
     if projects.exists():
         removed.append(f"project {identifier}")
-        projects.delete()
+        # Deleted one row at a time on purpose. A queryset `delete()` is a bulk
+        # `update(deleted_at=...)`, which never reaches `SoftDeleteModel.delete()` and so
+        # never queues the cascade that sweeps a project's cycles, work items and their
+        # join rows. Earlier runs of this seed left 17 cycles and 145 work items alive
+        # under projects the UI had already stopped showing.
+        for project in projects:
+            project.delete()
 
     initiatives = Initiative.objects.filter(workspace=workspace, name=DEMO_INITIATIVE_NAME)
     if initiatives.exists():
         removed.append(f"initiative {DEMO_INITIATIVE_NAME}")
-        initiatives.delete()
+        # Same reason: an initiative owns InitiativeProject rows that the bulk path strands.
+        for initiative in initiatives:
+            initiative.delete()
 
     views = IssueView.objects.filter(
         workspace=workspace, project__isnull=True, name=DEMO_WORKSPACE_VIEW_NAME
@@ -100,6 +111,9 @@ def seed(workspace, owner, identifier):
         "points": points, "milestones": milestones, "modules": modules, "cycles": cycles,
     }
     items = planning.create_hierarchy(workspace, project, owner, context)
+    # After the items exist and before anything reads a burndown: the completion stamps
+    # Issue.save() just wrote all point at today, which is outside both sprint windows.
+    planning.settle_completion_dates(cycles, items)
     planning.create_relations(workspace, project, owner, items)
     planning.create_external_links(workspace, project, owner, items)
     planning.create_comments(workspace, project, owner, items)

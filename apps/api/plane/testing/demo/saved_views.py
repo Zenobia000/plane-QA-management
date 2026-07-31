@@ -35,6 +35,10 @@ anything phrased as "which items are missing something" belongs in a report inst
 # Module imports
 from plane.db.models import IssueView
 
+# The one view that outlives its project, so `purge()` has to remove it by name. Owned
+# here, where it is created, so the two cannot drift apart.
+WORKSPACE_VIEW_NAME = "跨專案:urgent 未完成"
+
 DISPLAY_PROPERTIES = {
     "assignee": True,
     "attachment_count": False,
@@ -149,7 +153,7 @@ def create_views(workspace, project, owner, context):
     # --- Workspace scope: the same question across projects ---
     views["cross_project_urgent"] = _view(
         workspace, owner,
-        "跨專案:urgent 未完成",
+        WORKSPACE_VIEW_NAME,
         "workspace 層視角,不綁任何專案。示範 view 可以跨越專案邊界,而 cycle 與 module 不行。",
         {"priority": ["urgent"], "state_group": ["backlog", "unstarted", "started"]},
         _display(group_by="project"),

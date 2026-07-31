@@ -5,10 +5,9 @@
 """The one rule that keeps the work-item tree from inverting.
 
 `IssueType.level` ranks a type by breadth. This fork seeds Epic at 0, Feature at 1, Story
-at 2, Task at 3 and Bug at 2, so **a lower number is a broader type** -- the same ordering
-`build_hierarchy` already sorts roots by. Upstream Plane numbers its two default types the
-other way round (Task 0, Epic 1); the convention here is the one the seeded data and the
-hierarchy endpoint agree on, and flipping it would need a data migration to buy nothing.
+at 2, Task at 3 and Bug at 2, so **a lower number is a broader type**. Upstream Plane numbers
+its two default types the other way round (Task 0, Epic 1); the convention here is the one
+the seeded data agrees on, and flipping it would need a data migration to buy nothing.
 
 The rule is that a parent may not be *narrower* than its child:
 

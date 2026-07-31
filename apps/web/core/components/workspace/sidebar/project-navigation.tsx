@@ -150,7 +150,9 @@ export const ProjectNavigation = observer(function ProjectNavigation(props: TPro
         href: `/${targetWorkspaceSlug}/projects/${targetProjectId}/epics`,
         icon: Layers,
         access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
-        shouldRender: true,
+        // Defaults to shown when the field is absent, so a client talking to an API that
+        // predates the toggle keeps the surface rather than silently losing it.
+        shouldRender: project?.is_epic_enabled ?? true,
         sortOrder: 7,
       },
       {

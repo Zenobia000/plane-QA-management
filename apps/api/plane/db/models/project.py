@@ -95,7 +95,7 @@ class Project(BaseModel):
     # opts in. That is the wrong default here: the breakdown axis is useless on its own.
     # A requirement has to be schedulable (cycle), groupable by capability (module) and
     # queryable by a standing question (view) before any of the reports this fork adds --
-    # coverage, the release gate, the epic rollup -- describe anything. Shipping them off
+    # coverage, the release gate, epic analytics -- describe anything. Shipping them off
     # meant the demo seeded two sprints, two modules and seven saved views that nothing in
     # the sidebar could reach. `intake_view` stays off: a public submission form is a real
     # opt-in, not a missing half of the model.
@@ -106,6 +106,11 @@ class Project(BaseModel):
     intake_view = models.BooleanField(default=False)
     is_time_tracking_enabled = models.BooleanField(default=False)
     is_issue_type_enabled = models.BooleanField(default=False)
+    # On by default, unlike upstream EE where epics are opt-in. The sidebar entry has
+    # rendered unconditionally on this fork since the epics surface landed, so defaulting
+    # this off would take a visible feature away from every existing project on migrate --
+    # a regression dressed as a new setting. Admins who do not model epics can switch it off.
+    is_epic_enabled = models.BooleanField(default=True)
     guest_view_all_features = models.BooleanField(default=False)
     cover_image = models.TextField(blank=True, null=True)
     cover_image_asset = models.ForeignKey(

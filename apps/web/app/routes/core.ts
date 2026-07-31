@@ -222,11 +222,19 @@ export const coreRoutes: RouteConfigEntry[] = [
             ":workspaceSlug/projects/:projectId/overview",
             "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/overview/page.tsx"
           ),
-          // Epics - the requirement hierarchy with each level reporting what
-          // sits beneath it, which the flat work-item list cannot show
+          // Epics - the work-item list scoped to types carrying `is_epic`, rendered
+          // through the same layouts because an epic is an ordinary work item
+          layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/epics/(list)/layout.tsx", [
+            route(
+              ":workspaceSlug/projects/:projectId/epics",
+              "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/epics/(list)/page.tsx"
+            ),
+          ]),
+          // Epic detail resolves through /browse, which already branches on `is_epic`.
+          // Kept for parity with the work-item detail URL, which redirects the same way.
           route(
-            ":workspaceSlug/projects/:projectId/epics",
-            "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/epics/page.tsx"
+            ":workspaceSlug/projects/:projectId/epics/:epicId",
+            "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/epics/(detail)/[epicId]/page.tsx"
           ),
           // Testing - every entity is addressable so work items, defects and
           // runs can link straight at the thing they are talking about

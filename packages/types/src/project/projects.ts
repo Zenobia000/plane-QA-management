@@ -32,6 +32,12 @@ export interface IPartialProject {
   module_view: boolean;
   page_view: boolean;
   inbox_view: boolean;
+  /**
+   * Optional so a response from an API older than the field still type-checks. Read sites
+   * default it to `true`, matching the column default and the fork's prior behaviour of
+   * always showing the epics surface.
+   */
+  is_epic_enabled?: boolean;
   guest_view_all_features?: boolean;
   project_lead?: IUserLite | string | null;
   network?: number;

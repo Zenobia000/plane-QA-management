@@ -181,7 +181,7 @@ from .issue.relation import IssueRelationViewSet
 
 from .issue.reaction import IssueReactionViewSet
 
-from .issue.epic import ProjectEpicHierarchyEndpoint, WorkItemHierarchyEndpoint
+from .issue.epic import EpicAnalyticsEndpoint
 from .issue.dedupe import WorkItemDeDupeEndpoint
 from .issue.sub_issue import SubIssuesEndpoint
 

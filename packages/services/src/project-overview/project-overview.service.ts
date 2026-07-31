@@ -8,6 +8,8 @@ import { API_BASE_URL } from "@plane/constants";
 import type {
   TEntityUpdate,
   TEntityUpdatePayload,
+  TMilestone,
+  TMilestonePayload,
   TProjectActivityPage,
   TProjectOverviewLink,
   TProjectOverview,
@@ -45,6 +47,50 @@ export class ProjectOverviewService extends APIService {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/activity/`, {
       params: cursor ? { cursor } : undefined,
     })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * The project's milestones.
+   *
+   * Separate from `getOverview`, which embeds a summary with progress counts on it. This
+   * is the manageable list: the shape you edit, with `work_item_count` so the UI knows
+   * which ones the server will refuse to delete.
+   */
+  async listMilestones(workspaceSlug: string, projectId: string): Promise<TMilestone[]> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/milestones/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createMilestone(workspaceSlug: string, projectId: string, payload: TMilestonePayload): Promise<TMilestone> {
+    return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/milestones/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async updateMilestone(
+    workspaceSlug: string,
+    projectId: string,
+    milestoneId: string,
+    payload: Partial<TMilestonePayload>
+  ): Promise<TMilestone> {
+    return this.patch(`/api/workspaces/${workspaceSlug}/projects/${projectId}/milestones/${milestoneId}/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteMilestone(workspaceSlug: string, projectId: string, milestoneId: string): Promise<void> {
+    return this.delete(`/api/workspaces/${workspaceSlug}/projects/${projectId}/milestones/${milestoneId}/`)
       .then((response) => response.data)
       .catch((error) => {
         throw error?.response?.data;

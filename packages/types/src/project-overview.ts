@@ -84,6 +84,34 @@ export type TProjectActivityPage = {
   total_count: number;
 };
 
+/**
+ * A milestone as the settings surface edits it.
+ *
+ * `TProjectMilestoneSummary` is the overview's read-only view, which carries progress
+ * counts instead. This one carries `work_item_count`, because that is what decides whether
+ * the server will let it be deleted.
+ */
+export type TMilestone = {
+  id: string;
+  name: string;
+  description: string;
+  status: TPortfolioStatus;
+  target_date: string | null;
+  sort_order: number;
+  work_item_count: number;
+  project: string;
+  workspace: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TMilestonePayload = {
+  name: string;
+  description?: string;
+  status?: TPortfolioStatus;
+  target_date?: string | null;
+};
+
 export type TProjectMilestoneSummary = {
   id: string;
   name: string;

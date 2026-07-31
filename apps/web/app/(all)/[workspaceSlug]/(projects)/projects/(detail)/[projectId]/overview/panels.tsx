@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TProjectActivityEvent, TProjectOverviewLink, TProjectMilestoneSummary } from "@plane/types";
 import { readError } from "./errors";
@@ -159,27 +159,144 @@ export function LinksPanel({
 }
 
 /**
- * Milestones, with how much of each is done.
+ * Milestones, with how much of each is done -- and the controls to change them.
  *
  * Counts rather than names alone: a milestone list without them is decoration, and the
  * reason to put one on this page is to see what is left.
+ *
+ * Managed here rather than behind a settings page because this is where a reader meets
+ * them. They were display-only until the app API grew write routes, so a seeded project
+ * showed milestones nobody could rename, redate or remove without an API key.
  */
-export function MilestonesPanel({ milestones }: { milestones: TProjectMilestoneSummary[] }) {
-  if (!milestones.length) return null;
+export function MilestonesPanel({
+  milestones,
+  disabled,
+  onCreate,
+  onRename,
+  onRemove,
+}: {
+  milestones: TProjectMilestoneSummary[];
+  disabled: boolean;
+  onCreate: (name: string, targetDate: string | null) => Promise<void>;
+  onRename: (milestoneId: string, name: string, targetDate: string | null) => Promise<void>;
+  onRemove: (milestoneId: string) => Promise<void>;
+}) {
+  const [name, setName] = useState("");
+  const [targetDate, setTargetDate] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDate, setEditDate] = useState("");
+
+  const report = (error: unknown, title: string, fallback: string) =>
+    setToast({ type: TOAST_TYPE.ERROR, title, message: readError(error, fallback) });
+
+  const create = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setBusy(true);
+    try {
+      await onCreate(trimmed, targetDate || null);
+      setName("");
+      setTargetDate("");
+    } catch (error) {
+      report(error, "Milestone not created", "The milestone could not be created.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const startEditing = (milestone: TProjectMilestoneSummary) => {
+    setEditing(milestone.id);
+    setEditName(milestone.name);
+    setEditDate(milestone.target_date ?? "");
+  };
+
+  const commitEdit = async () => {
+    const trimmed = editName.trim();
+    if (!editing || !trimmed) return;
+    try {
+      await onRename(editing, trimmed, editDate || null);
+      setEditing(null);
+    } catch (error) {
+      report(error, "Milestone not saved", "The change could not be saved.");
+    }
+  };
+
+  const remove = async (milestone: TProjectMilestoneSummary) => {
+    try {
+      await onRemove(milestone.id);
+    } catch (error) {
+      report(error, "Milestone not removed", "The milestone could not be removed.");
+    }
+  };
 
   return (
     <section className="rounded border border-subtle p-4">
       <h2 className="text-13 font-medium text-primary">Milestones</h2>
       <ul className="mt-2 space-y-2">
         {milestones.map((milestone) => (
-          <li key={milestone.id}>
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="truncate text-12 text-primary">{milestone.name}</span>
-              <span className="shrink-0 text-11 text-tertiary">
-                {milestone.completed}/{milestone.total}
-                {milestone.target_date ? ` · ${milestone.target_date}` : ""}
-              </span>
-            </div>
+          <li key={milestone.id} className="group">
+            {editing === milestone.id ? (
+              <div className="flex gap-2">
+                <input
+                  aria-label="Milestone name"
+                  className="h-8 min-w-0 flex-1 rounded border border-subtle bg-surface-1 px-2 text-12 outline-none focus:border-accent-strong"
+                  value={editName}
+                  onChange={(event) => setEditName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void commitEdit();
+                    if (event.key === "Escape") setEditing(null);
+                  }}
+                />
+                <input
+                  type="date"
+                  aria-label="Milestone target date"
+                  className="h-8 w-32 rounded border border-subtle bg-surface-1 px-2 text-12 outline-none focus:border-accent-strong"
+                  value={editDate}
+                  onChange={(event) => setEditDate(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="h-8 rounded bg-surface-2 px-2 text-12 font-medium text-primary"
+                  onClick={() => void commitEdit()}
+                >
+                  Save
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="truncate text-12 text-primary">{milestone.name}</span>
+                <span className="flex shrink-0 items-center gap-1.5 text-11 text-tertiary">
+                  {milestone.completed}/{milestone.total}
+                  {milestone.target_date ? ` · ${milestone.target_date}` : ""}
+                  {!disabled && (
+                    <>
+                      <button
+                        type="button"
+                        aria-label={`Edit ${milestone.name}`}
+                        className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-primary"
+                        onClick={() => startEditing(milestone)}
+                      >
+                        <Pencil className="size-3" />
+                      </button>
+                      {/* The server refuses to delete a milestone that still carries work
+                          items, so the control is not offered when it would only fail. */}
+                      {milestone.total === 0 && (
+                        <button
+                          type="button"
+                          aria-label={`Remove ${milestone.name}`}
+                          className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger-primary"
+                          onClick={() => void remove(milestone)}
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
             <div className="mt-1 h-1 overflow-hidden rounded bg-surface-2">
               <div
                 className="bg-accent-solid h-full"
@@ -190,7 +307,42 @@ export function MilestonesPanel({ milestones }: { milestones: TProjectMilestoneS
             </div>
           </li>
         ))}
+        {/* Rendering nothing at all when the list was empty is why milestones read as
+            appearing from nowhere: there was no sign the feature existed until data did. */}
+        {!milestones.length && (
+          <li className="text-12 text-tertiary">No milestones yet. Add one to track a commitment.</li>
+        )}
       </ul>
+
+      {!disabled && (
+        <div className="mt-3 flex gap-2">
+          <input
+            aria-label="New milestone name"
+            className="h-8 min-w-0 flex-1 rounded border border-subtle bg-surface-1 px-2 text-12 outline-none focus:border-accent-strong"
+            placeholder="Milestone name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void create();
+            }}
+          />
+          <input
+            type="date"
+            aria-label="New milestone target date"
+            className="h-8 w-32 rounded border border-subtle bg-surface-1 px-2 text-12 outline-none focus:border-accent-strong"
+            value={targetDate}
+            onChange={(event) => setTargetDate(event.target.value)}
+          />
+          <button
+            type="button"
+            className="h-8 rounded bg-surface-2 px-3 text-12 font-medium text-primary disabled:opacity-50"
+            disabled={busy || !name.trim()}
+            onClick={() => void create()}
+          >
+            Add
+          </button>
+        </div>
+      )}
     </section>
   );
 }

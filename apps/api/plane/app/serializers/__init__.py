@@ -46,6 +46,7 @@ from .project import (
     ProjectMemberPreferenceSerializer,
     ProjectLinkSerializer,
     EntityUpdateSerializer,
+    MilestoneSerializer,
 )
 from .state import StateSerializer, StateLiteSerializer
 from .view import IssueViewSerializer, ViewIssueListSerializer

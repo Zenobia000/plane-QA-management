@@ -126,6 +126,24 @@ export default observer(function ProjectOverviewPage() {
     await load();
   };
 
+  const createMilestone = async (name: string, targetDate: string | null) => {
+    if (!slug || !id) return;
+    await overviewService.createMilestone(slug, id, { name, target_date: targetDate });
+    await load();
+  };
+
+  const renameMilestone = async (milestoneId: string, name: string, targetDate: string | null) => {
+    if (!slug || !id) return;
+    await overviewService.updateMilestone(slug, id, milestoneId, { name, target_date: targetDate });
+    await load();
+  };
+
+  const removeMilestone = async (milestoneId: string) => {
+    if (!slug || !id) return;
+    await overviewService.deleteMilestone(slug, id, milestoneId);
+    await load();
+  };
+
   const addLink = async (url: string, title: string) => {
     if (!slug || !id) return;
     await overviewService.createLink(slug, id, { url, title });
@@ -202,7 +220,13 @@ export default observer(function ProjectOverviewPage() {
                   }}
                 />
               )}
-              <MilestonesPanel milestones={overview.milestones} />
+              <MilestonesPanel
+                milestones={overview.milestones}
+                disabled={!canEdit}
+                onCreate={createMilestone}
+                onRename={renameMilestone}
+                onRemove={removeMilestone}
+              />
               <LinksPanel links={overview.links} disabled={!canEdit} onAdd={addLink} onRemove={removeLink} />
             </div>
           </div>

@@ -445,3 +445,99 @@ class TestOverviewComposite:
         response = api_client.get(overview_url(workspace, overview_project))
 
         assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
+
+
+def milestones_url(workspace, project):
+    return f"{project_url(workspace, project)}milestones/"
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+class TestMilestoneManagement:
+    """Milestones, writable by the session-authenticated surface the browser uses.
+
+    They had full CRUD on the token API and none here, so the overview could render a
+    milestone and the app could not change it. These assert the same rules as the v1
+    endpoints, on the routes the web client actually calls.
+    """
+
+    def test_a_milestone_round_trips(self, session_client, workspace, overview_project):
+        created = session_client.post(
+            milestones_url(workspace, overview_project),
+            data={"name": "M1 Launch", "target_date": "2026-09-30"},
+            content_type="application/json",
+        )
+        assert created.status_code == status.HTTP_201_CREATED
+        milestone_id = created.json()["id"]
+
+        listed = session_client.get(milestones_url(workspace, overview_project)).json()
+        assert [m["name"] for m in listed] == ["M1 Launch"]
+        assert listed[0]["work_item_count"] == 0
+
+        renamed = session_client.patch(
+            f"{milestones_url(workspace, overview_project)}{milestone_id}/",
+            data={"name": "M1 Launch (revised)"},
+            content_type="application/json",
+        )
+        assert renamed.status_code == status.HTTP_200_OK
+        assert renamed.json()["name"] == "M1 Launch (revised)"
+
+        removed = session_client.delete(f"{milestones_url(workspace, overview_project)}{milestone_id}/")
+        assert removed.status_code == status.HTTP_204_NO_CONTENT
+        assert session_client.get(milestones_url(workspace, overview_project)).json() == []
+
+    def test_an_empty_name_is_rejected(self, session_client, workspace, overview_project):
+        response = session_client.post(
+            milestones_url(workspace, overview_project),
+            data={"name": "   "},
+            content_type="application/json",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_a_milestone_carrying_work_cannot_be_deleted(
+        self, session_client, workspace, overview_project, create_user
+    ):
+        """Deleting it would silently unset the target every assigned item is measured on."""
+        milestone = Milestone.objects.create(
+            name="M2", project=overview_project, workspace=workspace, created_by=create_user
+        )
+        Issue.objects.create(
+            name="Assigned work",
+            project=overview_project,
+            workspace=workspace,
+            milestone=milestone,
+            created_by=create_user,
+        )
+
+        response = session_client.delete(f"{milestones_url(workspace, overview_project)}{milestone.id}/")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert Milestone.objects.filter(pk=milestone.id).exists()
+
+    def test_the_count_reports_assigned_work(self, session_client, workspace, overview_project, create_user):
+        milestone = Milestone.objects.create(
+            name="M3", project=overview_project, workspace=workspace, created_by=create_user
+        )
+        Issue.objects.create(
+            name="One", project=overview_project, workspace=workspace, milestone=milestone, created_by=create_user
+        )
+
+        listed = session_client.get(milestones_url(workspace, overview_project)).json()
+
+        assert [m["work_item_count"] for m in listed] == [1]
+
+    def test_a_milestone_from_another_project_is_rejected(
+        self, session_client, workspace, overview_project, other_project, create_user
+    ):
+        """`fields = "__all__"` accepted any milestone id until this rule was added."""
+        foreign = Milestone.objects.create(
+            name="Elsewhere", project=other_project, workspace=workspace, created_by=create_user
+        )
+
+        response = session_client.post(
+            f"{project_url(workspace, overview_project)}issues/",
+            data={"name": "Work item", "milestone": str(foreign.id)},
+            content_type="application/json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST

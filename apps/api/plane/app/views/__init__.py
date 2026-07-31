@@ -21,6 +21,7 @@ from .project.phase_d import (
 )
 
 from .project.overview import (
+    MilestoneViewSet,
     ProjectLinkViewSet,
     EntityUpdateViewSet,
     ProjectProgressEndpoint,

@@ -27,6 +27,7 @@ from plane.db.models import (
     IssueSubscriber,
     IssueLabel,
     Label,
+    Milestone,
     CycleIssue,
     Cycle,
     Module,
@@ -139,6 +140,15 @@ class IssueCreateSerializer(BaseSerializer):
             and attrs.get("start_date", None) > attrs.get("target_date", None)
         ):
             raise serializers.ValidationError("Start date cannot exceed target date")
+
+        # `fields = "__all__"` has always let this through, but nothing checked that the
+        # milestone belonged to the same project -- so a work item could be pinned to
+        # another project's commitment. The token API has had this rule since milestones
+        # were added; this is the same rule on the surface the browser uses.
+        if attrs.get("milestone") and not Milestone.objects.filter(
+            project_id=self.context.get("project_id"), pk=attrs["milestone"].id
+        ).exists():
+            raise serializers.ValidationError("Milestone is not valid for this project")
 
         # Validate description content for security
         if "description_html" in attrs and attrs["description_html"]:
@@ -856,6 +866,10 @@ class IssueSerializer(DynamicBaseSerializer):
             "cycle_id",
             "module_ids",
             "type_id",
+            # Writable since this serializer's create/update counterpart takes `__all__`,
+            # but absent here, so the browser could set a milestone and never see which one
+            # an item was on. The overview could show milestones; nothing else could.
+            "milestone_id",
             "label_ids",
             "assignee_ids",
             "sub_issues_count",

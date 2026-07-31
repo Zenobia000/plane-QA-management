@@ -218,10 +218,12 @@ export const coreRoutes: RouteConfigEntry[] = [
           ]),
           // Overview - how the project is going, answered by computing over the
           // work beneath it rather than by trusting a field set by hand
-          route(
-            ":workspaceSlug/projects/:projectId/overview",
-            "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/overview/page.tsx"
-          ),
+          layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/overview/layout.tsx", [
+            route(
+              ":workspaceSlug/projects/:projectId/overview",
+              "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/overview/page.tsx"
+            ),
+          ]),
           // Epics - the work-item list scoped to types carrying `is_epic`, rendered
           // through the same layouts because an epic is an ordinary work item
           layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/epics/(list)/layout.tsx", [

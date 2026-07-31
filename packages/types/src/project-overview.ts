@@ -70,6 +70,20 @@ export type TProjectActivityEvent = {
   work_item: { id: string; name: string } | null;
 };
 
+/**
+ * One page of activity, cursor-paginated.
+ *
+ * The service used to narrow the response to `{ results }`, which discarded the cursor at
+ * the type level and left the client unable to ask for a second page even in principle --
+ * so it rendered whatever a single request returned, however long that was.
+ */
+export type TProjectActivityPage = {
+  results: TProjectActivityEvent[];
+  next_cursor: string;
+  next_page_results: boolean;
+  total_count: number;
+};
+
 export type TProjectMilestoneSummary = {
   id: string;
   name: string;

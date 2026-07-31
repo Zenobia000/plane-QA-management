@@ -8,29 +8,12 @@ import { useState } from "react";
 import { ExternalLink, Trash2 } from "lucide-react";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TProjectActivityEvent, TProjectOverviewLink, TProjectMilestoneSummary } from "@plane/types";
+import { readError } from "./errors";
 
 // The column behind these is a plain URLField, so anything longer is rejected by the
 // serializer rather than truncated. Checking here turns a silent 400 into a hint.
 const URL_MAX_LENGTH = 200;
 const TITLE_MAX_LENGTH = 255;
-
-/**
- * Pull something readable out of whatever the service threw.
- *
- * The overview service rethrows the raw DRF body, so a rejected link arrives as
- * `{url: ["Enter a valid URL."]}` rather than an Error. Anything unrecognised falls back
- * to the caller's default -- an empty toast is worse than a generic one.
- */
-function readError(error: unknown, fallback: string): string {
-  if (typeof error === "string") return error;
-  if (error && typeof error === "object") {
-    for (const value of Object.values(error as Record<string, unknown>)) {
-      if (typeof value === "string") return value;
-      if (Array.isArray(value) && typeof value[0] === "string") return value[0];
-    }
-  }
-  return fallback;
-}
 
 /** Rejects what the serializer would reject anyway, before a round trip. */
 function validateLink(url: string, title: string): string | null {
@@ -212,23 +195,65 @@ export function MilestonesPanel({ milestones }: { milestones: TProjectMilestoneS
   );
 }
 
-export function ActivityPanel({ activities }: { activities: TProjectActivityEvent[] }) {
+/** "backlog" -> "In progress" reads better than the raw column value. */
+function readValue(value: string | null): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+export function ActivityPanel({
+  activities,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+}: {
+  activities: TProjectActivityEvent[];
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
+}) {
   return (
     <section className="rounded border border-subtle p-4">
       <h2 className="text-13 font-medium text-primary">Activity</h2>
-      <ul className="mt-2 space-y-2">
-        {activities.map((activity) => (
-          <li key={activity.id} className="text-12 text-secondary">
-            <span className="text-primary">{activity.actor?.display_name ?? "Someone"}</span> {activity.verb}{" "}
-            {activity.field ?? ""}
-            {activity.work_item && <span className="text-tertiary"> on {activity.work_item.name}</span>}
-            <time className="ml-1 text-11 text-tertiary" dateTime={activity.created_at}>
-              {new Date(activity.created_at).toLocaleDateString()}
-            </time>
-          </li>
-        ))}
+      {/* The feed is unbounded by nature -- a row per field change per work item -- so it
+          scrolls inside the panel instead of stretching the page to whatever the server
+          last returned. */}
+      <ul className="mt-2 max-h-96 space-y-2 overflow-y-auto pr-1">
+        {activities.map((activity) => {
+          const from = readValue(activity.old_value);
+          const to = readValue(activity.new_value);
+          return (
+            <li key={activity.id} className="text-12 text-secondary">
+              <span className="text-primary">{activity.actor?.display_name ?? "Someone"}</span> {activity.verb}{" "}
+              {activity.field ?? ""}
+              {activity.work_item && <span className="text-tertiary"> on {activity.work_item.name}</span>}
+              <time className="ml-1 text-11 text-tertiary" dateTime={activity.created_at}>
+                {new Date(activity.created_at).toLocaleDateString()}
+              </time>
+              {/* The endpoint has always sent these; nothing rendered them, so every row
+                  read as "someone changed something" with no before or after. */}
+              {(from || to) && (
+                <span className="ml-1 text-11 text-tertiary">
+                  {from && <span className="line-through">{from}</span>}
+                  {from && to && " → "}
+                  {to && <span className="text-secondary">{to}</span>}
+                </span>
+              )}
+            </li>
+          );
+        })}
         {!activities.length && <li className="text-12 text-tertiary">Nothing has happened yet.</li>}
       </ul>
+      {hasMore && (
+        <button
+          type="button"
+          className="mt-2 text-12 font-medium text-accent-primary hover:underline disabled:opacity-50"
+          disabled={loadingMore}
+          onClick={onLoadMore}
+        >
+          {loadingMore ? "Loading…" : "Load more"}
+        </button>
+      )}
     </section>
   );
 }

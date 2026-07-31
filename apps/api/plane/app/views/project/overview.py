@@ -159,6 +159,12 @@ class ProjectActivityEndpoint(BaseAPIView):
 
     permission_classes = [ProjectEntityPermission]
 
+    # `paginate` defaults to a thousand rows a page, which for an activity feed is not a
+    # page at all -- `issue_activities` gains a row per field change per work item, so a
+    # real project reaches that within days and the overview rendered every one. A page is
+    # what fits on screen; the client asks for more by cursor.
+    PER_PAGE = 20
+
     def get(self, request, slug, project_id):
         activities = (
             IssueActivity.objects.filter(project_id=project_id, workspace__slug=slug)
@@ -168,6 +174,7 @@ class ProjectActivityEndpoint(BaseAPIView):
         return self.paginate(
             request=request,
             queryset=activities,
+            default_per_page=self.PER_PAGE,
             on_results=lambda results: [
                 {
                     "id": str(activity.id),

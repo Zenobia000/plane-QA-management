@@ -8,7 +8,7 @@ import { API_BASE_URL } from "@plane/constants";
 import type {
   TEntityUpdate,
   TEntityUpdatePayload,
-  TProjectActivityEvent,
+  TProjectActivityPage,
   TProjectOverviewLink,
   TProjectOverview,
   TUpdateEntityName,
@@ -34,8 +34,17 @@ export class ProjectOverviewService extends APIService {
       });
   }
 
-  async getActivity(workspaceSlug: string, projectId: string): Promise<{ results: TProjectActivityEvent[] }> {
-    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/activity/`)
+  /**
+   * One page of activity. Pass the previous page's `next_cursor` to continue.
+   *
+   * The whole envelope is returned, not just `results` -- without the cursor the caller
+   * has no way to reach a second page, which is how this ended up rendering every row the
+   * server was willing to send.
+   */
+  async getActivity(workspaceSlug: string, projectId: string, cursor?: string): Promise<TProjectActivityPage> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/activity/`, {
+      params: cursor ? { cursor } : undefined,
+    })
       .then((response) => response.data)
       .catch((error) => {
         throw error?.response?.data;

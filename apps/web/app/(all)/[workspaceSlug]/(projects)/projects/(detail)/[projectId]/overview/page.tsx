@@ -9,8 +9,10 @@ import { observer } from "mobx-react";
 import { AlertTriangle } from "lucide-react";
 import { useParams } from "react-router";
 import { ProjectOverviewService } from "@plane/services";
+import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TProjectActivityEvent, TProjectOverview, TUpdateStatus } from "@plane/types";
 import { PageHead } from "@/components/core/page-title";
+import { readError } from "./errors";
 import { useProject } from "@/hooks/store/use-project";
 import { useUserPermissions } from "@/hooks/store/user";
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
@@ -43,6 +45,8 @@ export default observer(function ProjectOverviewPage() {
   const { allowPermissions } = useUserPermissions();
   const [overview, setOverview] = useState<TProjectOverview | null>(null);
   const [activities, setActivities] = useState<TProjectActivityEvent[]>([]);
+  const [activityCursor, setActivityCursor] = useState<string | null>(null);
+  const [loadingMoreActivity, setLoadingMoreActivity] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const project = id ? getProjectById(id) : undefined;
@@ -62,10 +66,31 @@ export default observer(function ProjectOverviewPage() {
       ]);
       setOverview(data);
       setActivities(activity.results ?? []);
+      // Only the first page. Anything already loaded is discarded on purpose: a refetch
+      // after a write has to agree with the server about where the feed now starts.
+      setActivityCursor(activity.next_page_results ? activity.next_cursor : null);
     } catch {
       setError("Could not load the project overview.");
     }
   }, [slug, id]);
+
+  const loadMoreActivity = useCallback(async () => {
+    if (!slug || !id || !activityCursor) return;
+    setLoadingMoreActivity(true);
+    try {
+      const activity = await overviewService.getActivity(slug, id, activityCursor);
+      setActivities((current) => [...current, ...(activity.results ?? [])]);
+      setActivityCursor(activity.next_page_results ? activity.next_cursor : null);
+    } catch (failure) {
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: "Could not load more activity",
+        message: readError(failure, "The next page could not be loaded."),
+      });
+    } finally {
+      setLoadingMoreActivity(false);
+    }
+  }, [slug, id, activityCursor]);
 
   useEffect(() => {
     void load();
@@ -115,7 +140,10 @@ export default observer(function ProjectOverviewPage() {
   return (
     <>
       <PageHead title={project ? `${project.name} — Overview` : "Overview"} />
-      <main className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-6">
+      {/* ContentWrapper owns the scroll now that this route has a layout, so this only
+          constrains width and spacing. Keeping `overflow-y-auto` here would nest a second
+          scroll container inside it. */}
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-6">
         {project && (
           <OverviewHeader
             project={project}
@@ -152,7 +180,12 @@ export default observer(function ProjectOverviewPage() {
                 onLoadReplies={loadReplies}
                 onReply={postReply}
               />
-              <ActivityPanel activities={activities} />
+              <ActivityPanel
+                activities={activities}
+                hasMore={!!activityCursor}
+                loadingMore={loadingMoreActivity}
+                onLoadMore={() => void loadMoreActivity()}
+              />
             </div>
             <div className="flex flex-col gap-4">
               {project && (

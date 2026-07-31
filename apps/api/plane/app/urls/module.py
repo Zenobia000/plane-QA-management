@@ -47,7 +47,9 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/modules/<uuid:module_id>/issues/<uuid:issue_id>/",
         ModuleIssueViewSet.as_view(
             {
-                "get": "retrieve",
+                # No `get`: the viewset defines no `retrieve`, and its lookup kwarg is
+                # `issue_id` rather than `pk`, so DRF's default raised rather than
+                # serving. Nothing called it; the list route above is the read path.
                 "put": "update",
                 "patch": "partial_update",
                 "delete": "destroy",
@@ -93,7 +95,11 @@ urlpatterns = [
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/modules/<uuid:module_id>/archive/",
-        ModuleArchiveUnarchiveEndpoint.as_view(),
+        # Restricted to the write pair. `as_view()` on an APIView exposes every method
+        # the class defines, and this one's `get` takes `pk` -- it serves the
+        # `archived-modules/` routes below. Reached through this URL it was handed
+        # `module_id` and raised TypeError, so GET here answered 500 instead of 405.
+        ModuleArchiveUnarchiveEndpoint.as_view(http_method_names=["post", "delete"]),
         name="module-archive-unarchive",
     ),
     path(

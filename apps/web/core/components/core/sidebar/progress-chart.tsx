@@ -37,14 +37,14 @@ function ProgressChart({
     // Ratio of the cycle elapsed at this point, used to draw the ideal trend line.
     const elapsed = lastIndex > 0 ? index / lastIndex : 1;
 
-    return Object.assign(
-      {
-        name: renderFormattedDateWithoutYear(key),
-        current: hasData ? (isBurnUp ? totalIssues - pending : pending) : null,
-        ideal: totalIssues * (isBurnUp ? elapsed : 1 - elapsed),
-      },
-      isBurnUp ? { scope: totalIssues } : {}
-    );
+    const point: TChartData<string, string> = {
+      name: renderFormattedDateWithoutYear(key),
+      current: hasData ? (isBurnUp ? totalIssues - pending : pending) : null,
+      ideal: totalIssues * (isBurnUp ? elapsed : 1 - elapsed),
+    };
+    // Burn-up plots progress against a scope line rather than down towards zero.
+    if (isBurnUp) point.scope = totalIssues;
+    return point;
   });
 
   const areas: TAreaItem<string>[] = [

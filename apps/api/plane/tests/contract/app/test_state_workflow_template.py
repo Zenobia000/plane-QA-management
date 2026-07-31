@@ -133,3 +133,24 @@ class TestWorkflowTemplate:
         response = session_client.post(template_url(workspace, project))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_a_differently_spelled_equivalent_is_left_alone(self, session_client, workspace, project):
+        """"Cancelled" and "Canceled" are one outcome; two columns would split work items.
+
+        Case-insensitive matching does not pair them -- the spellings differ -- so the
+        equivalence is declared explicitly.
+        """
+        session_client.post(template_url(workspace, project))
+
+        names = live_names(project)
+        assert "Cancelled" in names
+        assert "Canceled" not in names
+
+    def test_the_preview_does_not_offer_an_equivalent_it_would_skip(
+        self, session_client, workspace, project
+    ):
+        """Whatever the preview lists, applying must add -- otherwise the count is a lie."""
+        plan = session_client.get(template_url(workspace, project)).json()
+
+        assert "Canceled" not in plan["missing"]
+        assert "Canceled" in plan["already_present"]

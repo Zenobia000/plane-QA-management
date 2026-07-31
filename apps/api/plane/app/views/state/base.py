@@ -155,6 +155,22 @@ class IntakeStateEndpoint(BaseAPIView):
         return Response(StateSerializer(state).data, status=status.HTTP_200_OK)
 
 
+# Names that mean the same state but differ by more than case, so a casefold comparison
+# would not pair them. Without this a project keeps its "Cancelled" and gains the
+# template's "Canceled" beside it: one outcome, two board columns, and work items split
+# across them depending on which a person happened to pick.
+EQUIVALENT_STATE_NAMES = ({"canceled", "cancelled"},)
+
+
+def canonical_state_name(name):
+    """A key that pairs a project's state with the template's equivalent."""
+    folded = name.casefold().strip()
+    for group in EQUIVALENT_STATE_NAMES:
+        if folded in group:
+            return min(group)
+    return folded
+
+
 class StateWorkflowTemplateEndpoint(BaseAPIView):
     """Apply this fork's SDLC workflow to a project that has the default five states.
 
@@ -183,11 +199,11 @@ class StateWorkflowTemplateEndpoint(BaseAPIView):
         if not plan["missing"]:
             return Response(plan, status=status.HTTP_200_OK)
 
-        existing_names = {name.casefold() for name in self._existing(slug, project_id)}
+        existing_names = {canonical_state_name(name) for name in self._existing(slug, project_id)}
         # Created one at a time rather than bulk: State.save() assigns `slug` and the next
         # `sequence`, and bulk_create skips save() entirely.
         for state in SDLC_STATES:
-            if state["name"].casefold() in existing_names:
+            if canonical_state_name(state["name"]) in existing_names:
                 continue
             State.objects.create(
                 project_id=project_id,
@@ -206,7 +222,7 @@ class StateWorkflowTemplateEndpoint(BaseAPIView):
         )
 
     def _plan(self, slug, project_id):
-        existing = {name.casefold() for name in self._existing(slug, project_id)}
-        missing = [state["name"] for state in SDLC_STATES if state["name"].casefold() not in existing]
-        present = [state["name"] for state in SDLC_STATES if state["name"].casefold() in existing]
+        existing = {canonical_state_name(name) for name in self._existing(slug, project_id)}
+        missing = [s["name"] for s in SDLC_STATES if canonical_state_name(s["name"]) not in existing]
+        present = [s["name"] for s in SDLC_STATES if canonical_state_name(s["name"]) in existing]
         return {"missing": missing, "already_present": present}

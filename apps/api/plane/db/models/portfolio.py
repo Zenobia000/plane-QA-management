@@ -65,7 +65,9 @@ class InitiativeProject(BaseModel):
 
     initiative = models.ForeignKey(Initiative, on_delete=models.CASCADE, related_name="initiative_projects")
     project = models.ForeignKey("db.Project", on_delete=models.CASCADE, related_name="project_initiatives")
-    workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="workspace_initiative_projects")
+    workspace = models.ForeignKey(
+        "db.Workspace", on_delete=models.CASCADE, related_name="workspace_initiative_projects"
+    )
 
     class Meta:
         db_table = "initiative_projects"

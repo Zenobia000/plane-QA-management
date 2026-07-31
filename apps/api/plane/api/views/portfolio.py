@@ -143,9 +143,13 @@ def _workspace_projects_or_error(workspace, project_ids):
 
 def _replace_initiative_projects(initiative, projects):
     project_ids = [project.id for project in projects]
-    InitiativeProject.objects.filter(initiative=initiative, deleted_at__isnull=True).exclude(project_id__in=project_ids).delete()
+    InitiativeProject.objects.filter(initiative=initiative, deleted_at__isnull=True).exclude(
+        project_id__in=project_ids
+    ).delete()
     existing_project_ids = set(
-        InitiativeProject.objects.filter(initiative=initiative, deleted_at__isnull=True).values_list("project_id", flat=True)
+        InitiativeProject.objects.filter(initiative=initiative, deleted_at__isnull=True).values_list(
+            "project_id", flat=True
+        )
     )
     InitiativeProject.objects.bulk_create(
         [

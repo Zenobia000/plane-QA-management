@@ -10,7 +10,8 @@ from plane.testing import parse_junit_xml
 def test_junit_adapter_maps_results_and_durations():
     results = parse_junit_xml(
         """<testsuite><testcase classname="checkout" name="accepts card" time="0.125" />
-        <testcase classname="checkout" name="declines fraud"><failure type="AssertionError">wrong status</failure></testcase>
+        <testcase classname="checkout" name="declines fraud">
+        <failure type="AssertionError">wrong status</failure></testcase>
         <testcase classname="checkout" name="optional"><skipped message="not configured" /></testcase></testsuite>"""
     )
     assert [item["status"] for item in results] == ["passed", "failed", "skipped"]

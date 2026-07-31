@@ -74,7 +74,11 @@ urlpatterns = [
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/user-favorite-modules/",
-        ModuleFavoriteViewSet.as_view({"get": "list", "post": "create"}),
+        # GET is not offered: the viewset has no serializer and does not filter by
+        # entity_type, so listing here would 500 -- and reading favourites already has
+        # a working home at `workspaces/<slug>/user-favorites/`, which is what the web
+        # app calls. Only the write pair belongs on this route.
+        ModuleFavoriteViewSet.as_view({"post": "create"}),
         name="user-favorite-module",
     ),
     path(

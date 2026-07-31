@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Đang tải…",
+    "load_error": "Không thể tải tổng quan dự án.",
+    "progress": {
+      "title": "Tiến độ",
+      "out_of_scope": "Ngoài phạm vi nên không được tính vào thanh tiến độ"
+    },
+    "properties": {
+      "title": "Thuộc tính",
+      "state": "Trạng thái",
+      "state_label": "Trạng thái dự án",
+      "priority": "Mức ưu tiên",
+      "priority_label": "Mức ưu tiên của dự án",
+      "start": "Bắt đầu",
+      "start_label": "Ngày bắt đầu dự án",
+      "target": "Mục tiêu",
+      "target_label": "Ngày mục tiêu của dự án",
+      "not_set": "Chưa đặt",
+      "not_saved_title": "Thay đổi chưa được lưu",
+      "not_saved_message": "Không thể cập nhật dự án. Vui lòng tải lại để xem các giá trị hiện tại."
+    },
+    "links": {
+      "title": "Liên kết",
+      "empty": "Chưa có liên kết nào.",
+      "name_label": "Tiêu đề liên kết",
+      "name_placeholder": "Tiêu đề",
+      "url_label": "URL của liên kết",
+      "add": "Thêm",
+      "remove_label": "Xóa {name}",
+      "invalid_url": "Vui lòng nhập một URL, ví dụ https://example.com.",
+      "url_too_long": "Giữ URL dưới {max} ký tự.",
+      "title_too_long": "Giữ tiêu đề dưới {max} ký tự.",
+      "not_added_title": "Chưa thêm liên kết",
+      "not_added_message": "Không thể lưu liên kết.",
+      "not_removed_title": "Chưa xóa liên kết",
+      "not_removed_message": "Không thể xóa liên kết."
+    },
+    "milestones": {
+      "title": "Cột mốc",
+      "empty": "Chưa có cột mốc nào. Hãy thêm một cột mốc để theo dõi cam kết.",
+      "name_label": "Tên cột mốc",
+      "name_placeholder": "Tên cột mốc",
+      "target_date_label": "Ngày mục tiêu của cột mốc",
+      "new_name_label": "Tên cột mốc mới",
+      "new_target_date_label": "Ngày mục tiêu của cột mốc mới",
+      "add": "Thêm",
+      "save": "Lưu",
+      "edit_label": "Chỉnh sửa {name}",
+      "remove_label": "Xóa {name}",
+      "not_created_title": "Chưa tạo cột mốc",
+      "not_created_message": "Không thể tạo cột mốc.",
+      "not_saved_title": "Chưa lưu cột mốc",
+      "not_saved_message": "Không thể lưu thay đổi.",
+      "not_removed_title": "Chưa xóa cột mốc",
+      "not_removed_message": "Không thể xóa cột mốc."
+    },
+    "activity": {
+      "title": "Hoạt động",
+      "empty": "Chưa có gì xảy ra.",
+      "someone": "Ai đó",
+      "load_more": "Tải thêm",
+      "loading": "Đang tải…",
+      "not_loaded_title": "Không thể tải thêm hoạt động",
+      "not_loaded_message": "Không thể tải trang tiếp theo."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Hiển thị # cập nhật trước đó} other {Hiển thị # cập nhật trước đó}}",
+      "load_error": "Không thể tải phần còn lại của chuỗi thảo luận."
+    }
   }
 }

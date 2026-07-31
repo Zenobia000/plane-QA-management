@@ -5,6 +5,7 @@
  */
 
 import { useState } from "react";
+import { useTranslation } from "@plane/i18n";
 import type { TEntityUpdate, TUpdateEntityName, TUpdateStatus } from "@plane/types";
 
 export const UPDATE_STATUS_LABELS: Record<TUpdateStatus, string> = {
@@ -176,6 +177,7 @@ export function UpdatesPanel({
   // truth for the common case and a refetch after posting is not fighting a stale copy.
   const [expanded, setExpanded] = useState<TEntityUpdate[] | null>(null);
   const [expanding, setExpanding] = useState(false);
+  const { t } = useTranslation();
 
   const shown = expanded ?? updates;
   const hidden = (total ?? shown.length) - shown.length;
@@ -187,7 +189,7 @@ export function UpdatesPanel({
     try {
       setExpanded(await onLoadAll());
     } catch {
-      setError("Could not load the rest of the thread.");
+      setError(t("project_overview.updates.load_error"));
     } finally {
       setExpanding(false);
     }
@@ -273,7 +275,9 @@ export function UpdatesPanel({
           disabled={expanding}
           onClick={() => void showAll()}
         >
-          {expanding ? "Loading…" : `Show ${hidden} earlier update${hidden === 1 ? "" : "s"}`}
+          {expanding
+            ? t("project_overview.activity.loading")
+            : t("project_overview.updates.show_earlier", { count: hidden })}
         </button>
       )}
     </section>

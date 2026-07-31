@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TProjectActivityEvent, TProjectOverviewLink, TProjectMilestoneSummary } from "@plane/types";
 import { readError } from "./errors";
@@ -16,12 +17,16 @@ const URL_MAX_LENGTH = 200;
 const TITLE_MAX_LENGTH = 255;
 
 /** Rejects what the serializer would reject anyway, before a round trip. */
-function validateLink(url: string, title: string): string | null {
-  if (url.length > URL_MAX_LENGTH) return `Keep the URL under ${URL_MAX_LENGTH} characters.`;
-  if (title.length > TITLE_MAX_LENGTH) return `Keep the title under ${TITLE_MAX_LENGTH} characters.`;
+function validateLink(
+  url: string,
+  title: string,
+  t: (key: string, params?: Record<string, unknown>) => string
+): string | null {
+  if (url.length > URL_MAX_LENGTH) return t("project_overview.links.url_too_long", { max: URL_MAX_LENGTH });
+  if (title.length > TITLE_MAX_LENGTH) return t("project_overview.links.title_too_long", { max: TITLE_MAX_LENGTH });
   // The serializer prepends a scheme when one is missing, so "example.com/doc" is fine.
   // What it cannot accept is a bare word with no host at all.
-  if (!/^(https?:\/\/)?[^\s/]+\.[^\s/]+/i.test(url)) return "Enter a URL, for example https://example.com.";
+  if (!/^(https?:\/\/)?[^\s/]+\.[^\s/]+/i.test(url)) return t("project_overview.links.invalid_url");
   return null;
 }
 
@@ -40,13 +45,14 @@ export function LinksPanel({
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [invalid, setInvalid] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const add = async () => {
     const trimmedUrl = url.trim();
     const trimmedTitle = title.trim();
     if (!trimmedUrl) return;
 
-    const problem = validateLink(trimmedUrl, trimmedTitle);
+    const problem = validateLink(trimmedUrl, trimmedTitle, t);
     if (problem) {
       setInvalid(problem);
       return;
@@ -63,8 +69,8 @@ export function LinksPanel({
       // button re-enabled, which reads as the button doing nothing at all.
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Link not added",
-        message: readError(error, "The link could not be saved."),
+        title: t("project_overview.links.not_added_title"),
+        message: readError(error, t("project_overview.links.not_added_message")),
       });
     } finally {
       setBusy(false);
@@ -77,15 +83,15 @@ export function LinksPanel({
     } catch (error) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Link not removed",
-        message: readError(error, "The link could not be removed."),
+        title: t("project_overview.links.not_removed_title"),
+        message: readError(error, t("project_overview.links.not_removed_message")),
       });
     }
   };
 
   return (
     <section className="rounded border border-subtle p-4">
-      <h2 className="text-13 font-medium text-primary">Links</h2>
+      <h2 className="text-13 font-medium text-primary">{t("project_overview.links.title")}</h2>
       <ul className="mt-2 space-y-1.5">
         {links.map((link) => (
           <li key={link.id} className="flex items-center gap-2">
@@ -101,7 +107,7 @@ export function LinksPanel({
             {!disabled && (
               <button
                 type="button"
-                aria-label={`Remove ${link.title || link.url}`}
+                aria-label={t("project_overview.links.remove_label", { name: link.title || link.url })}
                 className="text-tertiary hover:text-danger-primary"
                 onClick={() => void remove(link.id)}
               >
@@ -110,16 +116,16 @@ export function LinksPanel({
             )}
           </li>
         ))}
-        {!links.length && <li className="text-12 text-tertiary">No links yet.</li>}
+        {!links.length && <li className="text-12 text-tertiary">{t("project_overview.links.empty")}</li>}
       </ul>
 
       {!disabled && (
         <div className="mt-3">
           <div className="flex gap-2">
             <input
-              aria-label="Link title"
+              aria-label={t("project_overview.links.name_label")}
               className="h-8 w-28 rounded border border-subtle bg-surface-1 px-2 text-12 outline-none focus:border-accent-strong"
-              placeholder="Title"
+              placeholder={t("project_overview.links.name_placeholder")}
               value={title}
               onChange={(event) => {
                 setTitle(event.target.value);
@@ -127,7 +133,7 @@ export function LinksPanel({
               }}
             />
             <input
-              aria-label="Link URL"
+              aria-label={t("project_overview.links.url_label")}
               aria-invalid={!!invalid}
               className={`h-8 flex-1 rounded border bg-surface-1 px-2 text-12 outline-none ${
                 invalid ? "border-danger-strong" : "border-subtle focus:border-accent-strong"
@@ -187,6 +193,7 @@ export function MilestonesPanel({
   const [editing, setEditing] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editDate, setEditDate] = useState("");
+  const { t } = useTranslation();
 
   const report = (error: unknown, title: string, fallback: string) =>
     setToast({ type: TOAST_TYPE.ERROR, title, message: readError(error, fallback) });
@@ -200,7 +207,11 @@ export function MilestonesPanel({
       setName("");
       setTargetDate("");
     } catch (error) {
-      report(error, "Milestone not created", "The milestone could not be created.");
+      report(
+        error,
+        t("project_overview.milestones.not_created_title"),
+        t("project_overview.milestones.not_created_message")
+      );
     } finally {
       setBusy(false);
     }
@@ -219,7 +230,11 @@ export function MilestonesPanel({
       await onRename(editing, trimmed, editDate || null);
       setEditing(null);
     } catch (error) {
-      report(error, "Milestone not saved", "The change could not be saved.");
+      report(
+        error,
+        t("project_overview.milestones.not_saved_title"),
+        t("project_overview.milestones.not_saved_message")
+      );
     }
   };
 
@@ -227,20 +242,24 @@ export function MilestonesPanel({
     try {
       await onRemove(milestone.id);
     } catch (error) {
-      report(error, "Milestone not removed", "The milestone could not be removed.");
+      report(
+        error,
+        t("project_overview.milestones.not_removed_title"),
+        t("project_overview.milestones.not_removed_message")
+      );
     }
   };
 
   return (
     <section className="rounded border border-subtle p-4">
-      <h2 className="text-13 font-medium text-primary">Milestones</h2>
+      <h2 className="text-13 font-medium text-primary">{t("project_overview.milestones.title")}</h2>
       <ul className="mt-2 space-y-2">
         {milestones.map((milestone) => (
           <li key={milestone.id} className="group">
             {editing === milestone.id ? (
               <div className="flex gap-2">
                 <input
-                  aria-label="Milestone name"
+                  aria-label={t("project_overview.milestones.name_label")}
                   className="h-8 min-w-0 flex-1 rounded border border-subtle bg-surface-1 px-2 text-12 outline-none focus:border-accent-strong"
                   value={editName}
                   onChange={(event) => setEditName(event.target.value)}
@@ -251,7 +270,7 @@ export function MilestonesPanel({
                 />
                 <input
                   type="date"
-                  aria-label="Milestone target date"
+                  aria-label={t("project_overview.milestones.target_date_label")}
                   className="h-8 w-32 rounded border border-subtle bg-surface-1 px-2 text-12 outline-none focus:border-accent-strong"
                   value={editDate}
                   onChange={(event) => setEditDate(event.target.value)}
@@ -261,7 +280,7 @@ export function MilestonesPanel({
                   className="h-8 rounded bg-surface-2 px-2 text-12 font-medium text-primary"
                   onClick={() => void commitEdit()}
                 >
-                  Save
+                  {t("project_overview.milestones.save")}
                 </button>
               </div>
             ) : (
@@ -274,7 +293,7 @@ export function MilestonesPanel({
                     <>
                       <button
                         type="button"
-                        aria-label={`Edit ${milestone.name}`}
+                        aria-label={t("project_overview.milestones.edit_label", { name: milestone.name })}
                         className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-primary"
                         onClick={() => startEditing(milestone)}
                       >
@@ -285,7 +304,7 @@ export function MilestonesPanel({
                       {milestone.total === 0 && (
                         <button
                           type="button"
-                          aria-label={`Remove ${milestone.name}`}
+                          aria-label={t("project_overview.milestones.remove_label", { name: milestone.name })}
                           className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger-primary"
                           onClick={() => void remove(milestone)}
                         >
@@ -309,17 +328,15 @@ export function MilestonesPanel({
         ))}
         {/* Rendering nothing at all when the list was empty is why milestones read as
             appearing from nowhere: there was no sign the feature existed until data did. */}
-        {!milestones.length && (
-          <li className="text-12 text-tertiary">No milestones yet. Add one to track a commitment.</li>
-        )}
+        {!milestones.length && <li className="text-12 text-tertiary">{t("project_overview.milestones.empty")}</li>}
       </ul>
 
       {!disabled && (
         <div className="mt-3 flex gap-2">
           <input
-            aria-label="New milestone name"
+            aria-label={t("project_overview.milestones.new_name_label")}
             className="h-8 min-w-0 flex-1 rounded border border-subtle bg-surface-1 px-2 text-12 outline-none focus:border-accent-strong"
-            placeholder="Milestone name"
+            placeholder={t("project_overview.milestones.name_placeholder")}
             value={name}
             onChange={(event) => setName(event.target.value)}
             onKeyDown={(event) => {
@@ -328,7 +345,7 @@ export function MilestonesPanel({
           />
           <input
             type="date"
-            aria-label="New milestone target date"
+            aria-label={t("project_overview.milestones.new_target_date_label")}
             className="h-8 w-32 rounded border border-subtle bg-surface-1 px-2 text-12 outline-none focus:border-accent-strong"
             value={targetDate}
             onChange={(event) => setTargetDate(event.target.value)}
@@ -364,9 +381,10 @@ export function ActivityPanel({
   loadingMore: boolean;
   onLoadMore: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <section className="rounded border border-subtle p-4">
-      <h2 className="text-13 font-medium text-primary">Activity</h2>
+      <h2 className="text-13 font-medium text-primary">{t("project_overview.activity.title")}</h2>
       {/* The feed is unbounded by nature -- a row per field change per work item -- so it
           scrolls inside the panel instead of stretching the page to whatever the server
           last returned. */}
@@ -376,8 +394,10 @@ export function ActivityPanel({
           const to = readValue(activity.new_value);
           return (
             <li key={activity.id} className="text-12 text-secondary">
-              <span className="text-primary">{activity.actor?.display_name ?? "Someone"}</span> {activity.verb}{" "}
-              {activity.field ?? ""}
+              <span className="text-primary">
+                {activity.actor?.display_name ?? t("project_overview.activity.someone")}
+              </span>{" "}
+              {activity.verb} {activity.field ?? ""}
               {activity.work_item && <span className="text-tertiary"> on {activity.work_item.name}</span>}
               <time className="ml-1 text-11 text-tertiary" dateTime={activity.created_at}>
                 {new Date(activity.created_at).toLocaleDateString()}
@@ -394,7 +414,7 @@ export function ActivityPanel({
             </li>
           );
         })}
-        {!activities.length && <li className="text-12 text-tertiary">Nothing has happened yet.</li>}
+        {!activities.length && <li className="text-12 text-tertiary">{t("project_overview.activity.empty")}</li>}
       </ul>
       {hasMore && (
         <button
@@ -403,7 +423,7 @@ export function ActivityPanel({
           disabled={loadingMore}
           onClick={onLoadMore}
         >
-          {loadingMore ? "Loading…" : "Load more"}
+          {loadingMore ? t("project_overview.activity.loading") : t("project_overview.activity.load_more")}
         </button>
       )}
     </section>

@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "{groupKey} grubu için durum yok",
         "description": "Lütfen yeni bir durum oluşturun"
+      },
+      "workflow_template": {
+        "title": "SDLC teslim akışını kullan",
+        "description": "Bu projede bulunmayan {count} durum ekler; buna, bir panonun işin nerede olduğunu göstermesini sağlayan inceleme ve test aşamaları da dâhildir. Mevcut hiçbir şey yeniden adlandırılmaz veya kaldırılmaz.",
+        "apply": "Uygula",
+        "applying": "Uygulanıyor…",
+        "applied_title": "Akış uygulandı",
+        "applied_message": "{count} durum eklendi.",
+        "not_applied_title": "Akış uygulanmadı",
+        "not_applied_message": "Durumlar eklenemedi."
       }
     },
     "labels": {

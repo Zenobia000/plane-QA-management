@@ -7,6 +7,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Layers } from "lucide-react";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 // services
 import { ProjectStateService } from "@/services/project/project-state.service";
@@ -34,6 +35,7 @@ type Props = {
  */
 export function WorkflowTemplateBanner({ workspaceSlug, projectId, isEditable, onApplied }: Props) {
   const [applying, setApplying] = useState(false);
+  const { t } = useTranslation();
 
   const { data: plan, mutate } = useSWR(
     isEditable ? `PROJECT_STATE_TEMPLATE_${workspaceSlug}_${projectId}` : null,
@@ -51,14 +53,16 @@ export function WorkflowTemplateBanner({ workspaceSlug, projectId, isEditable, o
       await Promise.all([onApplied(), mutate()]);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Workflow applied",
-        message: `Added ${result.missing.length ? result.missing.length : plan.missing.length} states.`,
+        title: t("project_settings.states.workflow_template.applied_title"),
+        message: t("project_settings.states.workflow_template.applied_message", {
+          count: result.missing.length || plan.missing.length,
+        }),
       });
     } catch {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Workflow not applied",
-        message: "The states could not be added.",
+        title: t("project_settings.states.workflow_template.not_applied_title"),
+        message: t("project_settings.states.workflow_template.not_applied_message"),
       });
     } finally {
       setApplying(false);
@@ -69,10 +73,9 @@ export function WorkflowTemplateBanner({ workspaceSlug, projectId, isEditable, o
     <div className="mb-4 flex items-start gap-3 rounded border border-subtle bg-surface-2 p-3">
       <Layers className="mt-0.5 size-4 shrink-0 text-tertiary" />
       <div className="min-w-0 flex-1">
-        <p className="text-13 font-medium text-primary">Use the SDLC delivery workflow</p>
+        <p className="text-13 font-medium text-primary">{t("project_settings.states.workflow_template.title")}</p>
         <p className="mt-0.5 text-12 text-tertiary">
-          Adds {plan.missing.length} states this project does not have, including the review and testing stages that
-          make a board show where work sits. Nothing existing is renamed or removed.
+          {t("project_settings.states.workflow_template.description", { count: plan.missing.length })}
         </p>
         <p className="mt-1 truncate text-11 text-tertiary" title={plan.missing.join(", ")}>
           {plan.missing.join(" · ")}
@@ -84,7 +87,9 @@ export function WorkflowTemplateBanner({ workspaceSlug, projectId, isEditable, o
         disabled={applying}
         onClick={() => void apply()}
       >
-        {applying ? "Applying…" : "Apply"}
+        {applying
+          ? t("project_settings.states.workflow_template.applying")
+          : t("project_settings.states.workflow_template.apply")}
       </button>
     </div>
   );

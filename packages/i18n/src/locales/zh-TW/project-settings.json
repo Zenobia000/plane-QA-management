@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "{groupKey} 群組沒有可用的狀態",
         "description": "請建立新狀態"
+      },
+      "workflow_template": {
+        "title": "使用 SDLC 交付工作流程",
+        "description": "新增此專案尚未擁有的 {count} 個狀態，包括讓看板顯示工作進行到哪個階段的審查與測試階段。不會重新命名或移除任何現有內容。",
+        "apply": "套用",
+        "applying": "套用中…",
+        "applied_title": "已套用工作流程",
+        "applied_message": "已新增 {count} 個狀態。",
+        "not_applied_title": "未套用工作流程",
+        "not_applied_message": "無法新增這些狀態。"
       }
     },
     "labels": {

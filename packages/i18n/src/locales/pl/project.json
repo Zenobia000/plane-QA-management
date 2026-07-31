@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Ładowanie…",
+    "load_error": "Nie udało się załadować przeglądu projektu.",
+    "progress": {
+      "title": "Postęp",
+      "out_of_scope": "Poza zakresem, więc nieliczone na pasku"
+    },
+    "properties": {
+      "title": "Właściwości",
+      "state": "Stan",
+      "state_label": "Stan projektu",
+      "priority": "Priorytet",
+      "priority_label": "Priorytet projektu",
+      "start": "Początek",
+      "start_label": "Data rozpoczęcia projektu",
+      "target": "Cel",
+      "target_label": "Data docelowa projektu",
+      "not_set": "Nie ustawiono",
+      "not_saved_title": "Zmiana niezapisana",
+      "not_saved_message": "Nie udało się zaktualizować projektu. Proszę odświeżyć, aby zobaczyć aktualne wartości."
+    },
+    "links": {
+      "title": "Linki",
+      "empty": "Brak linków.",
+      "name_label": "Tytuł linku",
+      "name_placeholder": "Tytuł",
+      "url_label": "Adres URL linku",
+      "add": "Dodaj",
+      "remove_label": "Usuń {name}",
+      "invalid_url": "Proszę podać adres URL, na przykład https://example.com.",
+      "url_too_long": "Adres URL nie może przekraczać {max} znaków.",
+      "title_too_long": "Tytuł nie może przekraczać {max} znaków.",
+      "not_added_title": "Nie dodano linku",
+      "not_added_message": "Nie udało się zapisać linku.",
+      "not_removed_title": "Nie usunięto linku",
+      "not_removed_message": "Nie udało się usunąć linku."
+    },
+    "milestones": {
+      "title": "Kamienie milowe",
+      "empty": "Brak kamieni milowych. Proszę dodać jeden, aby śledzić zobowiązanie.",
+      "name_label": "Nazwa kamienia milowego",
+      "name_placeholder": "Nazwa kamienia milowego",
+      "target_date_label": "Data docelowa kamienia milowego",
+      "new_name_label": "Nazwa nowego kamienia milowego",
+      "new_target_date_label": "Data docelowa nowego kamienia milowego",
+      "add": "Dodaj",
+      "save": "Zapisz",
+      "edit_label": "Edytuj {name}",
+      "remove_label": "Usuń {name}",
+      "not_created_title": "Nie utworzono kamienia milowego",
+      "not_created_message": "Nie udało się utworzyć kamienia milowego.",
+      "not_saved_title": "Nie zapisano kamienia milowego",
+      "not_saved_message": "Nie udało się zapisać zmiany.",
+      "not_removed_title": "Nie usunięto kamienia milowego",
+      "not_removed_message": "Nie udało się usunąć kamienia milowego."
+    },
+    "activity": {
+      "title": "Aktywność",
+      "empty": "Jeszcze nic się nie wydarzyło.",
+      "someone": "Ktoś",
+      "load_more": "Załaduj więcej",
+      "loading": "Ładowanie…",
+      "not_loaded_title": "Nie udało się załadować więcej aktywności",
+      "not_loaded_message": "Nie udało się załadować następnej strony."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Pokaż # wcześniejszą aktualizację} few {Pokaż # wcześniejsze aktualizacje} many {Pokaż # wcześniejszych aktualizacji} other {Pokaż # wcześniejszej aktualizacji}}",
+      "load_error": "Nie udało się załadować reszty wątku."
+    }
   }
 }

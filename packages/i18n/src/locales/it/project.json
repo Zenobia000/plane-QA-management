@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Caricamento…",
+    "load_error": "Impossibile caricare la panoramica del progetto.",
+    "progress": {
+      "title": "Avanzamento",
+      "out_of_scope": "Fuori ambito, quindi non conteggiato nella barra"
+    },
+    "properties": {
+      "title": "Proprietà",
+      "state": "Stato",
+      "state_label": "Stato del progetto",
+      "priority": "Priorità",
+      "priority_label": "Priorità del progetto",
+      "start": "Inizio",
+      "start_label": "Data di inizio del progetto",
+      "target": "Scadenza",
+      "target_label": "Data di scadenza del progetto",
+      "not_set": "Non impostato",
+      "not_saved_title": "Modifica non salvata",
+      "not_saved_message": "Impossibile aggiornare il progetto. Ricarichi per vedere i valori attuali."
+    },
+    "links": {
+      "title": "Collegamenti",
+      "empty": "Nessun collegamento.",
+      "name_label": "Titolo del collegamento",
+      "name_placeholder": "Titolo",
+      "url_label": "URL del collegamento",
+      "add": "Aggiungi",
+      "remove_label": "Rimuovi {name}",
+      "invalid_url": "Inserisca un URL, ad esempio https://example.com.",
+      "url_too_long": "Mantenga l’URL entro {max} caratteri.",
+      "title_too_long": "Mantenga il titolo entro {max} caratteri.",
+      "not_added_title": "Collegamento non aggiunto",
+      "not_added_message": "Impossibile salvare il collegamento.",
+      "not_removed_title": "Collegamento non rimosso",
+      "not_removed_message": "Impossibile rimuovere il collegamento."
+    },
+    "milestones": {
+      "title": "Traguardi",
+      "empty": "Nessun traguardo. Ne aggiunga uno per monitorare un impegno.",
+      "name_label": "Nome del traguardo",
+      "name_placeholder": "Nome del traguardo",
+      "target_date_label": "Data di scadenza del traguardo",
+      "new_name_label": "Nome del nuovo traguardo",
+      "new_target_date_label": "Data di scadenza del nuovo traguardo",
+      "add": "Aggiungi",
+      "save": "Salva",
+      "edit_label": "Modifica {name}",
+      "remove_label": "Rimuovi {name}",
+      "not_created_title": "Traguardo non creato",
+      "not_created_message": "Impossibile creare il traguardo.",
+      "not_saved_title": "Traguardo non salvato",
+      "not_saved_message": "Impossibile salvare la modifica.",
+      "not_removed_title": "Traguardo non rimosso",
+      "not_removed_message": "Impossibile rimuovere il traguardo."
+    },
+    "activity": {
+      "title": "Attività",
+      "empty": "Non è ancora successo nulla.",
+      "someone": "Qualcuno",
+      "load_more": "Carica altro",
+      "loading": "Caricamento…",
+      "not_loaded_title": "Impossibile caricare altre attività",
+      "not_loaded_message": "Impossibile caricare la pagina successiva."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Mostra # aggiornamento precedente} many {Mostra # aggiornamenti precedenti} other {Mostra # aggiornamenti precedenti}}",
+      "load_error": "Impossibile caricare il resto della discussione."
+    }
   }
 }

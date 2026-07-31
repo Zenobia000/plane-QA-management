@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssuePriorities, TPortfolioStatus, TProject } from "@plane/types";
 
@@ -40,6 +41,8 @@ type Props = {
  * there is nothing here that is only valid in combination with something else.
  */
 export function PropertiesPanel({ project, disabled, onChange }: Props) {
+  const { t } = useTranslation();
+
   /**
    * Every control here fired its write as a floating promise, so a rejected save was an
    * unhandled rejection: no message, and the select left showing a value the server never
@@ -49,27 +52,27 @@ export function PropertiesPanel({ project, disabled, onChange }: Props) {
     onChange(changes).catch(() => {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Change not saved",
-        message: "The project could not be updated. Reload to see its current values.",
+        title: t("project_overview.properties.not_saved_title"),
+        message: t("project_overview.properties.not_saved_message"),
       });
     });
   };
 
   return (
     <section className="rounded border border-subtle p-4">
-      <h2 className="text-13 font-medium text-primary">Properties</h2>
+      <h2 className="text-13 font-medium text-primary">{t("project_overview.properties.title")}</h2>
       <dl className="mt-3 space-y-3">
         <div>
-          <dt className="mb-1 text-11 text-tertiary">State</dt>
+          <dt className="mb-1 text-11 text-tertiary">{t("project_overview.properties.state")}</dt>
           <dd>
             <select
-              aria-label="Project state"
+              aria-label={t("project_overview.properties.state_label")}
               className={fieldClass}
               value={project.state ?? ""}
               disabled={disabled}
               onChange={(event) => save({ state: (event.target.value || null) as TPortfolioStatus | null })}
             >
-              <option value="">Not set</option>
+              <option value="">{t("project_overview.properties.not_set")}</option>
               {STATES.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -80,10 +83,10 @@ export function PropertiesPanel({ project, disabled, onChange }: Props) {
         </div>
 
         <div>
-          <dt className="mb-1 text-11 text-tertiary">Priority</dt>
+          <dt className="mb-1 text-11 text-tertiary">{t("project_overview.properties.priority")}</dt>
           <dd>
             <select
-              aria-label="Project priority"
+              aria-label={t("project_overview.properties.priority_label")}
               className={fieldClass}
               value={project.priority ?? "none"}
               disabled={disabled}
@@ -100,11 +103,11 @@ export function PropertiesPanel({ project, disabled, onChange }: Props) {
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <dt className="mb-1 text-11 text-tertiary">Start</dt>
+            <dt className="mb-1 text-11 text-tertiary">{t("project_overview.properties.start")}</dt>
             <dd>
               <input
                 type="date"
-                aria-label="Project start date"
+                aria-label={t("project_overview.properties.start_label")}
                 className={fieldClass}
                 value={project.start_date ?? ""}
                 disabled={disabled}
@@ -113,11 +116,11 @@ export function PropertiesPanel({ project, disabled, onChange }: Props) {
             </dd>
           </div>
           <div>
-            <dt className="mb-1 text-11 text-tertiary">Target</dt>
+            <dt className="mb-1 text-11 text-tertiary">{t("project_overview.properties.target")}</dt>
             <dd>
               <input
                 type="date"
-                aria-label="Project target date"
+                aria-label={t("project_overview.properties.target_label")}
                 className={fieldClass}
                 value={project.target_date ?? ""}
                 disabled={disabled}

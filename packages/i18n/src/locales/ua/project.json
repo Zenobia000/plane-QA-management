@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Завантаження…",
+    "load_error": "Не вдалося завантажити огляд проєкту.",
+    "progress": {
+      "title": "Прогрес",
+      "out_of_scope": "Поза обсягом робіт, тому не враховується в смузі"
+    },
+    "properties": {
+      "title": "Властивості",
+      "state": "Стан",
+      "state_label": "Стан проєкту",
+      "priority": "Пріоритет",
+      "priority_label": "Пріоритет проєкту",
+      "start": "Початок",
+      "start_label": "Дата початку проєкту",
+      "target": "Ціль",
+      "target_label": "Цільова дата проєкту",
+      "not_set": "Не задано",
+      "not_saved_title": "Зміну не збережено",
+      "not_saved_message": "Не вдалося оновити проєкт. Оновіть сторінку, щоб побачити поточні значення."
+    },
+    "links": {
+      "title": "Посилання",
+      "empty": "Посилань поки немає.",
+      "name_label": "Назва посилання",
+      "name_placeholder": "Назва",
+      "url_label": "URL посилання",
+      "add": "Додати",
+      "remove_label": "Видалити {name}",
+      "invalid_url": "Введіть URL, наприклад https://example.com.",
+      "url_too_long": "Обмежте URL до {max} символів.",
+      "title_too_long": "Обмежте назву до {max} символів.",
+      "not_added_title": "Посилання не додано",
+      "not_added_message": "Не вдалося зберегти посилання.",
+      "not_removed_title": "Посилання не видалено",
+      "not_removed_message": "Не вдалося видалити посилання."
+    },
+    "milestones": {
+      "title": "Віхи",
+      "empty": "Віх поки немає. Додайте віху, щоб відстежувати зобов’язання.",
+      "name_label": "Назва віхи",
+      "name_placeholder": "Назва віхи",
+      "target_date_label": "Цільова дата віхи",
+      "new_name_label": "Назва нової віхи",
+      "new_target_date_label": "Цільова дата нової віхи",
+      "add": "Додати",
+      "save": "Зберегти",
+      "edit_label": "Змінити {name}",
+      "remove_label": "Видалити {name}",
+      "not_created_title": "Віху не створено",
+      "not_created_message": "Не вдалося створити віху.",
+      "not_saved_title": "Віху не збережено",
+      "not_saved_message": "Не вдалося зберегти зміну.",
+      "not_removed_title": "Віху не видалено",
+      "not_removed_message": "Не вдалося видалити віху."
+    },
+    "activity": {
+      "title": "Активність",
+      "empty": "Поки нічого не сталося.",
+      "someone": "Хтось",
+      "load_more": "Завантажити ще",
+      "loading": "Завантаження…",
+      "not_loaded_title": "Не вдалося завантажити більше активності",
+      "not_loaded_message": "Не вдалося завантажити наступну сторінку."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Показати # попереднє оновлення} few {Показати # попередніх оновлення} many {Показати # попередніх оновлень} other {Показати # попередніх оновлення}}",
+      "load_error": "Не вдалося завантажити решту обговорення."
+    }
   }
 }

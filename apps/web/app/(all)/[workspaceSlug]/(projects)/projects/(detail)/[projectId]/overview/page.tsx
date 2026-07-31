@@ -9,6 +9,7 @@ import { observer } from "mobx-react";
 import { AlertTriangle } from "lucide-react";
 import { useParams } from "react-router";
 import { ProjectOverviewService } from "@plane/services";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TProjectActivityEvent, TProjectOverview, TUpdateStatus } from "@plane/types";
 import { PageHead } from "@/components/core/page-title";
@@ -43,6 +44,7 @@ export default observer(function ProjectOverviewPage() {
 
   const { getProjectById, updateProject } = useProject();
   const { allowPermissions } = useUserPermissions();
+  const { t } = useTranslation();
   const [overview, setOverview] = useState<TProjectOverview | null>(null);
   const [activities, setActivities] = useState<TProjectActivityEvent[]>([]);
   const [activityCursor, setActivityCursor] = useState<string | null>(null);
@@ -70,9 +72,9 @@ export default observer(function ProjectOverviewPage() {
       // after a write has to agree with the server about where the feed now starts.
       setActivityCursor(activity.next_page_results ? activity.next_cursor : null);
     } catch {
-      setError("Could not load the project overview.");
+      setError(t("project_overview.load_error"));
     }
-  }, [slug, id]);
+  }, [slug, id, t]);
 
   const loadMoreActivity = useCallback(async () => {
     if (!slug || !id || !activityCursor) return;
@@ -84,13 +86,13 @@ export default observer(function ProjectOverviewPage() {
     } catch (failure) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Could not load more activity",
-        message: readError(failure, "The next page could not be loaded."),
+        title: t("project_overview.activity.not_loaded_title"),
+        message: readError(failure, t("project_overview.activity.not_loaded_message")),
       });
     } finally {
       setLoadingMoreActivity(false);
     }
-  }, [slug, id, activityCursor]);
+  }, [slug, id, activityCursor, t]);
 
   useEffect(() => {
     void load();
@@ -187,7 +189,7 @@ export default observer(function ProjectOverviewPage() {
           </div>
         )}
 
-        {!overview && !error && <p className="text-13 text-tertiary">Loading…</p>}
+        {!overview && !error && <p className="text-13 text-tertiary">{t("project_overview.loading")}</p>}
 
         {overview && (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">

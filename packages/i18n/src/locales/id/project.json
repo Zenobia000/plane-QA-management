@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Memuat…",
+    "load_error": "Tidak dapat memuat ikhtisar proyek.",
+    "progress": {
+      "title": "Progres",
+      "out_of_scope": "Di luar cakupan sehingga tidak dihitung dalam bilah"
+    },
+    "properties": {
+      "title": "Properti",
+      "state": "Status",
+      "state_label": "Status proyek",
+      "priority": "Prioritas",
+      "priority_label": "Prioritas proyek",
+      "start": "Mulai",
+      "start_label": "Tanggal mulai proyek",
+      "target": "Target",
+      "target_label": "Tanggal target proyek",
+      "not_set": "Belum diatur",
+      "not_saved_title": "Perubahan tidak tersimpan",
+      "not_saved_message": "Tidak dapat memperbarui proyek. Muat ulang untuk melihat nilai saat ini."
+    },
+    "links": {
+      "title": "Tautan",
+      "empty": "Belum ada tautan.",
+      "name_label": "Judul tautan",
+      "name_placeholder": "Judul",
+      "url_label": "URL tautan",
+      "add": "Tambah",
+      "remove_label": "Hapus {name}",
+      "invalid_url": "Masukkan URL, misalnya https://example.com.",
+      "url_too_long": "Jaga URL tetap di bawah {max} karakter.",
+      "title_too_long": "Jaga judul tetap di bawah {max} karakter.",
+      "not_added_title": "Tautan tidak ditambahkan",
+      "not_added_message": "Tautan tidak dapat disimpan.",
+      "not_removed_title": "Tautan tidak dihapus",
+      "not_removed_message": "Tautan tidak dapat dihapus."
+    },
+    "milestones": {
+      "title": "Milestone",
+      "empty": "Belum ada milestone. Tambahkan satu untuk melacak sebuah komitmen.",
+      "name_label": "Nama milestone",
+      "name_placeholder": "Nama milestone",
+      "target_date_label": "Tanggal target milestone",
+      "new_name_label": "Nama milestone baru",
+      "new_target_date_label": "Tanggal target milestone baru",
+      "add": "Tambah",
+      "save": "Simpan",
+      "edit_label": "Edit {name}",
+      "remove_label": "Hapus {name}",
+      "not_created_title": "Milestone tidak dibuat",
+      "not_created_message": "Milestone tidak dapat dibuat.",
+      "not_saved_title": "Milestone tidak tersimpan",
+      "not_saved_message": "Perubahan tidak dapat disimpan.",
+      "not_removed_title": "Milestone tidak dihapus",
+      "not_removed_message": "Milestone tidak dapat dihapus."
+    },
+    "activity": {
+      "title": "Aktivitas",
+      "empty": "Belum ada yang terjadi.",
+      "someone": "Seseorang",
+      "load_more": "Muat lebih banyak",
+      "loading": "Memuat…",
+      "not_loaded_title": "Tidak dapat memuat aktivitas lainnya",
+      "not_loaded_message": "Halaman berikutnya tidak dapat dimuat."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Tampilkan # pembaruan sebelumnya} other {Tampilkan # pembaruan sebelumnya}}",
+      "load_error": "Sisa utas tidak dapat dimuat."
+    }
   }
 }

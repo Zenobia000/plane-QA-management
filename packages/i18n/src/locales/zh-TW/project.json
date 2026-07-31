@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "載入中…",
+    "load_error": "無法載入專案總覽。",
+    "progress": {
+      "title": "進度",
+      "out_of_scope": "超出範圍，因此不計入進度列"
+    },
+    "properties": {
+      "title": "屬性",
+      "state": "狀態",
+      "state_label": "專案狀態",
+      "priority": "優先順序",
+      "priority_label": "專案優先順序",
+      "start": "開始",
+      "start_label": "專案開始日期",
+      "target": "目標",
+      "target_label": "專案目標日期",
+      "not_set": "未設定",
+      "not_saved_title": "變更未儲存",
+      "not_saved_message": "無法更新專案。請重新載入以查看目前的值。"
+    },
+    "links": {
+      "title": "連結",
+      "empty": "尚無連結。",
+      "name_label": "連結標題",
+      "name_placeholder": "標題",
+      "url_label": "連結 URL",
+      "add": "新增",
+      "remove_label": "移除 {name}",
+      "invalid_url": "請輸入 URL，例如 https://example.com。",
+      "url_too_long": "請將 URL 控制在 {max} 個字元以內。",
+      "title_too_long": "請將標題控制在 {max} 個字元以內。",
+      "not_added_title": "未新增連結",
+      "not_added_message": "無法儲存連結。",
+      "not_removed_title": "未移除連結",
+      "not_removed_message": "無法移除連結。"
+    },
+    "milestones": {
+      "title": "里程碑",
+      "empty": "尚無里程碑。新增一個以追蹤承諾。",
+      "name_label": "里程碑名稱",
+      "name_placeholder": "里程碑名稱",
+      "target_date_label": "里程碑目標日期",
+      "new_name_label": "新里程碑名稱",
+      "new_target_date_label": "新里程碑目標日期",
+      "add": "新增",
+      "save": "儲存",
+      "edit_label": "編輯 {name}",
+      "remove_label": "移除 {name}",
+      "not_created_title": "未建立里程碑",
+      "not_created_message": "無法建立里程碑。",
+      "not_saved_title": "未儲存里程碑",
+      "not_saved_message": "無法儲存變更。",
+      "not_removed_title": "未移除里程碑",
+      "not_removed_message": "無法移除里程碑。"
+    },
+    "activity": {
+      "title": "動態",
+      "empty": "目前尚未發生任何事。",
+      "someone": "某人",
+      "load_more": "載入更多",
+      "loading": "載入中…",
+      "not_loaded_title": "無法載入更多動態",
+      "not_loaded_message": "無法載入下一頁。"
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {顯示 # 則較早的更新} other {顯示 # 則較早的更新}}",
+      "load_error": "無法載入此討論串的其餘部分。"
+    }
   }
 }

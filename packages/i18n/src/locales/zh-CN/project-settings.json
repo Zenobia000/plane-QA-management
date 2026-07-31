@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "{groupKey} 组中没有状态",
         "description": "请创建一个新状态"
+      },
+      "workflow_template": {
+        "title": "使用 SDLC 交付工作流",
+        "description": "添加此项目尚未拥有的 {count} 个状态，包括让看板显示工作进展到哪一步的评审和测试阶段。不会重命名或移除任何现有内容。",
+        "apply": "应用",
+        "applying": "正在应用…",
+        "applied_title": "已应用工作流",
+        "applied_message": "已添加 {count} 个状态。",
+        "not_applied_title": "未应用工作流",
+        "not_applied_message": "无法添加这些状态。"
       }
     },
     "labels": {

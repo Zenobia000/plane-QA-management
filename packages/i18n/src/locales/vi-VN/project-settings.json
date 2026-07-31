@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "Không có trạng thái trong nhóm {groupKey}",
         "description": "Vui lòng tạo một trạng thái mới"
+      },
+      "workflow_template": {
+        "title": "Dùng quy trình bàn giao SDLC",
+        "description": "Thêm {count} trạng thái mà dự án này chưa có, bao gồm các giai đoạn đánh giá và kiểm thử giúp bảng hiển thị công việc đang ở đâu. Không có nội dung hiện có nào bị đổi tên hoặc xóa.",
+        "apply": "Áp dụng",
+        "applying": "Đang áp dụng…",
+        "applied_title": "Đã áp dụng quy trình",
+        "applied_message": "Đã thêm {count} trạng thái.",
+        "not_applied_title": "Chưa áp dụng quy trình",
+        "not_applied_message": "Không thể thêm các trạng thái."
       }
     },
     "labels": {

@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "加载中…",
+    "load_error": "无法加载项目概览。",
+    "progress": {
+      "title": "进度",
+      "out_of_scope": "超出范围，因此不计入进度条"
+    },
+    "properties": {
+      "title": "属性",
+      "state": "状态",
+      "state_label": "项目状态",
+      "priority": "优先级",
+      "priority_label": "项目优先级",
+      "start": "开始",
+      "start_label": "项目开始日期",
+      "target": "目标",
+      "target_label": "项目目标日期",
+      "not_set": "未设置",
+      "not_saved_title": "更改未保存",
+      "not_saved_message": "无法更新项目。请重新加载以查看当前值。"
+    },
+    "links": {
+      "title": "链接",
+      "empty": "暂无链接。",
+      "name_label": "链接标题",
+      "name_placeholder": "标题",
+      "url_label": "链接 URL",
+      "add": "添加",
+      "remove_label": "移除 {name}",
+      "invalid_url": "请输入 URL，例如 https://example.com。",
+      "url_too_long": "请将 URL 控制在 {max} 个字符以内。",
+      "title_too_long": "请将标题控制在 {max} 个字符以内。",
+      "not_added_title": "未添加链接",
+      "not_added_message": "无法保存链接。",
+      "not_removed_title": "未移除链接",
+      "not_removed_message": "无法移除链接。"
+    },
+    "milestones": {
+      "title": "里程碑",
+      "empty": "暂无里程碑。添加一个以跟踪承诺。",
+      "name_label": "里程碑名称",
+      "name_placeholder": "里程碑名称",
+      "target_date_label": "里程碑目标日期",
+      "new_name_label": "新里程碑名称",
+      "new_target_date_label": "新里程碑目标日期",
+      "add": "添加",
+      "save": "保存",
+      "edit_label": "编辑 {name}",
+      "remove_label": "移除 {name}",
+      "not_created_title": "未创建里程碑",
+      "not_created_message": "无法创建里程碑。",
+      "not_saved_title": "未保存里程碑",
+      "not_saved_message": "无法保存更改。",
+      "not_removed_title": "未移除里程碑",
+      "not_removed_message": "无法移除里程碑。"
+    },
+    "activity": {
+      "title": "动态",
+      "empty": "目前还没有任何动态。",
+      "someone": "某人",
+      "load_more": "加载更多",
+      "loading": "加载中…",
+      "not_loaded_title": "无法加载更多动态",
+      "not_loaded_message": "无法加载下一页。"
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {显示 # 条较早的更新} other {显示 # 条较早的更新}}",
+      "load_error": "无法加载该讨论串的其余部分。"
+    }
   }
 }

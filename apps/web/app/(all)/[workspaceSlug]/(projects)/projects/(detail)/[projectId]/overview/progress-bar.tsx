@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { useTranslation } from "@plane/i18n";
 import type { TProjectProgress } from "@plane/types";
 
 const GROUPS = [
@@ -21,12 +22,13 @@ const GROUPS = [
  * project as behind on work nobody owes.
  */
 export function ProgressBar({ progress }: { progress: TProjectProgress }) {
+  const { t } = useTranslation();
   const { state_distribution: distribution, in_scope: inScope } = progress;
 
   return (
     <section className="rounded border border-subtle p-4">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-13 font-medium text-primary">Progress</h2>
+        <h2 className="text-13 font-medium text-primary">{t("project_overview.progress.title")}</h2>
         <p className="text-12 text-secondary">
           {progress.completed} / {inScope} done
           <span className="ml-2 font-medium text-primary">{progress.completion_percentage}%</span>
@@ -57,7 +59,7 @@ export function ProgressBar({ progress }: { progress: TProjectProgress }) {
           </li>
         ))}
         {distribution.cancelled > 0 && (
-          <li className="text-11 text-tertiary" title="Out of scope, so not counted in the bar">
+          <li className="text-11 text-tertiary" title={t("project_overview.progress.out_of_scope")}>
             Cancelled {distribution.cancelled}
           </li>
         )}

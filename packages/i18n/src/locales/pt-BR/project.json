@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Carregando…",
+    "load_error": "Não foi possível carregar a visão geral do projeto.",
+    "progress": {
+      "title": "Progresso",
+      "out_of_scope": "Fora do escopo, portanto não contabilizado na barra"
+    },
+    "properties": {
+      "title": "Propriedades",
+      "state": "Estado",
+      "state_label": "Estado do projeto",
+      "priority": "Prioridade",
+      "priority_label": "Prioridade do projeto",
+      "start": "Início",
+      "start_label": "Data de início do projeto",
+      "target": "Meta",
+      "target_label": "Data-alvo do projeto",
+      "not_set": "Não definido",
+      "not_saved_title": "Alteração não salva",
+      "not_saved_message": "Não foi possível atualizar o projeto. Recarregue para ver os valores atuais."
+    },
+    "links": {
+      "title": "Links",
+      "empty": "Ainda não há links.",
+      "name_label": "Título do link",
+      "name_placeholder": "Título",
+      "url_label": "URL do link",
+      "add": "Adicionar",
+      "remove_label": "Remover {name}",
+      "invalid_url": "Informe uma URL, por exemplo https://example.com.",
+      "url_too_long": "Mantenha a URL com menos de {max} caracteres.",
+      "title_too_long": "Mantenha o título com menos de {max} caracteres.",
+      "not_added_title": "Link não adicionado",
+      "not_added_message": "Não foi possível salvar o link.",
+      "not_removed_title": "Link não removido",
+      "not_removed_message": "Não foi possível remover o link."
+    },
+    "milestones": {
+      "title": "Marcos",
+      "empty": "Ainda não há marcos. Adicione um para acompanhar um compromisso.",
+      "name_label": "Nome do marco",
+      "name_placeholder": "Nome do marco",
+      "target_date_label": "Data-alvo do marco",
+      "new_name_label": "Nome do novo marco",
+      "new_target_date_label": "Data-alvo do novo marco",
+      "add": "Adicionar",
+      "save": "Salvar",
+      "edit_label": "Editar {name}",
+      "remove_label": "Remover {name}",
+      "not_created_title": "Marco não criado",
+      "not_created_message": "Não foi possível criar o marco.",
+      "not_saved_title": "Marco não salvo",
+      "not_saved_message": "Não foi possível salvar a alteração.",
+      "not_removed_title": "Marco não removido",
+      "not_removed_message": "Não foi possível remover o marco."
+    },
+    "activity": {
+      "title": "Atividade",
+      "empty": "Nada aconteceu ainda.",
+      "someone": "Alguém",
+      "load_more": "Carregar mais",
+      "loading": "Carregando…",
+      "not_loaded_title": "Não foi possível carregar mais atividades",
+      "not_loaded_message": "Não foi possível carregar a próxima página."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Mostrar # atualização anterior} many {Mostrar # atualizações anteriores} other {Mostrar # atualizações anteriores}}",
+      "load_error": "Não foi possível carregar o restante da conversa."
+    }
   }
 }

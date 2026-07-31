@@ -28,7 +28,7 @@ from django.db import transaction
 from django.utils import timezone
 
 # Third party imports
-from rest_framework import serializers, status
+from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 

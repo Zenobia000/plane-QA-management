@@ -162,7 +162,9 @@ class WorklogViewSet(BaseViewSet):
                 {"error": "Time tracking is not enabled for this project."}, status=status.HTTP_400_BAD_REQUEST
             )
         if not Issue.objects.filter(pk=issue_id, project_id=project_id).exists():
-            return Response({"error": "The work item does not exist in this project."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "The work item does not exist in this project."}, status=status.HTTP_404_NOT_FOUND
+            )
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

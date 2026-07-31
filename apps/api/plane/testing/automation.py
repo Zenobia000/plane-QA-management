@@ -54,7 +54,13 @@ def parse_junit_xml(xml_text):
         failure = node.find("failure")
         error = node.find("error")
         skipped = node.find("skipped")
-        status = "failed" if failure is not None or error is not None else "skipped" if skipped is not None else "passed"
+        status = (
+            "failed"
+            if failure is not None or error is not None
+            else "skipped"
+            if skipped is not None
+            else "passed"
+        )
         evidence = failure if failure is not None else error if error is not None else skipped
         actual = {}
         if evidence is not None:
@@ -87,7 +93,16 @@ def canonical_payload_hash(payload):
 
 @transaction.atomic
 def ingest_automation_results(
-    *, project_id, idempotency_key, source, name, results, build="", configuration=None, artifact_ids=None, created_by=None
+    *,
+    project_id,
+    idempotency_key,
+    source,
+    name,
+    results,
+    build="",
+    configuration=None,
+    artifact_ids=None,
+    created_by=None,
 ):
     project = Project.objects.select_for_update().get(id=project_id)
     normalized = {

@@ -8,7 +8,7 @@ import json
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from plane.db.models import Issue, Project, TestCase, TestCaseVersion, TestFolder
+from plane.db.models import Issue, Project, TestCase, TestFolder
 
 from .services import create_test_case, link_test_case_to_work_item
 
@@ -44,8 +44,10 @@ def export_test_library_csv(*, project_id):
     output = io.StringIO(newline="")
     writer = csv.DictWriter(output, fieldnames=CSV_FIELDS)
     writer.writeheader()
-    cases = TestCase.objects.filter(project_id=project_id, archived_at__isnull=True).select_related("folder").prefetch_related(
-        "folder__parent", "versions__steps", "work_item_links__issue"
+    cases = (
+        TestCase.objects.filter(project_id=project_id, archived_at__isnull=True)
+        .select_related("folder")
+        .prefetch_related("folder__parent", "versions__steps", "work_item_links__issue")
     )
     for test_case in cases:
         version = next(item for item in test_case.versions.all() if item.version == test_case.current_version)
@@ -63,7 +65,11 @@ def export_test_library_csv(*, project_id):
                     "tags_json": json.dumps(version.tags, ensure_ascii=False, separators=(",", ":")),
                     "step_position": step.position if step else "",
                     "action_json": json.dumps(step.action, ensure_ascii=False, separators=(",", ":")) if step else "",
-                    "expected_result_json": json.dumps(step.expected_result, ensure_ascii=False, separators=(",", ":")) if step else "",
+                    "expected_result_json": json.dumps(
+                        step.expected_result, ensure_ascii=False, separators=(",", ":")
+                    )
+                    if step
+                    else "",
                     "work_item_sequences": work_items,
                 }
             )
@@ -151,4 +157,8 @@ def import_test_library_csv(*, project_id, csv_text, created_by=None):
                 diagnostics.append(
                     {"code": "work_item_not_found", "case_sequence": source_sequence, "work_item_sequence": sequence}
                 )
-    return {"created": len(created_cases), "diagnostics": diagnostics, "case_ids": [str(item.id) for item in created_cases]}
+    return {
+        "created": len(created_cases),
+        "diagnostics": diagnostics,
+        "case_ids": [str(item.id) for item in created_cases],
+    }

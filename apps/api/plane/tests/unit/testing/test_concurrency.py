@@ -20,19 +20,24 @@ def _thread_call(function, **kwargs):
 
 @pytest.mark.django_db(transaction=True)
 def test_concurrent_case_creation_allocates_unique_project_sequences(workspace, create_user):
-    project = Project.objects.create(name="Concurrent cases", identifier="CC", workspace=workspace, created_by=create_user)
+    project = Project.objects.create(
+        name="Concurrent cases", identifier="CC", workspace=workspace, created_by=create_user
+    )
     with ThreadPoolExecutor(max_workers=2) as executor:
         futures = [
             executor.submit(_thread_call, create_test_case, project_id=project.id, title=f"Case {index}")
             for index in range(2)
         ]
         [future.result() for future in futures]
-    assert list(TestCase.objects.filter(project=project).order_by("sequence").values_list("sequence", flat=True)) == [1, 2]
+    sequences = TestCase.objects.filter(project=project).order_by("sequence").values_list("sequence", flat=True)
+    assert list(sequences) == [1, 2]
 
 
 @pytest.mark.django_db(transaction=True)
 def test_concurrent_results_append_unique_sequences(workspace, create_user):
-    project = Project.objects.create(name="Concurrent results", identifier="CR", workspace=workspace, created_by=create_user)
+    project = Project.objects.create(
+        name="Concurrent results", identifier="CR", workspace=workspace, created_by=create_user
+    )
     test_case = create_test_case(project_id=project.id, title="Retest")
     run = create_fixed_test_run(project_id=project.id, name="Concurrent run", test_case_ids=[test_case.id])
     run_case = run.run_cases.get()
@@ -48,10 +53,8 @@ def test_concurrent_results_append_unique_sequences(workspace, create_user):
             for status in ("failed", "passed")
         ]
         [future.result() for future in futures]
-    assert list(TestResult.objects.filter(run_case=run_case).order_by("sequence").values_list("sequence", flat=True)) == [
-        1,
-        2,
-    ]
+    sequences = TestResult.objects.filter(run_case=run_case).order_by("sequence").values_list("sequence", flat=True)
+    assert list(sequences) == [1, 2]
 
 
 @pytest.mark.django_db(transaction=True)

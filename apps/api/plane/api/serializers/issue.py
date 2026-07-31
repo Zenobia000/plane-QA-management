@@ -185,8 +185,9 @@ class IssueSerializer(BaseSerializer):
                 default_value__isnull=True,
             )
             if missing.exists():
+                missing_names = ", ".join(missing.values_list("name", flat=True))
                 raise serializers.ValidationError(
-                    {"properties": f"Missing required work item properties: {', '.join(missing.values_list('name', flat=True))}"}
+                    {"properties": f"Missing required work item properties: {missing_names}"}
                 )
 
         return data
@@ -202,7 +203,9 @@ class IssueSerializer(BaseSerializer):
         by_id = {str(property_definition.id): property_definition for property_definition in property_definitions}
         unknown = set(values) - set(by_id)
         if unknown:
-            raise serializers.ValidationError({"properties": "One or more property IDs are not available in this project."})
+            raise serializers.ValidationError(
+                {"properties": "One or more property IDs are not available in this project."}
+            )
         for property_id, value in values.items():
             validate_property_value(by_id[property_id], value)
         if self.instance is None:
@@ -214,7 +217,9 @@ class IssueSerializer(BaseSerializer):
                 and property_definition.default_value is None
             ]
             if missing:
-                raise serializers.ValidationError({"properties": f"Missing required work item properties: {', '.join(missing)}"})
+                raise serializers.ValidationError(
+                    {"properties": f"Missing required work item properties: {', '.join(missing)}"}
+                )
 
     def get_custom_properties(self, instance):
         return {
@@ -383,7 +388,9 @@ class IssueSerializer(BaseSerializer):
                 },
                 **values,
             }
-        definitions_by_id = {str(property_definition.id): property_definition for property_definition in property_definitions}
+        definitions_by_id = {
+            str(property_definition.id): property_definition for property_definition in property_definitions
+        }
         for property_id, value in values.items():
             property_definition = definitions_by_id[property_id]
             if value is None:

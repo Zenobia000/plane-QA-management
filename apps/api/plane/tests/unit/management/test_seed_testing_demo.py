@@ -18,8 +18,9 @@ from io import StringIO
 import pytest
 from django.core.management import call_command
 
-from plane.db.models import Issue, IssueView, Label, Project, State, TestResultIssueLink
+from plane.db.models import Cycle, Issue, IssueView, Label, Project, State, TestResultIssueLink
 from plane.db.models.state import SDLC_STATES, StateGroup
+from plane.utils.analytics_plot import burndown_plot
 
 
 @pytest.fixture
@@ -80,6 +81,111 @@ class TestSeededDefectLoop:
         defect_ids = TestResultIssueLink.objects.filter(project=seeded).values_list("issue_id", flat=True)
         open_defects = Issue.objects.filter(id__in=defect_ids).exclude(state__group__in=("completed", "cancelled"))
         assert open_defects.count() == 1
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+class TestSeededBurndown:
+    """The seed exists to be looked at, and a flat burndown shows nothing.
+
+    `Issue.save()` stamps `completed_at` with the current time on entering a completed
+    state, so every seeded delivery originally recorded as finishing the moment the seed
+    ran -- days after the previous sprint had closed. `burndown_plot` only counts
+    completions falling inside the sprint window, so the chart held flat at the opening
+    total with every story marked done.
+    """
+
+    @staticmethod
+    def _plot(cycle):
+        cycle.total_issues = Issue.issue_objects.filter(
+            issue_cycle__cycle_id=cycle.id, issue_cycle__deleted_at__isnull=True
+        ).count()
+        return burndown_plot(
+            queryset=cycle,
+            slug=cycle.workspace.slug,
+            project_id=str(cycle.project_id),
+            plot_type="issues",
+            cycle_id=str(cycle.id),
+        )
+
+    def test_deliveries_are_dated_inside_the_sprint_that_delivered_them(self, seeded):
+        for cycle in Cycle.objects.filter(project=seeded):
+            delivered = Issue.issue_objects.filter(
+                issue_cycle__cycle_id=cycle.id, completed_at__isnull=False
+            )
+            assert delivered.exists(), f"{cycle.name} delivered nothing"
+            for issue in delivered:
+                assert cycle.start_date <= issue.completed_at <= cycle.end_date, (
+                    f"{issue.name} completed at {issue.completed_at}, outside {cycle.name}"
+                )
+
+    def test_the_closed_sprint_burns_all_the_way_down(self, seeded):
+        cycle = Cycle.objects.get(project=seeded, name="Sprint 2026-07B")
+        plotted = [v for v in self._plot(cycle).values() if v is not None]
+
+        assert plotted[0] > plotted[-1], "burndown never descended"
+        assert plotted[-1] == 0, "a fully delivered sprint should reach zero"
+
+    def test_the_running_sprint_descends_without_reaching_zero(self, seeded):
+        cycle = Cycle.objects.get(project=seeded, name="Sprint 2026-08A")
+        chart = self._plot(cycle)
+        plotted = [v for v in chart.values() if v is not None]
+
+        assert plotted[0] > plotted[-1], "burndown never descended"
+        assert plotted[-1] > 0, "a sprint still in flight should have work left"
+        # Dates past today carry no reading at all, so the chart stops rather than
+        # reporting the remaining work as delivered.
+        assert any(v is None for v in chart.values())
+
+    def test_burnup_is_the_complement_of_the_burndown(self, seeded):
+        """What the CE burn-up chart derives client-side, checked against its source."""
+        cycle = Cycle.objects.get(project=seeded, name="Sprint 2026-07B")
+        total = Issue.issue_objects.filter(
+            issue_cycle__cycle_id=cycle.id, issue_cycle__deleted_at__isnull=True
+        ).count()
+        burnup = [total - v for v in self._plot(cycle).values() if v is not None]
+
+        assert burnup[0] < burnup[-1]
+        assert burnup[-1] == total
+
+
+@pytest.fixture
+def eager_tasks():
+    """Run queued Celery work in-process for the duration of one test.
+
+    Soft deletion sweeps a row's children from a background task, so with no worker
+    attached the purge below would look like it stranded everything it owns. Scoped to
+    the test rather than the settings module, because the rest of the suite is written
+    against tasks that do not run.
+    """
+    from plane.celery import app
+
+    previous = app.conf.task_always_eager
+    app.conf.task_always_eager = True
+    yield
+    app.conf.task_always_eager = previous
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_reseeding_strands_no_children(workspace, eager_tasks):
+    """`purge()` must delete per instance; a queryset delete skips the cascade task.
+
+    Bulk soft deletion is a plain `update(deleted_at=...)`, which never reaches
+    `SoftDeleteModel.delete()` and so never queues the sweep of a project's cycles and
+    work items. Re-running this seed used to leave both alive under a project the UI had
+    already stopped showing.
+    """
+    call_command("seed_testing_demo", workspace=workspace.slug, identifier="DEMO", stdout=StringIO())
+    call_command(
+        "seed_testing_demo", workspace=workspace.slug, identifier="DEMO", force=True, stdout=StringIO()
+    )
+
+    dead = Project.all_objects.filter(workspace=workspace, identifier="DEMO", deleted_at__isnull=False)
+    assert dead.exists(), "the first project should have been purged"
+
+    assert not Cycle.objects.filter(project__in=dead).exists()
+    assert not Issue.issue_objects.filter(project__in=dead).exists()
 
 
 @pytest.mark.unit

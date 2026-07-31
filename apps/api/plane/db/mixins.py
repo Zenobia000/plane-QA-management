@@ -47,6 +47,17 @@ class UserAuditModel(models.Model):
 
 class SoftDeletionQuerySet(models.QuerySet):
     def delete(self, soft=True):
+        """Soft delete every row in the queryset.
+
+        WARNING: this marks only the rows in the queryset. Unlike
+        `SoftDeleteModel.delete()`, it does not queue `soft_delete_related_objects`, so
+        children are left alive and reachable -- a bulk-deleted project keeps its cycles
+        and work items, which then leak into any query that does not re-check the parent.
+
+        Call the instance method in a loop when the rows own children. This stays a bulk
+        `update()` because the callers that use it are mostly join tables, where fanning
+        one Celery task out per row would be far more expensive than the cascade is worth.
+        """
         if soft:
             return self.update(deleted_at=timezone.now())
         else:

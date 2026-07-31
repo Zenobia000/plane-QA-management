@@ -5,7 +5,7 @@
 from django.urls import path
 
 
-from plane.app.views import StateViewSet, IntakeStateEndpoint
+from plane.app.views import StateViewSet, StateWorkflowTemplateEndpoint, IntakeStateEndpoint
 
 
 urlpatterns = [
@@ -23,6 +23,11 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/intake-state/",
         IntakeStateEndpoint.as_view(),
         name="intake-state",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/states/workflow-template/",
+        StateWorkflowTemplateEndpoint.as_view(),
+        name="project-state-workflow-template",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/states/<uuid:pk>/mark-default/",

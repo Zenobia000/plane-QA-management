@@ -18,6 +18,7 @@ from .. import BaseViewSet, BaseAPIView
 from plane.app.serializers import StateSerializer
 from plane.app.permissions import ROLE, allow_permission
 from plane.db.models import State, Issue
+from plane.db.models.state import SDLC_STATES
 from plane.utils.cache import invalidate_cache
 
 
@@ -152,3 +153,60 @@ class IntakeStateEndpoint(BaseAPIView):
             )
 
         return Response(StateSerializer(state).data, status=status.HTTP_200_OK)
+
+
+class StateWorkflowTemplateEndpoint(BaseAPIView):
+    """Apply this fork's SDLC workflow to a project that has the default five states.
+
+    `SDLC_STATES` describes the delivery workflow this fork is built around -- nine states
+    in `started` alone, which is what makes a board show where work actually sits. Until
+    now only `seed_testing_demo` could produce it: a project created through the UI or the
+    API gets `DEFAULT_STATES`, one per group, and there was no way to reach the other set.
+
+    Additive on purpose. Existing states are matched case-insensitively and left alone, so
+    "In Progress" is recognised as the SDLC set's "In progress" and no work item is
+    reassigned, renamed or orphaned. Nothing is ever deleted: a state carrying work is a
+    board column someone is looking at, and the two sets disagree on spelling
+    ("Cancelled"/"Canceled") in ways that would otherwise strand items.
+
+    Idempotent, so applying twice is a no-op, and GET previews exactly what POST would do.
+    """
+
+    @allow_permission([ROLE.ADMIN])
+    def get(self, request, slug, project_id):
+        return Response(self._plan(slug, project_id), status=status.HTTP_200_OK)
+
+    @invalidate_cache(path="workspaces/:slug/states/", url_params=True, user=False)
+    @allow_permission([ROLE.ADMIN])
+    def post(self, request, slug, project_id):
+        plan = self._plan(slug, project_id)
+        if not plan["missing"]:
+            return Response(plan, status=status.HTTP_200_OK)
+
+        existing_names = {name.casefold() for name in self._existing(slug, project_id)}
+        # Created one at a time rather than bulk: State.save() assigns `slug` and the next
+        # `sequence`, and bulk_create skips save() entirely.
+        for state in SDLC_STATES:
+            if state["name"].casefold() in existing_names:
+                continue
+            State.objects.create(
+                project_id=project_id,
+                name=state["name"],
+                color=state["color"],
+                group=state["group"],
+                description="",
+            )
+
+        return Response(self._plan(slug, project_id), status=status.HTTP_201_CREATED)
+
+    @staticmethod
+    def _existing(slug, project_id):
+        return list(
+            State.all_state_objects.filter(project_id=project_id, workspace__slug=slug).values_list("name", flat=True)
+        )
+
+    def _plan(self, slug, project_id):
+        existing = {name.casefold() for name in self._existing(slug, project_id)}
+        missing = [state["name"] for state in SDLC_STATES if state["name"].casefold() not in existing]
+        present = [state["name"] for state in SDLC_STATES if state["name"].casefold() in existing]
+        return {"missing": missing, "already_present": present}

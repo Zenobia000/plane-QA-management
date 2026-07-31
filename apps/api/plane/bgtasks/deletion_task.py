@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+# Python imports
+import logging
+
 # Django imports
 from django.utils import timezone
 from django.apps import apps
@@ -12,6 +15,11 @@ from django.db.models.fields.related import OneToOneRel
 
 # Third party imports
 from celery import shared_task
+
+# Module imports
+from plane.db.soft_delete import SOFT_DELETE_FIELDS
+
+logger = logging.getLogger("plane")
 
 
 @shared_task
@@ -70,7 +78,7 @@ def soft_delete_related_objects(app_label, model_name, instance_pk, using=None):
                         if hasattr(related_obj, "deleted_at"):
                             if not related_obj.deleted_at:
                                 related_obj.deleted_at = timezone.now()
-                                related_obj.save()
+                                related_obj.save(update_fields=list(SOFT_DELETE_FIELDS))
                                 # Recursively handle related objects
                                 soft_delete_related_objects(
                                     related_obj._meta.app_label,
@@ -86,7 +94,7 @@ def soft_delete_related_objects(app_label, model_name, instance_pk, using=None):
                         if hasattr(related_obj, "deleted_at"):
                             if not related_obj.deleted_at:
                                 related_obj.deleted_at = timezone.now()
-                                related_obj.save()
+                                related_obj.save(update_fields=list(SOFT_DELETE_FIELDS))
                                 # Recursively handle related objects
                                 soft_delete_related_objects(
                                     related_obj._meta.app_label,
@@ -94,9 +102,15 @@ def soft_delete_related_objects(app_label, model_name, instance_pk, using=None):
                                     related_obj.pk,
                                     using,
                                 )
-            except Exception as e:
-                # Log the error or handle as needed
-                print(f"Error handling relation {related_name}: {str(e)}")
+            except Exception:
+                # Swallowing this is deliberate -- one unsweepable relation must not strand
+                # the rest -- but it has to be visible. Printing sent it to a worker's
+                # stdout, where nobody was reading, which is how a model that could never
+                # be swept went unnoticed until its rows were counted.
+                logger.exception(
+                    "Could not soft delete related objects",
+                    extra={"model": model_name, "instance_pk": str(instance_pk), "relation": related_name},
+                )
                 continue
 
     _soft_delete_polymorphic_children(model_name, instance_pk)
@@ -104,7 +118,7 @@ def soft_delete_related_objects(app_label, model_name, instance_pk, using=None):
     # Finally, soft delete the instance itself if it hasn't been deleted yet
     if hasattr(instance, "deleted_at") and not instance.deleted_at:
         instance.deleted_at = timezone.now()
-        instance.save()
+        instance.save(update_fields=list(SOFT_DELETE_FIELDS))
 
 
 # Models that something points at by a bare UUID rather than by a foreign key, mapped to the

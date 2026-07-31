@@ -11,6 +11,7 @@ from django.utils import timezone
 
 # Module imports
 from plane.bgtasks.deletion_task import soft_delete_related_objects
+from plane.db.soft_delete import SOFT_DELETE_FIELDS
 
 
 class TimeAuditModel(models.Model):
@@ -71,9 +72,14 @@ class SoftDeleteModel(models.Model):
 
     def delete(self, using=None, soft=True, *args, **kwargs):
         if soft:
-            # Soft delete the current instance
+            # Soft delete the current instance.
+            #
+            # `update_fields` is what marks this as a retirement rather than an edit. A
+            # model that rejects writes to a published row -- the testing entities do --
+            # has no other way to tell the two apart, and would otherwise refuse to be
+            # deleted at all, staying alive under a parent that is already gone.
             self.deleted_at = timezone.now()
-            self.save(using=using)
+            self.save(using=using, update_fields=list(SOFT_DELETE_FIELDS))
 
             soft_delete_related_objects.delay(self._meta.app_label, self._meta.model_name, self.pk, using=using)
 

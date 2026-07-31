@@ -5,6 +5,8 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from plane.db.soft_delete import is_soft_delete_save
+
 from .project import ProjectBaseModel
 
 
@@ -105,7 +107,10 @@ class TestCaseVersion(ProjectBaseModel):
         ]
 
     def save(self, *args, **kwargs):
-        if not self._state.adding:
+        # Immutability is about the content of a published version, not its lifetime. A
+        # soft delete names only the lifecycle columns and is allowed through; without that
+        # exemption a version outlives the project that owned it, unreachable but alive.
+        if not self._state.adding and not is_soft_delete_save(kwargs):
             raise ValidationError("Published test case versions are immutable.")
         if self.test_case_id:
             self.project_id = self.test_case.project_id
@@ -134,7 +139,8 @@ class TestStep(ProjectBaseModel):
         ]
 
     def save(self, *args, **kwargs):
-        if not self._state.adding:
+        # See TestCaseVersion.save: retiring a row is not editing it.
+        if not self._state.adding and not is_soft_delete_save(kwargs):
             raise ValidationError("Published test steps are immutable.")
         if self.test_case_version_id:
             self.project_id = self.test_case_version.project_id
@@ -243,7 +249,9 @@ class TestResult(ProjectBaseModel):
         ]
 
     def save(self, *args, **kwargs):
-        if not self._state.adding:
+        # See TestCaseVersion.save: append-only governs what a result says, not whether the
+        # row survives the project it was recorded in.
+        if not self._state.adding and not is_soft_delete_save(kwargs):
             raise ValidationError("Test results are append-only.")
         if self.run_case_id:
             self.project_id = self.run_case.project_id

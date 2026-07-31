@@ -109,6 +109,9 @@ export class IssueLinkStore implements IIssueLinkStore {
     const response = await this.issueService.createIssueLink(workspaceSlug, projectId, issueId, data);
     const issueLinkCount = this.getLinksByIssueId(issueId)?.length ?? 0;
     runInAction(() => {
+      // Seeded by addLinks() during fetchLinks, so this is only empty when the fetch never
+      // landed -- which is what every epic did while its links route was returning 404.
+      if (!this.links[issueId]) this.links[issueId] = [];
       this.links[issueId].push(response.id);
       set(this.linkMap, response.id, response);
       this.rootIssueDetailStore.rootIssueStore.issues.updateIssue(issueId, {

@@ -4,6 +4,7 @@
  * See the LICENSE file for details.
  */
 
+import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssuePriorities, TPortfolioStatus, TProject } from "@plane/types";
 
 const STATES: { value: TPortfolioStatus; label: string }[] = [
@@ -39,6 +40,21 @@ type Props = {
  * there is nothing here that is only valid in combination with something else.
  */
 export function PropertiesPanel({ project, disabled, onChange }: Props) {
+  /**
+   * Every control here fired its write as a floating promise, so a rejected save was an
+   * unhandled rejection: no message, and the select left showing a value the server never
+   * accepted. Reporting the failure is what tells the reader the field did not stick.
+   */
+  const save = (changes: Partial<TProject>) => {
+    onChange(changes).catch(() => {
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: "Change not saved",
+        message: "The project could not be updated. Reload to see its current values.",
+      });
+    });
+  };
+
   return (
     <section className="rounded border border-subtle p-4">
       <h2 className="text-13 font-medium text-primary">Properties</h2>
@@ -51,7 +67,7 @@ export function PropertiesPanel({ project, disabled, onChange }: Props) {
               className={fieldClass}
               value={project.state ?? ""}
               disabled={disabled}
-              onChange={(event) => void onChange({ state: (event.target.value || null) as TPortfolioStatus | null })}
+              onChange={(event) => save({ state: (event.target.value || null) as TPortfolioStatus | null })}
             >
               <option value="">Not set</option>
               {STATES.map((option) => (
@@ -71,7 +87,7 @@ export function PropertiesPanel({ project, disabled, onChange }: Props) {
               className={fieldClass}
               value={project.priority ?? "none"}
               disabled={disabled}
-              onChange={(event) => void onChange({ priority: event.target.value as TIssuePriorities })}
+              onChange={(event) => save({ priority: event.target.value as TIssuePriorities })}
             >
               {PRIORITIES.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -92,7 +108,7 @@ export function PropertiesPanel({ project, disabled, onChange }: Props) {
                 className={fieldClass}
                 value={project.start_date ?? ""}
                 disabled={disabled}
-                onChange={(event) => void onChange({ start_date: event.target.value || null })}
+                onChange={(event) => save({ start_date: event.target.value || null })}
               />
             </dd>
           </div>
@@ -105,7 +121,7 @@ export function PropertiesPanel({ project, disabled, onChange }: Props) {
                 className={fieldClass}
                 value={project.target_date ?? ""}
                 disabled={disabled}
-                onChange={(event) => void onChange({ target_date: event.target.value || null })}
+                onChange={(event) => save({ target_date: event.target.value || null })}
               />
             </dd>
           </div>

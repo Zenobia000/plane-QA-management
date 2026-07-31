@@ -3,6 +3,7 @@
 
 from django.db import transaction
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from plane.api.serializers.work_item_property import (
@@ -129,6 +130,11 @@ class WorkItemPropertyValueDetailEndpoint(BaseAPIView):
             deleted_at__isnull=True,
             is_active=True,
         )
+        # This endpoint writes a value directly, without going through the work-item
+        # serializer, so it is the other way a property could be set on an item its type
+        # never asks for. Refused here rather than left to the UI, which is a suggestion.
+        if property_definition.type_id is not None and property_definition.type_id != issue.type_id:
+            raise ValidationError({"property": "This property does not apply to this work item's type."})
         return issue, property_definition
 
     @transaction.atomic

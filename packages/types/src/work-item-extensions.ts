@@ -48,6 +48,13 @@ export type TWorkItemProperty = {
   sort_order: number;
   default_value: unknown;
   options: TWorkItemPropertyOption[];
+  /**
+   * The work item type this property is narrowed to, or null for every type.
+   *
+   * Null is the pre-existing case and stays the common one -- a project-wide field. Set,
+   * it means only items of that type are asked for the value.
+   */
+  type: string | null;
   project: string;
   workspace: string;
   created_at: string;

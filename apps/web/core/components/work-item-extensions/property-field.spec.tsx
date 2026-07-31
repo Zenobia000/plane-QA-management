@@ -23,6 +23,9 @@ const definition = (kind: TWorkItemPropertyKind): TWorkItemProperty => ({
   is_active: true,
   sort_order: 10,
   default_value: null,
+  // Project-wide, which is what these field-rendering cases are about. Narrowing is
+  // decided before this component is reached -- see propertiesForType.
+  type: null,
   options: [
     { id: "o1", label: "API", value: "api", sort_order: 10 },
     { id: "o2", label: "Web", value: "web", sort_order: 20 },

@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import { WorkItemPropertyField } from "@/components/work-item-extensions";
+import { propertiesForType, WorkItemPropertyField } from "@/components/work-item-extensions";
 import { useIssueModal } from "@/hooks/context/use-issue-modal";
 import { useWorkItemPropertyDefinitions, useWorkItemPropertyValues } from "@/hooks/use-work-item-extensions";
 
@@ -13,11 +13,13 @@ export type TWorkItemModalAdditionalPropertiesProps = {
   isDraft?: boolean;
   projectId: string | null;
   workItemId: string | undefined;
+  /** Watched rather than read once, so switching type re-asks for that type's fields. */
+  workItemTypeId?: string | null;
   workspaceSlug: string;
 };
 
 export function WorkItemModalAdditionalProperties(props: TWorkItemModalAdditionalPropertiesProps) {
-  const { isDraft = false, projectId, workItemId, workspaceSlug } = props;
+  const { isDraft = false, projectId, workItemId, workItemTypeId, workspaceSlug } = props;
   const {
     issuePropertyValues,
     setIssuePropertyValues,
@@ -44,7 +46,7 @@ export function WorkItemModalAdditionalProperties(props: TWorkItemModalAdditiona
     loadedIssue.current = workItemId;
   }, [savedValues, setIssuePropertyValues, workItemId]);
 
-  const activeDefinitions = definitions?.filter((item) => item.is_active) ?? [];
+  const activeDefinitions = propertiesForType(definitions, workItemTypeId);
   if (!projectId || !activeDefinitions.length) return null;
 
   return (

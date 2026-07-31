@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ListChecks } from "lucide-react";
-import { WorkItemPropertyField } from "@/components/work-item-extensions";
+import { propertiesForType, WorkItemPropertyField } from "@/components/work-item-extensions";
 import { SidebarPropertyListItem } from "@/components/common/layout/sidebar/property-list-item";
 import {
   useWorkItemPropertyDefinitions,
@@ -24,7 +24,7 @@ export type TWorkItemAdditionalSidebarProperties = {
 };
 
 export function WorkItemAdditionalSidebarProperties(props: TWorkItemAdditionalSidebarProperties) {
-  const { workItemId, projectId, workspaceSlug, isEditable } = props;
+  const { workItemId, workItemTypeId, projectId, workspaceSlug, isEditable } = props;
   const { data: definitions } = useWorkItemPropertyDefinitions(workspaceSlug, projectId);
   const { data: savedValues, mutate } = useWorkItemPropertyValues(workspaceSlug, projectId, workItemId);
   const [values, setValues] = useState<Record<string, unknown>>({});
@@ -57,7 +57,7 @@ export function WorkItemAdditionalSidebarProperties(props: TWorkItemAdditionalSi
     }
   };
 
-  const activeDefinitions = definitions?.filter((item) => item.is_active) ?? [];
+  const activeDefinitions = propertiesForType(definitions, workItemTypeId);
   if (!activeDefinitions.length) return <></>;
 
   return (

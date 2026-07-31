@@ -6,6 +6,7 @@
 from django.utils import timezone
 from lxml import html
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 
 #  Third party imports
 from rest_framework import serializers
@@ -175,12 +176,15 @@ class IssueSerializer(BaseSerializer):
         if violation:
             raise serializers.ValidationError(violation)
 
+        # Resolved the same way the hierarchy check above resolves it: retyping an item
+        # changes which properties it is asked for, so the incoming type wins over the
+        # stored one.
+        work_item_type = data.get("type", self.instance.type if self.instance else None)
+
         if "properties" in data:
-            self._validate_properties(data["properties"])
+            self._validate_properties(data["properties"], work_item_type)
         elif self.instance is None:
-            missing = WorkItemProperty.objects.filter(
-                project_id=self.context.get("project_id"),
-                is_active=True,
+            missing = self._applicable_properties(work_item_type).filter(
                 is_required=True,
                 default_value__isnull=True,
             )
@@ -192,19 +196,38 @@ class IssueSerializer(BaseSerializer):
 
         return data
 
-    def _validate_properties(self, values):
+    def _applicable_properties(self, work_item_type):
+        """The properties this work item is asked for: project-wide ones, plus its type's own.
+
+        A property narrowed to some other type is not merely optional here -- it is not part
+        of this item's form at all, so it can be neither required of it nor set on it.
+
+        `deleted_at__isnull=True` matters and was missing from the no-properties-supplied
+        path before: a soft-deleted required property still blocked creation there, and
+        nothing could satisfy it because the same property was invisible to every writer.
+        """
+        return (
+            WorkItemProperty.objects.filter(
+                project_id=self.context.get("project_id"),
+                is_active=True,
+                deleted_at__isnull=True,
+            )
+            .filter(Q(type__isnull=True) | Q(type=work_item_type))
+            .order_by("sort_order", "created_at")
+        )
+
+    def _validate_properties(self, values, work_item_type):
         if not isinstance(values, dict):
             raise serializers.ValidationError({"properties": "Expected an object keyed by property ID."})
-        property_definitions = list(
-            WorkItemProperty.objects.prefetch_related("options").filter(
-                project_id=self.context.get("project_id"), is_active=True, deleted_at__isnull=True
-            )
-        )
+        property_definitions = list(self._applicable_properties(work_item_type).prefetch_related("options"))
         by_id = {str(property_definition.id): property_definition for property_definition in property_definitions}
         unknown = set(values) - set(by_id)
         if unknown:
+            # "for this work item" rather than "in this project": a property narrowed to
+            # another type does exist in the project, and saying otherwise would send an
+            # admin hunting for a definition that is sitting right there in settings.
             raise serializers.ValidationError(
-                {"properties": "One or more property IDs are not available in this project."}
+                {"properties": "One or more property IDs are not available for this work item."}
             )
         for property_id, value in values.items():
             validate_property_value(by_id[property_id], value)

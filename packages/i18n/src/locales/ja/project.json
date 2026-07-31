@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "読み込み中…",
+    "load_error": "プロジェクトの概要を読み込めませんでした。",
+    "progress": {
+      "title": "進捗",
+      "out_of_scope": "対象範囲外のため、バーには数えられません"
+    },
+    "properties": {
+      "title": "プロパティー",
+      "state": "状態",
+      "state_label": "プロジェクトの状態",
+      "priority": "優先度",
+      "priority_label": "プロジェクトの優先度",
+      "start": "開始",
+      "start_label": "プロジェクトの開始日",
+      "target": "目標",
+      "target_label": "プロジェクトの目標日",
+      "not_set": "未設定",
+      "not_saved_title": "変更は保存されていません",
+      "not_saved_message": "プロジェクトを更新できませんでした。現在の値を確認するには再読み込みしてください。"
+    },
+    "links": {
+      "title": "リンク",
+      "empty": "リンクはまだありません。",
+      "name_label": "リンクのタイトル",
+      "name_placeholder": "タイトル",
+      "url_label": "リンクの URL",
+      "add": "追加",
+      "remove_label": "{name} を削除",
+      "invalid_url": "URL を入力してください。例: https://example.com",
+      "url_too_long": "URL は {max} 文字未満にしてください。",
+      "title_too_long": "タイトルは {max} 文字未満にしてください。",
+      "not_added_title": "リンクを追加できませんでした",
+      "not_added_message": "リンクを保存できませんでした。",
+      "not_removed_title": "リンクを削除できませんでした",
+      "not_removed_message": "リンクを削除できませんでした。"
+    },
+    "milestones": {
+      "title": "マイルストーン",
+      "empty": "マイルストーンはまだありません。コミットメントを追跡するには追加してください。",
+      "name_label": "マイルストーン名",
+      "name_placeholder": "マイルストーン名",
+      "target_date_label": "マイルストーンの目標日",
+      "new_name_label": "新しいマイルストーンの名前",
+      "new_target_date_label": "新しいマイルストーンの目標日",
+      "add": "追加",
+      "save": "保存",
+      "edit_label": "{name} を編集",
+      "remove_label": "{name} を削除",
+      "not_created_title": "マイルストーンを作成できませんでした",
+      "not_created_message": "マイルストーンを作成できませんでした。",
+      "not_saved_title": "マイルストーンを保存できませんでした",
+      "not_saved_message": "変更を保存できませんでした。",
+      "not_removed_title": "マイルストーンを削除できませんでした",
+      "not_removed_message": "マイルストーンを削除できませんでした。"
+    },
+    "activity": {
+      "title": "アクティビティー",
+      "empty": "まだ何も起きていません。",
+      "someone": "誰か",
+      "load_more": "さらに読み込む",
+      "loading": "読み込み中…",
+      "not_loaded_title": "アクティビティーを追加で読み込めませんでした",
+      "not_loaded_message": "次のページを読み込めませんでした。"
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {以前の更新を # 件表示} other {以前の更新を # 件表示}}",
+      "load_error": "スレッドの残りを読み込めませんでした。"
+    }
   }
 }

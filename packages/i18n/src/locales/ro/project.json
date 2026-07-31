@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Se încarcă…",
+    "load_error": "Prezentarea generală a proiectului nu a putut fi încărcată.",
+    "progress": {
+      "title": "Progres",
+      "out_of_scope": "În afara domeniului, deci nu este numărat în bară"
+    },
+    "properties": {
+      "title": "Proprietăți",
+      "state": "Stare",
+      "state_label": "Starea proiectului",
+      "priority": "Prioritate",
+      "priority_label": "Prioritatea proiectului",
+      "start": "Început",
+      "start_label": "Data de început a proiectului",
+      "target": "Țintă",
+      "target_label": "Data-țintă a proiectului",
+      "not_set": "Nedefinit",
+      "not_saved_title": "Modificare nesalvată",
+      "not_saved_message": "Proiectul nu a putut fi actualizat. Reîncărcați pentru a vedea valorile curente."
+    },
+    "links": {
+      "title": "Linkuri",
+      "empty": "Încă niciun link.",
+      "name_label": "Titlul linkului",
+      "name_placeholder": "Titlu",
+      "url_label": "URL-ul linkului",
+      "add": "Adăugați",
+      "remove_label": "Eliminați {name}",
+      "invalid_url": "Introduceți un URL, de exemplu https://example.com.",
+      "url_too_long": "Păstrați URL-ul sub {max} de caractere.",
+      "title_too_long": "Păstrați titlul sub {max} de caractere.",
+      "not_added_title": "Link neadăugat",
+      "not_added_message": "Linkul nu a putut fi salvat.",
+      "not_removed_title": "Link neeliminat",
+      "not_removed_message": "Linkul nu a putut fi eliminat."
+    },
+    "milestones": {
+      "title": "Jaloane",
+      "empty": "Încă niciun jalon. Adăugați unul pentru a urmări un angajament.",
+      "name_label": "Numele jalonului",
+      "name_placeholder": "Numele jalonului",
+      "target_date_label": "Data-țintă a jalonului",
+      "new_name_label": "Numele noului jalon",
+      "new_target_date_label": "Data-țintă a noului jalon",
+      "add": "Adăugați",
+      "save": "Salvați",
+      "edit_label": "Editați {name}",
+      "remove_label": "Eliminați {name}",
+      "not_created_title": "Jalon necreat",
+      "not_created_message": "Jalonul nu a putut fi creat.",
+      "not_saved_title": "Jalon nesalvat",
+      "not_saved_message": "Modificarea nu a putut fi salvată.",
+      "not_removed_title": "Jalon neeliminat",
+      "not_removed_message": "Jalonul nu a putut fi eliminat."
+    },
+    "activity": {
+      "title": "Activitate",
+      "empty": "Încă nu s-a întâmplat nimic.",
+      "someone": "Cineva",
+      "load_more": "Încărcați mai mult",
+      "loading": "Se încarcă…",
+      "not_loaded_title": "Nu s-a putut încărca mai multă activitate",
+      "not_loaded_message": "Pagina următoare nu a putut fi încărcată."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Afișați # actualizare anterioară} few {Afișați # actualizări anterioare} other {Afișați # de actualizări anterioare}}",
+      "load_error": "Restul discuției nu a putut fi încărcat."
+    }
   }
 }

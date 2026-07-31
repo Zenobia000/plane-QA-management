@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "{groupKey}グループのステータスがありません",
         "description": "新しいステータスを作成してください"
+      },
+      "workflow_template": {
+        "title": "SDLC デリバリーワークフローを使用する",
+        "description": "このプロジェクトにない状態を {count} 件追加します。作業がどの段階にあるかをボードで示すレビューとテストの各段階も含まれます。既存のものの名前変更や削除は行われません。",
+        "apply": "適用",
+        "applying": "適用中…",
+        "applied_title": "ワークフローを適用しました",
+        "applied_message": "{count} 件の状態を追加しました。",
+        "not_applied_title": "ワークフローを適用できませんでした",
+        "not_applied_message": "状態を追加できませんでした。"
       }
     },
     "labels": {

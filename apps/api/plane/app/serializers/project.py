@@ -16,6 +16,7 @@ from plane.app.serializers.user import UserLiteSerializer, UserAdminLiteSerializ
 from plane.db.models import (
     EntityUpdate,
     Issue,
+    Milestone,
     Project,
     ProjectLink,
     ProjectMember,
@@ -278,6 +279,45 @@ class ProjectLinkSerializer(BaseSerializer):
             data["url"] = "http://" + url
 
         return super().to_internal_value(data)
+
+
+class MilestoneSerializer(BaseSerializer):
+    """A milestone as the web app writes it.
+
+    The token API has carried milestones since they were added, but nothing on this side
+    did, so the browser could display them and not change them. Same fields and the same
+    empty-name rule as `plane.api.serializers.portfolio.MilestoneSerializer` -- one shape,
+    two authentication surfaces.
+
+    `work_item_count` rides along because the delete rule depends on it: a milestone with
+    work items cannot be removed, and a UI that only learns that from a rejected request
+    offers an action it knows will fail.
+    """
+
+    work_item_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Milestone
+        fields = [
+            "id",
+            "name",
+            "description",
+            "target_date",
+            "status",
+            "sort_order",
+            "work_item_count",
+            "project",
+            "workspace",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "project", "workspace", "created_at", "updated_at"]
+
+    def validate_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Name cannot be empty.")
+        return value
 
 
 class EntityUpdateSerializer(BaseSerializer):

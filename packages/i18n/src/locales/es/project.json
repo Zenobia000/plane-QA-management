@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Cargando…",
+    "load_error": "No se pudo cargar la vista general del proyecto.",
+    "progress": {
+      "title": "Progreso",
+      "out_of_scope": "Fuera de alcance, por lo que no se cuenta en la barra"
+    },
+    "properties": {
+      "title": "Propiedades",
+      "state": "Estado",
+      "state_label": "Estado del proyecto",
+      "priority": "Prioridad",
+      "priority_label": "Prioridad del proyecto",
+      "start": "Inicio",
+      "start_label": "Fecha de inicio del proyecto",
+      "target": "Objetivo",
+      "target_label": "Fecha objetivo del proyecto",
+      "not_set": "Sin definir",
+      "not_saved_title": "Cambio no guardado",
+      "not_saved_message": "No se pudo actualizar el proyecto. Recargue para ver sus valores actuales."
+    },
+    "links": {
+      "title": "Enlaces",
+      "empty": "Aún no hay enlaces.",
+      "name_label": "Título del enlace",
+      "name_placeholder": "Título",
+      "url_label": "URL del enlace",
+      "add": "Añadir",
+      "remove_label": "Eliminar {name}",
+      "invalid_url": "Introduzca una URL, por ejemplo https://example.com.",
+      "url_too_long": "Mantenga la URL por debajo de {max} caracteres.",
+      "title_too_long": "Mantenga el título por debajo de {max} caracteres.",
+      "not_added_title": "Enlace no añadido",
+      "not_added_message": "No se pudo guardar el enlace.",
+      "not_removed_title": "Enlace no eliminado",
+      "not_removed_message": "No se pudo eliminar el enlace."
+    },
+    "milestones": {
+      "title": "Hitos",
+      "empty": "Aún no hay hitos. Añada uno para hacer seguimiento de un compromiso.",
+      "name_label": "Nombre del hito",
+      "name_placeholder": "Nombre del hito",
+      "target_date_label": "Fecha objetivo del hito",
+      "new_name_label": "Nombre del nuevo hito",
+      "new_target_date_label": "Fecha objetivo del nuevo hito",
+      "add": "Añadir",
+      "save": "Guardar",
+      "edit_label": "Editar {name}",
+      "remove_label": "Eliminar {name}",
+      "not_created_title": "Hito no creado",
+      "not_created_message": "No se pudo crear el hito.",
+      "not_saved_title": "Hito no guardado",
+      "not_saved_message": "No se pudo guardar el cambio.",
+      "not_removed_title": "Hito no eliminado",
+      "not_removed_message": "No se pudo eliminar el hito."
+    },
+    "activity": {
+      "title": "Actividad",
+      "empty": "Todavía no ha ocurrido nada.",
+      "someone": "Alguien",
+      "load_more": "Cargar más",
+      "loading": "Cargando…",
+      "not_loaded_title": "No se pudo cargar más actividad",
+      "not_loaded_message": "No se pudo cargar la página siguiente."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Mostrar # actualización anterior} other {Mostrar # actualizaciones anteriores}}",
+      "load_error": "No se pudo cargar el resto del hilo."
+    }
   }
 }

@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "Nenhum estado disponível para o grupo {groupKey}",
         "description": "Por favor, crie um novo estado"
+      },
+      "workflow_template": {
+        "title": "Usar o fluxo de entrega SDLC",
+        "description": "Adiciona {count} estados que este projeto não possui, incluindo as etapas de revisão e teste que fazem um quadro mostrar em que ponto o trabalho está. Nada existente é renomeado ou removido.",
+        "apply": "Aplicar",
+        "applying": "Aplicando…",
+        "applied_title": "Fluxo aplicado",
+        "applied_message": "{count} estados adicionados.",
+        "not_applied_title": "Fluxo não aplicado",
+        "not_applied_message": "Não foi possível adicionar os estados."
       }
     },
     "labels": {

@@ -5,6 +5,7 @@
  */
 
 import { useState } from "react";
+import { useTranslation } from "@plane/i18n";
 import type { TEntityUpdate, TUpdateEntityName, TUpdateStatus } from "@plane/types";
 
 export const UPDATE_STATUS_LABELS: Record<TUpdateStatus, string> = {
@@ -35,6 +36,13 @@ type Props = {
   /** Omit to render the thread without replies -- a peek view has no room for them. */
   onLoadReplies?: (updateId: string) => Promise<TEntityUpdate[]>;
   onReply?: (parentId: string, description: string) => Promise<void>;
+  /**
+   * How many updates the thread holds, when the caller is only passing the newest few.
+   * Omit when `updates` is already the whole thread.
+   */
+  total?: number;
+  /** Fetches the rest. Required for the "show all" control to appear. */
+  onLoadAll?: () => Promise<TEntityUpdate[]>;
 };
 
 /**
@@ -151,11 +159,41 @@ function UpdateThread({
  * shipped updates on epics first and then extended them everywhere, which is the same
  * conclusion arrived at from the other direction.
  */
-export function UpdatesPanel({ entityName, updates, disabled = false, onPost, onLoadReplies, onReply }: Props) {
+export function UpdatesPanel({
+  entityName,
+  updates,
+  disabled = false,
+  onPost,
+  onLoadReplies,
+  onReply,
+  total,
+  onLoadAll,
+}: Props) {
   const [status, setStatus] = useState<TUpdateStatus>("on_track");
   const [description, setDescription] = useState("");
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The full thread, once asked for. Null until then, so `updates` stays the source of
+  // truth for the common case and a refetch after posting is not fighting a stale copy.
+  const [expanded, setExpanded] = useState<TEntityUpdate[] | null>(null);
+  const [expanding, setExpanding] = useState(false);
+  const { t } = useTranslation();
+
+  const shown = expanded ?? updates;
+  const hidden = (total ?? shown.length) - shown.length;
+
+  const showAll = async () => {
+    if (!onLoadAll) return;
+    setExpanding(true);
+    setError(null);
+    try {
+      setExpanded(await onLoadAll());
+    } catch {
+      setError(t("project_overview.updates.load_error"));
+    } finally {
+      setExpanding(false);
+    }
+  };
 
   const submit = async () => {
     setPosting(true);
@@ -217,7 +255,7 @@ export function UpdatesPanel({ entityName, updates, disabled = false, onPost, on
       )}
 
       <ul className="mt-4 space-y-3">
-        {updates.map((update) => (
+        {shown.map((update) => (
           <UpdateThread
             key={update.id}
             update={update}
@@ -226,8 +264,22 @@ export function UpdatesPanel({ entityName, updates, disabled = false, onPost, on
             onReply={onReply}
           />
         ))}
-        {!updates.length && <li className="text-12 text-tertiary">No updates yet.</li>}
+        {!shown.length && <li className="text-12 text-tertiary">No updates yet.</li>}
       </ul>
+      {/* The caller embeds only the newest few. Saying how many are hidden beats
+          truncating silently, which reads as the thread having stopped. */}
+      {hidden > 0 && onLoadAll && (
+        <button
+          type="button"
+          className="mt-3 text-12 font-medium text-accent-primary hover:underline disabled:opacity-50"
+          disabled={expanding}
+          onClick={() => void showAll()}
+        >
+          {expanding
+            ? t("project_overview.activity.loading")
+            : t("project_overview.updates.show_earlier", { count: hidden })}
+        </button>
+      )}
     </section>
   );
 }

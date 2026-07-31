@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Yükleniyor…",
+    "load_error": "Proje genel görünümü yüklenemedi.",
+    "progress": {
+      "title": "İlerleme",
+      "out_of_scope": "Kapsam dışı olduğu için çubukta sayılmaz"
+    },
+    "properties": {
+      "title": "Özellikler",
+      "state": "Durum",
+      "state_label": "Proje durumu",
+      "priority": "Öncelik",
+      "priority_label": "Proje önceliği",
+      "start": "Başlangıç",
+      "start_label": "Projenin başlangıç tarihi",
+      "target": "Hedef",
+      "target_label": "Projenin hedef tarihi",
+      "not_set": "Ayarlanmadı",
+      "not_saved_title": "Değişiklik kaydedilmedi",
+      "not_saved_message": "Proje güncellenemedi. Güncel değerleri görmek için sayfayı yeniden yükleyiniz."
+    },
+    "links": {
+      "title": "Bağlantılar",
+      "empty": "Henüz bağlantı yok.",
+      "name_label": "Bağlantı başlığı",
+      "name_placeholder": "Başlık",
+      "url_label": "Bağlantı URL’si",
+      "add": "Ekle",
+      "remove_label": "{name} ögesini kaldır",
+      "invalid_url": "Bir URL giriniz, örneğin https://example.com.",
+      "url_too_long": "URL’yi {max} karakterin altında tutunuz.",
+      "title_too_long": "Başlığı {max} karakterin altında tutunuz.",
+      "not_added_title": "Bağlantı eklenmedi",
+      "not_added_message": "Bağlantı kaydedilemedi.",
+      "not_removed_title": "Bağlantı kaldırılmadı",
+      "not_removed_message": "Bağlantı kaldırılamadı."
+    },
+    "milestones": {
+      "title": "Kilometre taşları",
+      "empty": "Henüz kilometre taşı yok. Bir taahhüdü izlemek için bir tane ekleyiniz.",
+      "name_label": "Kilometre taşı adı",
+      "name_placeholder": "Kilometre taşı adı",
+      "target_date_label": "Kilometre taşının hedef tarihi",
+      "new_name_label": "Yeni kilometre taşının adı",
+      "new_target_date_label": "Yeni kilometre taşının hedef tarihi",
+      "add": "Ekle",
+      "save": "Kaydet",
+      "edit_label": "{name} ögesini düzenle",
+      "remove_label": "{name} ögesini kaldır",
+      "not_created_title": "Kilometre taşı oluşturulmadı",
+      "not_created_message": "Kilometre taşı oluşturulamadı.",
+      "not_saved_title": "Kilometre taşı kaydedilmedi",
+      "not_saved_message": "Değişiklik kaydedilemedi.",
+      "not_removed_title": "Kilometre taşı kaldırılmadı",
+      "not_removed_message": "Kilometre taşı kaldırılamadı."
+    },
+    "activity": {
+      "title": "Etkinlik",
+      "empty": "Henüz bir şey olmadı.",
+      "someone": "Birisi",
+      "load_more": "Daha fazla yükle",
+      "loading": "Yükleniyor…",
+      "not_loaded_title": "Daha fazla etkinlik yüklenemedi",
+      "not_loaded_message": "Sonraki sayfa yüklenemedi."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {# önceki güncellemeyi göster} other {# önceki güncellemeyi göster}}",
+      "load_error": "Konuşmanın kalanı yüklenemedi."
+    }
   }
 }

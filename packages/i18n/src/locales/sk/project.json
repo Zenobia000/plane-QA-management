@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Načítava sa…",
+    "load_error": "Prehľad projektu sa nepodarilo načítať.",
+    "progress": {
+      "title": "Priebeh",
+      "out_of_scope": "Mimo rozsahu, preto sa do pruhu nepočíta"
+    },
+    "properties": {
+      "title": "Vlastnosti",
+      "state": "Stav",
+      "state_label": "Stav projektu",
+      "priority": "Priorita",
+      "priority_label": "Priorita projektu",
+      "start": "Začiatok",
+      "start_label": "Dátum začiatku projektu",
+      "target": "Cieľ",
+      "target_label": "Cieľový dátum projektu",
+      "not_set": "Nenastavené",
+      "not_saved_title": "Zmena neuložená",
+      "not_saved_message": "Projekt sa nepodarilo aktualizovať. Načítajte stránku znova, aby ste videli aktuálne hodnoty."
+    },
+    "links": {
+      "title": "Odkazy",
+      "empty": "Zatiaľ žiadne odkazy.",
+      "name_label": "Názov odkazu",
+      "name_placeholder": "Názov",
+      "url_label": "URL odkazu",
+      "add": "Pridať",
+      "remove_label": "Odstrániť {name}",
+      "invalid_url": "Zadajte URL, napríklad https://example.com.",
+      "url_too_long": "Ponechajte URL kratšiu ako {max} znakov.",
+      "title_too_long": "Ponechajte názov kratší ako {max} znakov.",
+      "not_added_title": "Odkaz nebol pridaný",
+      "not_added_message": "Odkaz sa nepodarilo uložiť.",
+      "not_removed_title": "Odkaz nebol odstránený",
+      "not_removed_message": "Odkaz sa nepodarilo odstrániť."
+    },
+    "milestones": {
+      "title": "Míľniky",
+      "empty": "Zatiaľ žiadne míľniky. Pridajte jeden na sledovanie záväzku.",
+      "name_label": "Názov míľnika",
+      "name_placeholder": "Názov míľnika",
+      "target_date_label": "Cieľový dátum míľnika",
+      "new_name_label": "Názov nového míľnika",
+      "new_target_date_label": "Cieľový dátum nového míľnika",
+      "add": "Pridať",
+      "save": "Uložiť",
+      "edit_label": "Upraviť {name}",
+      "remove_label": "Odstrániť {name}",
+      "not_created_title": "Míľnik nebol vytvorený",
+      "not_created_message": "Míľnik sa nepodarilo vytvoriť.",
+      "not_saved_title": "Míľnik nebol uložený",
+      "not_saved_message": "Zmenu sa nepodarilo uložiť.",
+      "not_removed_title": "Míľnik nebol odstránený",
+      "not_removed_message": "Míľnik sa nepodarilo odstrániť."
+    },
+    "activity": {
+      "title": "Aktivita",
+      "empty": "Zatiaľ sa nič nestalo.",
+      "someone": "Niekto",
+      "load_more": "Načítať viac",
+      "loading": "Načítava sa…",
+      "not_loaded_title": "Nepodarilo sa načítať ďalšiu aktivitu",
+      "not_loaded_message": "Ďalšiu stránku sa nepodarilo načítať."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Zobraziť # staršiu aktualizáciu} few {Zobraziť # staršie aktualizácie} many {Zobraziť # staršej aktualizácie} other {Zobraziť # starších aktualizácií}}",
+      "load_error": "Zvyšok vlákna sa nepodarilo načítať."
+    }
   }
 }

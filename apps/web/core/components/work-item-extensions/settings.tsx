@@ -5,9 +5,10 @@
 
 import { useMemo, useState } from "react";
 import { Check, Pencil, Plus, Trash2 } from "lucide-react";
-import type { TWorkItemProperty, TWorkItemPropertyKind } from "@plane/types";
+import { EmojiIconPickerTypes, EmojiPicker, Logo } from "@plane/propel/emoji-icon-picker";
+import type { TLogoProps, TWorkItemProperty, TWorkItemPropertyKind } from "@plane/types";
 import { CustomSelect } from "@plane/ui";
-import { WorkItemTypeBadge } from "./type-badge";
+import { WorkItemTypeBadge, asLogo } from "./type-badge";
 import {
   useProjectWorkItemTypes,
   useWorkItemPropertyDefinitions,
@@ -62,6 +63,19 @@ export const parsePropertyOptions = (rawOptions: string) => {
     });
 };
 
+/**
+ * Normalise what the picker hands back into the shape `logo_props` stores.
+ *
+ * The emoji tab yields a value to wrap; the icon tab yields the whole `{name, color}`
+ * object already. Same conversion the project form does -- kept here rather than shared
+ * because the picker's own callback is typed `any` and each caller narrows it locally.
+ */
+function toLogoProps(value: { type?: string; value?: unknown } | null): TLogoProps | Record<string, never> {
+  if (!value?.type) return {};
+  const payload = value.type === "emoji" ? { value: value.value } : value.value;
+  return { in_use: value.type, [value.type]: payload } as TLogoProps;
+}
+
 export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
   const { data: workspaceTypes, mutate: mutateWorkspaceTypes } = useWorkspaceWorkItemTypes(workspaceSlug);
   const { data: projectTypes, mutate: mutateProjectTypes } = useProjectWorkItemTypes(workspaceSlug, projectId);
@@ -70,6 +84,11 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
   const [typeDescription, setTypeDescription] = useState("");
   const [typeLevel, setTypeLevel] = useState(0);
   const [typeIsEpic, setTypeIsEpic] = useState(false);
+  // `{}` means "no logo chosen", which is what the model stores until someone picks one.
+  const [typeLogo, setTypeLogo] = useState<TLogoProps | Record<string, never>>({});
+  const [logoPickerOpen, setLogoPickerOpen] = useState(false);
+  // The id of the type whose logo is being changed, or null when none is.
+  const [editingLogoFor, setEditingLogoFor] = useState<string | null>(null);
   const [typeToEnable, setTypeToEnable] = useState("");
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [propertyName, setPropertyName] = useState("");
@@ -100,6 +119,7 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
         level: typeLevel,
         is_epic: typeIsEpic,
         is_active: true,
+        logo_props: typeLogo,
       });
       await workItemExtensionService.enableProjectType(workspaceSlug, projectId, {
         type_id: created.id,
@@ -107,6 +127,7 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
         is_default: !projectTypes?.length,
       });
       setTypeName("");
+      setTypeLogo({});
       setTypeDescription("");
       setTypeLevel(0);
       setTypeIsEpic(false);
@@ -115,6 +136,25 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
       setError(errorMessage(caught));
     } finally {
       setBusy(false);
+    }
+  };
+
+  /**
+   * Change one type's logo.
+   *
+   * `updateWorkspaceType` has existed on the service since types were added and had no
+   * callers -- there was no edit path for a type at all. This gives it one for the field
+   * that is purely presentational and therefore safe to change after the fact.
+   */
+  const setTypeLogoFor = async (typeId: string, logo: TLogoProps | Record<string, never>) => {
+    setLogoPickerOpen(false);
+    setEditingLogoFor(null);
+    setError("");
+    try {
+      await workItemExtensionService.updateWorkspaceType(workspaceSlug, typeId, { logo_props: logo });
+      await refreshTypes();
+    } catch (caught) {
+      setError(errorMessage(caught));
     }
   };
 
@@ -204,8 +244,34 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
           {projectTypes?.map((item) => (
             <div
               key={item.id}
-              className="grid grid-cols-[minmax(0,1fr)_6rem_auto_auto] items-center gap-3 rounded border border-subtle p-3"
+              className="grid grid-cols-[auto_minmax(0,1fr)_6rem_auto_auto] items-center gap-3 rounded border border-subtle p-3"
             >
+              {/* The only way to change a type's appearance after creation. Everything else
+                  about a type is still fixed once created, which is a separate gap. */}
+              <EmojiPicker
+                iconType="material"
+                closeOnSelect={false}
+                isOpen={logoPickerOpen && editingLogoFor === item.type.id}
+                handleToggle={(open: boolean) => {
+                  setEditingLogoFor(open ? item.type.id : null);
+                  setLogoPickerOpen(open);
+                }}
+                className="flex items-center justify-center"
+                buttonClassName="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-subtle bg-surface-1"
+                label={<Logo logo={asLogo(item.type.logo_props)} size={16} />}
+                // TODO: fix types -- the picker's own callback is untyped
+                onChange={(value: any) => void setTypeLogoFor(item.type.id, toLogoProps(value))}
+                defaultIconColor={
+                  "in_use" in item.type.logo_props && item.type.logo_props.in_use === "icon"
+                    ? item.type.logo_props.icon?.color
+                    : undefined
+                }
+                defaultOpen={
+                  "in_use" in item.type.logo_props && item.type.logo_props.in_use === "emoji"
+                    ? EmojiIconPickerTypes.EMOJI
+                    : EmojiIconPickerTypes.ICON
+                }
+              />
               <span className="min-w-0">
                 <WorkItemTypeBadge type={item.type} />
                 {item.type.description && <span className="ml-2 text-11 text-tertiary">{item.type.description}</span>}
@@ -290,7 +356,30 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
             </div>
           )}
 
-          <div className="grid grid-cols-[1fr_1fr_6rem_auto_auto] gap-2 border-t border-subtle pt-4">
+          <div className="grid grid-cols-[auto_1fr_1fr_6rem_auto_auto] gap-2 border-t border-subtle pt-4">
+            <EmojiPicker
+              iconType="material"
+              closeOnSelect={false}
+              isOpen={logoPickerOpen && editingLogoFor === null}
+              handleToggle={(open: boolean) => {
+                setEditingLogoFor(null);
+                setLogoPickerOpen(open);
+              }}
+              className="flex items-center justify-center"
+              buttonClassName="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-subtle bg-surface-1"
+              label={<Logo logo={asLogo(typeLogo)} size={16} />}
+              // TODO: fix types -- the picker's own callback is untyped
+              onChange={(value: any) => {
+                setTypeLogo(toLogoProps(value));
+                setLogoPickerOpen(false);
+              }}
+              defaultIconColor={"in_use" in typeLogo && typeLogo.in_use === "icon" ? typeLogo.icon?.color : undefined}
+              defaultOpen={
+                "in_use" in typeLogo && typeLogo.in_use === "emoji"
+                  ? EmojiIconPickerTypes.EMOJI
+                  : EmojiIconPickerTypes.ICON
+              }
+            />
             <input
               className={fieldClass}
               value={typeName}

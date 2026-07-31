@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "Keine Status für die Gruppe {groupKey}",
         "description": "Erstellen Sie einen neuen Status"
+      },
+      "workflow_template": {
+        "title": "SDLC-Lieferworkflow verwenden",
+        "description": "Fügt {count} Status hinzu, die dieses Projekt nicht hat, einschließlich der Review- und Teststufen, die auf einem Board zeigen, wo die Arbeit steht. Nichts Bestehendes wird umbenannt oder entfernt.",
+        "apply": "Anwenden",
+        "applying": "Wird angewendet…",
+        "applied_title": "Workflow angewendet",
+        "applied_message": "{count} Status hinzugefügt.",
+        "not_applied_title": "Workflow nicht angewendet",
+        "not_applied_message": "Die Status konnten nicht hinzugefügt werden."
       }
     },
     "labels": {

@@ -21,6 +21,7 @@ from .project.phase_d import (
 )
 
 from .project.overview import (
+    MilestoneViewSet,
     ProjectLinkViewSet,
     EntityUpdateViewSet,
     ProjectProgressEndpoint,
@@ -114,7 +115,7 @@ from .workspace.cycle import WorkspaceCyclesEndpoint
 from .workspace.quick_link import QuickLinkViewSet
 from .workspace.sticky import WorkspaceStickyViewSet
 
-from .state.base import StateViewSet, IntakeStateEndpoint
+from .state.base import StateViewSet, StateWorkflowTemplateEndpoint, IntakeStateEndpoint
 from .view.base import (
     WorkspaceViewViewSet,
     WorkspaceViewIssuesViewSet,

@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "Nicio stare disponibilă pentru grupul {groupKey}",
         "description": "Te rog să creezi o stare nouă"
+      },
+      "workflow_template": {
+        "title": "Utilizați fluxul de livrare SDLC",
+        "description": "Adaugă {count} stări pe care acest proiect nu le are, inclusiv etapele de revizuire și testare care arată pe un panou unde se află munca. Nimic existent nu este redenumit sau eliminat.",
+        "apply": "Aplicați",
+        "applying": "Se aplică…",
+        "applied_title": "Flux aplicat",
+        "applied_message": "{count} stări adăugate.",
+        "not_applied_title": "Flux neaplicat",
+        "not_applied_message": "Stările nu au putut fi adăugate."
       }
     },
     "labels": {

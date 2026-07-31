@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "No states available for the {groupKey} group",
         "description": "Please create a new state"
+      },
+      "workflow_template": {
+        "title": "Use the SDLC delivery workflow",
+        "description": "Adds {count} states this project does not have, including the review and testing stages that make a board show where work sits. Nothing existing is renamed or removed.",
+        "apply": "Apply",
+        "applying": "Applying…",
+        "applied_title": "Workflow applied",
+        "applied_message": "Added {count} states.",
+        "not_applied_title": "Workflow not applied",
+        "not_applied_message": "The states could not be added."
       }
     },
     "labels": {

@@ -27,7 +27,7 @@ above it -- every work item in it is one unit of its scope.
 from collections import defaultdict
 
 # Django imports
-from django.db.models import Count
+from django.db.models import Count, Q
 
 # Third party imports
 from rest_framework import status
@@ -35,7 +35,7 @@ from rest_framework.response import Response
 
 # Module imports
 from plane.app.permissions import ProjectEntityPermission
-from plane.app.serializers import EntityUpdateSerializer, ProjectLinkSerializer
+from plane.app.serializers import EntityUpdateSerializer, MilestoneSerializer, ProjectLinkSerializer
 from plane.app.views.base import BaseAPIView, BaseViewSet
 from plane.db.models import EntityUpdate, Issue, IssueActivity, Milestone, ProjectLink
 
@@ -116,6 +116,55 @@ class EntityUpdateViewSet(BaseViewSet):
         )
 
 
+class MilestoneViewSet(BaseViewSet):
+    """Milestones, writable by the browser.
+
+    They existed only on the token API until now, so the overview could render them and no
+    one could create, rename or retire one without an API key -- the demo seed produced
+    milestones a reader could see and had no way to manage.
+
+    `work_item_count` is annotated rather than counted per row so the list stays one query,
+    and it is what `destroy` enforces against: a milestone still carrying work is a
+    commitment someone is measured on, and deleting it would silently unset their target.
+    """
+
+    permission_classes = [ProjectEntityPermission]
+
+    model = Milestone
+    serializer_class = MilestoneSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(project_id=self.kwargs.get("project_id"))
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(workspace__slug=self.kwargs.get("slug"))
+            .filter(project_id=self.kwargs.get("project_id"))
+            .filter(
+                project__project_projectmember__member=self.request.user,
+                project__project_projectmember__is_active=True,
+                project__archived_at__isnull=True,
+            )
+            .annotate(
+                work_item_count=Count("work_items", filter=Q(work_items__deleted_at__isnull=True), distinct=True)
+            )
+            .order_by("target_date", "sort_order", "created_at")
+            .distinct()
+        )
+
+    def destroy(self, request, slug, project_id, pk):
+        milestone = self.get_queryset().get(pk=pk)
+        if Issue.issue_objects.filter(milestone_id=pk).exists():
+            return Response(
+                {"error": "A milestone assigned to work items cannot be deleted."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        milestone.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class ProjectProgressEndpoint(BaseAPIView):
     """Work item counts by state group, which is the overview's completion bar."""
 
@@ -159,6 +208,12 @@ class ProjectActivityEndpoint(BaseAPIView):
 
     permission_classes = [ProjectEntityPermission]
 
+    # `paginate` defaults to a thousand rows a page, which for an activity feed is not a
+    # page at all -- `issue_activities` gains a row per field change per work item, so a
+    # real project reaches that within days and the overview rendered every one. A page is
+    # what fits on screen; the client asks for more by cursor.
+    PER_PAGE = 20
+
     def get(self, request, slug, project_id):
         activities = (
             IssueActivity.objects.filter(project_id=project_id, workspace__slug=slug)
@@ -168,6 +223,7 @@ class ProjectActivityEndpoint(BaseAPIView):
         return self.paginate(
             request=request,
             queryset=activities,
+            default_per_page=self.PER_PAGE,
             on_results=lambda results: [
                 {
                     "id": str(activity.id),
@@ -204,10 +260,16 @@ class ProjectOverviewEndpoint(BaseAPIView):
 
     permission_classes = [ProjectEntityPermission]
 
+    # The overview embeds the newest updates rather than the whole thread, which on a long
+    # running project is most of a page on its own. `updates_total` tells the client what it
+    # is not being shown, so it can offer the rest through the updates endpoint instead of
+    # silently truncating.
+    EMBEDDED_UPDATES = 10
+
     def get(self, request, slug, project_id):
         progress = ProjectProgressEndpoint().get(request, slug, project_id).data
         links = ProjectLink.objects.filter(project_id=project_id, workspace__slug=slug).order_by("-created_at")
-        updates = (
+        thread = (
             EntityUpdate.objects.filter(
                 project_id=project_id,
                 workspace__slug=slug,
@@ -217,14 +279,16 @@ class ProjectOverviewEndpoint(BaseAPIView):
             )
             .select_related("actor")
             .annotate(reply_count=Count("replies", distinct=True))
-            .order_by("-created_at")[:10]
+            .order_by("-created_at")
         )
+        updates = thread[: self.EMBEDDED_UPDATES]
 
         return Response(
             {
                 "progress": progress,
                 "links": ProjectLinkSerializer(links, many=True).data,
                 "updates": EntityUpdateSerializer(updates, many=True).data,
+                "updates_total": thread.count(),
                 "milestones": self._milestones(slug, project_id),
             },
             status=status.HTTP_200_OK,

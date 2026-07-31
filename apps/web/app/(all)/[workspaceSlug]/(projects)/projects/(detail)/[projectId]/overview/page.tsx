@@ -9,8 +9,11 @@ import { observer } from "mobx-react";
 import { AlertTriangle } from "lucide-react";
 import { useParams } from "react-router";
 import { ProjectOverviewService } from "@plane/services";
+import { useTranslation } from "@plane/i18n";
+import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TProjectActivityEvent, TProjectOverview, TUpdateStatus } from "@plane/types";
 import { PageHead } from "@/components/core/page-title";
+import { readError } from "./errors";
 import { useProject } from "@/hooks/store/use-project";
 import { useUserPermissions } from "@/hooks/store/user";
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
@@ -41,8 +44,11 @@ export default observer(function ProjectOverviewPage() {
 
   const { getProjectById, updateProject } = useProject();
   const { allowPermissions } = useUserPermissions();
+  const { t } = useTranslation();
   const [overview, setOverview] = useState<TProjectOverview | null>(null);
   const [activities, setActivities] = useState<TProjectActivityEvent[]>([]);
+  const [activityCursor, setActivityCursor] = useState<string | null>(null);
+  const [loadingMoreActivity, setLoadingMoreActivity] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const project = id ? getProjectById(id) : undefined;
@@ -62,10 +68,31 @@ export default observer(function ProjectOverviewPage() {
       ]);
       setOverview(data);
       setActivities(activity.results ?? []);
+      // Only the first page. Anything already loaded is discarded on purpose: a refetch
+      // after a write has to agree with the server about where the feed now starts.
+      setActivityCursor(activity.next_page_results ? activity.next_cursor : null);
     } catch {
-      setError("Could not load the project overview.");
+      setError(t("project_overview.load_error"));
     }
-  }, [slug, id]);
+  }, [slug, id, t]);
+
+  const loadMoreActivity = useCallback(async () => {
+    if (!slug || !id || !activityCursor) return;
+    setLoadingMoreActivity(true);
+    try {
+      const activity = await overviewService.getActivity(slug, id, activityCursor);
+      setActivities((current) => [...current, ...(activity.results ?? [])]);
+      setActivityCursor(activity.next_page_results ? activity.next_cursor : null);
+    } catch (failure) {
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("project_overview.activity.not_loaded_title"),
+        message: readError(failure, t("project_overview.activity.not_loaded_message")),
+      });
+    } finally {
+      setLoadingMoreActivity(false);
+    }
+  }, [slug, id, activityCursor, t]);
 
   useEffect(() => {
     void load();
@@ -82,6 +109,9 @@ export default observer(function ProjectOverviewPage() {
     await load();
   };
 
+  /** The whole thread, when the reader asks past the newest few the overview embeds. */
+  const loadAllUpdates = async () => (slug && id ? overviewService.listUpdates(slug, id, "project", id) : []);
+
   const loadReplies = async (updateId: string) =>
     slug && id ? overviewService.listReplies(slug, id, updateId, "project", id) : [];
 
@@ -95,6 +125,24 @@ export default observer(function ProjectOverviewPage() {
       description,
       parent: parentId,
     });
+    await load();
+  };
+
+  const createMilestone = async (name: string, targetDate: string | null) => {
+    if (!slug || !id) return;
+    await overviewService.createMilestone(slug, id, { name, target_date: targetDate });
+    await load();
+  };
+
+  const renameMilestone = async (milestoneId: string, name: string, targetDate: string | null) => {
+    if (!slug || !id) return;
+    await overviewService.updateMilestone(slug, id, milestoneId, { name, target_date: targetDate });
+    await load();
+  };
+
+  const removeMilestone = async (milestoneId: string) => {
+    if (!slug || !id) return;
+    await overviewService.deleteMilestone(slug, id, milestoneId);
     await load();
   };
 
@@ -115,7 +163,10 @@ export default observer(function ProjectOverviewPage() {
   return (
     <>
       <PageHead title={project ? `${project.name} — Overview` : "Overview"} />
-      <main className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-6">
+      {/* ContentWrapper owns the scroll now that this route has a layout, so this only
+          constrains width and spacing. Keeping `overflow-y-auto` here would nest a second
+          scroll container inside it. */}
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-6">
         {project && (
           <OverviewHeader
             project={project}
@@ -138,7 +189,7 @@ export default observer(function ProjectOverviewPage() {
           </div>
         )}
 
-        {!overview && !error && <p className="text-13 text-tertiary">Loading…</p>}
+        {!overview && !error && <p className="text-13 text-tertiary">{t("project_overview.loading")}</p>}
 
         {overview && (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -147,12 +198,19 @@ export default observer(function ProjectOverviewPage() {
               <UpdatesPanel
                 entityName="project"
                 updates={overview.updates}
+                total={overview.updates_total}
                 disabled={!canEdit}
                 onPost={postUpdate}
                 onLoadReplies={loadReplies}
                 onReply={postReply}
+                onLoadAll={loadAllUpdates}
               />
-              <ActivityPanel activities={activities} />
+              <ActivityPanel
+                activities={activities}
+                hasMore={!!activityCursor}
+                loadingMore={loadingMoreActivity}
+                onLoadMore={() => void loadMoreActivity()}
+              />
             </div>
             <div className="flex flex-col gap-4">
               {project && (
@@ -164,7 +222,13 @@ export default observer(function ProjectOverviewPage() {
                   }}
                 />
               )}
-              <MilestonesPanel milestones={overview.milestones} />
+              <MilestonesPanel
+                milestones={overview.milestones}
+                disabled={!canEdit}
+                onCreate={createMilestone}
+                onRename={renameMilestone}
+                onRemove={removeMilestone}
+              />
               <LinksPanel links={overview.links} disabled={!canEdit} onAdd={addLink} onRemove={removeLink} />
             </div>
           </div>

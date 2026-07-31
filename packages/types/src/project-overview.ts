@@ -70,6 +70,48 @@ export type TProjectActivityEvent = {
   work_item: { id: string; name: string } | null;
 };
 
+/**
+ * One page of activity, cursor-paginated.
+ *
+ * The service used to narrow the response to `{ results }`, which discarded the cursor at
+ * the type level and left the client unable to ask for a second page even in principle --
+ * so it rendered whatever a single request returned, however long that was.
+ */
+export type TProjectActivityPage = {
+  results: TProjectActivityEvent[];
+  next_cursor: string;
+  next_page_results: boolean;
+  total_count: number;
+};
+
+/**
+ * A milestone as the settings surface edits it.
+ *
+ * `TProjectMilestoneSummary` is the overview's read-only view, which carries progress
+ * counts instead. This one carries `work_item_count`, because that is what decides whether
+ * the server will let it be deleted.
+ */
+export type TMilestone = {
+  id: string;
+  name: string;
+  description: string;
+  status: TPortfolioStatus;
+  target_date: string | null;
+  sort_order: number;
+  work_item_count: number;
+  project: string;
+  workspace: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TMilestonePayload = {
+  name: string;
+  description?: string;
+  status?: TPortfolioStatus;
+  target_date?: string | null;
+};
+
 export type TProjectMilestoneSummary = {
   id: string;
   name: string;
@@ -83,6 +125,8 @@ export type TProjectMilestoneSummary = {
 export type TProjectOverview = {
   progress: TProjectProgress;
   links: TProjectOverviewLink[];
+  /** The newest few. `updates_total` says how many the thread actually holds. */
   updates: TEntityUpdate[];
+  updates_total: number;
   milestones: TProjectMilestoneSummary[];
 };

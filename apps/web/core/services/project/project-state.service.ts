@@ -16,6 +16,35 @@ export class ProjectStateService extends APIService {
     super(API_BASE_URL);
   }
 
+  /**
+   * What applying the SDLC workflow template would add, without adding it.
+   *
+   * `already_present` is matched case-insensitively, so a project's own "In Progress"
+   * counts as the template's "In progress" and is not duplicated.
+   */
+  async previewWorkflowTemplate(
+    workspaceSlug: string,
+    projectId: string
+  ): Promise<{ missing: string[]; already_present: string[] }> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/states/workflow-template/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /** Adds the states the template defines and the project does not have. Never removes. */
+  async applyWorkflowTemplate(
+    workspaceSlug: string,
+    projectId: string
+  ): Promise<{ missing: string[]; already_present: string[] }> {
+    return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/states/workflow-template/`, {})
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
   async createState(workspaceSlug: string, projectId: string, data: any): Promise<IState> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/states/`, data)
       .then((response) => response?.data)

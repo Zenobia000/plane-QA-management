@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Chargement…",
+    "load_error": "Impossible de charger la vue d’ensemble du projet.",
+    "progress": {
+      "title": "Progression",
+      "out_of_scope": "Hors périmètre, donc non compté dans la barre"
+    },
+    "properties": {
+      "title": "Propriétés",
+      "state": "État",
+      "state_label": "État du projet",
+      "priority": "Priorité",
+      "priority_label": "Priorité du projet",
+      "start": "Début",
+      "start_label": "Date de début du projet",
+      "target": "Échéance",
+      "target_label": "Date d’échéance du projet",
+      "not_set": "Non défini",
+      "not_saved_title": "Modification non enregistrée",
+      "not_saved_message": "Impossible de mettre à jour le projet. Rechargez pour voir ses valeurs actuelles."
+    },
+    "links": {
+      "title": "Liens",
+      "empty": "Aucun lien pour l’instant.",
+      "name_label": "Titre du lien",
+      "name_placeholder": "Titre",
+      "url_label": "URL du lien",
+      "add": "Ajouter",
+      "remove_label": "Supprimer {name}",
+      "invalid_url": "Saisissez une URL, par exemple https://example.com.",
+      "url_too_long": "Limitez l’URL à moins de {max} caractères.",
+      "title_too_long": "Limitez le titre à moins de {max} caractères.",
+      "not_added_title": "Lien non ajouté",
+      "not_added_message": "Impossible d’enregistrer le lien.",
+      "not_removed_title": "Lien non supprimé",
+      "not_removed_message": "Impossible de supprimer le lien."
+    },
+    "milestones": {
+      "title": "Jalons",
+      "empty": "Aucun jalon pour l’instant. Ajoutez-en un pour suivre un engagement.",
+      "name_label": "Nom du jalon",
+      "name_placeholder": "Nom du jalon",
+      "target_date_label": "Date d’échéance du jalon",
+      "new_name_label": "Nom du nouveau jalon",
+      "new_target_date_label": "Date d’échéance du nouveau jalon",
+      "add": "Ajouter",
+      "save": "Enregistrer",
+      "edit_label": "Modifier {name}",
+      "remove_label": "Supprimer {name}",
+      "not_created_title": "Jalon non créé",
+      "not_created_message": "Impossible de créer le jalon.",
+      "not_saved_title": "Jalon non enregistré",
+      "not_saved_message": "Impossible d’enregistrer la modification.",
+      "not_removed_title": "Jalon non supprimé",
+      "not_removed_message": "Impossible de supprimer le jalon."
+    },
+    "activity": {
+      "title": "Activité",
+      "empty": "Rien ne s’est encore produit.",
+      "someone": "Quelqu’un",
+      "load_more": "Charger plus",
+      "loading": "Chargement…",
+      "not_loaded_title": "Impossible de charger plus d’activité",
+      "not_loaded_message": "Impossible de charger la page suivante."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Afficher # mise à jour antérieure} many {Afficher # mises à jour antérieures} other {Afficher # mises à jour antérieures}}",
+      "load_error": "Impossible de charger la suite du fil."
+    }
   }
 }

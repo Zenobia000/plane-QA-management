@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Wird geladen…",
+    "load_error": "Die Projektübersicht konnte nicht geladen werden.",
+    "progress": {
+      "title": "Fortschritt",
+      "out_of_scope": "Außerhalb des Umfangs, daher nicht im Balken gezählt"
+    },
+    "properties": {
+      "title": "Eigenschaften",
+      "state": "Status",
+      "state_label": "Projektstatus",
+      "priority": "Priorität",
+      "priority_label": "Projektpriorität",
+      "start": "Beginn",
+      "start_label": "Startdatum des Projekts",
+      "target": "Ziel",
+      "target_label": "Zieldatum des Projekts",
+      "not_set": "Nicht festgelegt",
+      "not_saved_title": "Änderung nicht gespeichert",
+      "not_saved_message": "Das Projekt konnte nicht aktualisiert werden. Laden Sie neu, um die aktuellen Werte zu sehen."
+    },
+    "links": {
+      "title": "Links",
+      "empty": "Noch keine Links.",
+      "name_label": "Linktitel",
+      "name_placeholder": "Titel",
+      "url_label": "Link-URL",
+      "add": "Hinzufügen",
+      "remove_label": "{name} entfernen",
+      "invalid_url": "Geben Sie eine URL ein, zum Beispiel https://example.com.",
+      "url_too_long": "Halten Sie die URL unter {max} Zeichen.",
+      "title_too_long": "Halten Sie den Titel unter {max} Zeichen.",
+      "not_added_title": "Link nicht hinzugefügt",
+      "not_added_message": "Der Link konnte nicht gespeichert werden.",
+      "not_removed_title": "Link nicht entfernt",
+      "not_removed_message": "Der Link konnte nicht entfernt werden."
+    },
+    "milestones": {
+      "title": "Meilensteine",
+      "empty": "Noch keine Meilensteine. Fügen Sie einen hinzu, um eine Zusage zu verfolgen.",
+      "name_label": "Meilensteinname",
+      "name_placeholder": "Meilensteinname",
+      "target_date_label": "Zieldatum des Meilensteins",
+      "new_name_label": "Name des neuen Meilensteins",
+      "new_target_date_label": "Zieldatum des neuen Meilensteins",
+      "add": "Hinzufügen",
+      "save": "Speichern",
+      "edit_label": "{name} bearbeiten",
+      "remove_label": "{name} entfernen",
+      "not_created_title": "Meilenstein nicht erstellt",
+      "not_created_message": "Der Meilenstein konnte nicht erstellt werden.",
+      "not_saved_title": "Meilenstein nicht gespeichert",
+      "not_saved_message": "Die Änderung konnte nicht gespeichert werden.",
+      "not_removed_title": "Meilenstein nicht entfernt",
+      "not_removed_message": "Der Meilenstein konnte nicht entfernt werden."
+    },
+    "activity": {
+      "title": "Aktivität",
+      "empty": "Bisher ist nichts passiert.",
+      "someone": "Jemand",
+      "load_more": "Mehr laden",
+      "loading": "Wird geladen…",
+      "not_loaded_title": "Weitere Aktivitäten konnten nicht geladen werden",
+      "not_loaded_message": "Die nächste Seite konnte nicht geladen werden."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {# frühere Aktualisierung anzeigen} other {# frühere Aktualisierungen anzeigen}}",
+      "load_error": "Der Rest des Verlaufs konnte nicht geladen werden."
+    }
   }
 }

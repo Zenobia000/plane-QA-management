@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Loading…",
+    "load_error": "Could not load the project overview.",
+    "progress": {
+      "title": "Progress",
+      "out_of_scope": "Out of scope, so not counted in the bar"
+    },
+    "properties": {
+      "title": "Properties",
+      "state": "State",
+      "state_label": "Project state",
+      "priority": "Priority",
+      "priority_label": "Project priority",
+      "start": "Start",
+      "start_label": "Project start date",
+      "target": "Target",
+      "target_label": "Project target date",
+      "not_set": "Not set",
+      "not_saved_title": "Change not saved",
+      "not_saved_message": "The project could not be updated. Reload to see its current values."
+    },
+    "links": {
+      "title": "Links",
+      "empty": "No links yet.",
+      "name_label": "Link title",
+      "name_placeholder": "Title",
+      "url_label": "Link URL",
+      "add": "Add",
+      "remove_label": "Remove {name}",
+      "invalid_url": "Enter a URL, for example https://example.com.",
+      "url_too_long": "Keep the URL under {max} characters.",
+      "title_too_long": "Keep the title under {max} characters.",
+      "not_added_title": "Link not added",
+      "not_added_message": "The link could not be saved.",
+      "not_removed_title": "Link not removed",
+      "not_removed_message": "The link could not be removed."
+    },
+    "milestones": {
+      "title": "Milestones",
+      "empty": "No milestones yet. Add one to track a commitment.",
+      "name_label": "Milestone name",
+      "name_placeholder": "Milestone name",
+      "target_date_label": "Milestone target date",
+      "new_name_label": "New milestone name",
+      "new_target_date_label": "New milestone target date",
+      "add": "Add",
+      "save": "Save",
+      "edit_label": "Edit {name}",
+      "remove_label": "Remove {name}",
+      "not_created_title": "Milestone not created",
+      "not_created_message": "The milestone could not be created.",
+      "not_saved_title": "Milestone not saved",
+      "not_saved_message": "The change could not be saved.",
+      "not_removed_title": "Milestone not removed",
+      "not_removed_message": "The milestone could not be removed."
+    },
+    "activity": {
+      "title": "Activity",
+      "empty": "Nothing has happened yet.",
+      "someone": "Someone",
+      "load_more": "Load more",
+      "loading": "Loading…",
+      "not_loaded_title": "Could not load more activity",
+      "not_loaded_message": "The next page could not be loaded."
+    },
+    "updates": {
+      "load_error": "Could not load the rest of the thread.",
+      "show_earlier": "Show {count, plural, one {# earlier update} other {# earlier updates}}"
+    }
   }
 }

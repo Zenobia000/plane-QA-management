@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "Žiadne stavy pre skupinu {groupKey}",
         "description": "Vytvorte nový stav"
+      },
+      "workflow_template": {
+        "title": "Použiť dodacie workflow SDLC",
+        "description": "Pridá {count} stavov, ktoré tento projekt nemá, vrátane fáz revízie a testovania, vďaka ktorým tabuľa ukazuje, kde sa práca nachádza. Nič existujúce sa nepremenuje ani neodstráni.",
+        "apply": "Použiť",
+        "applying": "Používa sa…",
+        "applied_title": "Workflow použité",
+        "applied_message": "Pridaných {count} stavov.",
+        "not_applied_title": "Workflow nebolo použité",
+        "not_applied_message": "Stavy sa nepodarilo pridať."
       }
     },
     "labels": {

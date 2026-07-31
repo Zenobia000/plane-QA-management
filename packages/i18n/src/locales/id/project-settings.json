@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "Tidak ada status yang tersedia untuk grup {groupKey}",
         "description": "Silakan buat status baru"
+      },
+      "workflow_template": {
+        "title": "Gunakan alur pengiriman SDLC",
+        "description": "Menambahkan {count} status yang belum dimiliki proyek ini, termasuk tahap peninjauan dan pengujian yang membuat papan menunjukkan posisi pekerjaan. Tidak ada yang sudah ada yang diubah namanya atau dihapus.",
+        "apply": "Terapkan",
+        "applying": "Menerapkan…",
+        "applied_title": "Alur diterapkan",
+        "applied_message": "{count} status ditambahkan.",
+        "not_applied_title": "Alur tidak diterapkan",
+        "not_applied_message": "Status tidak dapat ditambahkan."
       }
     },
     "labels": {

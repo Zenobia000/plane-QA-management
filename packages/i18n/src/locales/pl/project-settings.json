@@ -43,6 +43,16 @@
       "empty_state": {
         "title": "Brak stanów w grupie {groupKey}",
         "description": "Utwórz nowy stan"
+      },
+      "workflow_template": {
+        "title": "Użyj przepływu dostarczania SDLC",
+        "description": "Dodaje {count} stanów, których ten projekt nie ma, w tym etapy przeglądu i testów, dzięki którym tablica pokazuje, na jakim etapie jest praca. Nic z istniejących elementów nie jest zmieniane ani usuwane.",
+        "apply": "Zastosuj",
+        "applying": "Stosowanie…",
+        "applied_title": "Zastosowano przepływ",
+        "applied_message": "Dodano {count} stanów.",
+        "not_applied_title": "Nie zastosowano przepływu",
+        "not_applied_message": "Nie udało się dodać stanów."
       }
     },
     "labels": {

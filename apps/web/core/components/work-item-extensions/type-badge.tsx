@@ -4,7 +4,8 @@
  */
 
 import { ListTodo } from "lucide-react";
-import type { TWorkItemType } from "@plane/types";
+import { Logo } from "@plane/propel/emoji-icon-picker";
+import type { TLogoProps, TWorkItemType } from "@plane/types";
 import { cn } from "@plane/utils";
 
 type Props = {
@@ -14,6 +15,24 @@ type Props = {
   className?: string;
 };
 
+/**
+ * The stored value as something `Logo` will accept.
+ *
+ * `logo_props` is `{}` until someone picks one, and an empty object is not a logo -- it is
+ * the absence of one, which every caller has to render as a fallback rather than pass on.
+ */
+export function asLogo(logo: TLogoProps | Record<string, never> | undefined): TLogoProps | undefined {
+  return logo && "in_use" in logo && logo.in_use ? (logo as TLogoProps) : undefined;
+}
+
+/**
+ * How a work item type appears everywhere it appears.
+ *
+ * This is the single render path for a type across the app, which is why the hardcoded
+ * icon mattered: `IssueType.logo_props` has existed as long as the table has, the
+ * serializer accepts it and the MCP server already writes it, yet every type still drew
+ * the same grey checklist. Types nobody has given a logo keep that as the fallback.
+ */
 export function WorkItemTypeBadge({ type, name, compact = false, className }: Props) {
   const label = type?.name ?? name ?? "Work item";
   return (
@@ -25,7 +44,13 @@ export function WorkItemTypeBadge({ type, name, compact = false, className }: Pr
         className
       )}
     >
-      <ListTodo className="size-3.5 shrink-0" />
+      {asLogo(type?.logo_props) ? (
+        <span className="flex size-3.5 shrink-0 items-center justify-center">
+          <Logo logo={asLogo(type?.logo_props)} size={14} />
+        </span>
+      ) : (
+        <ListTodo className="size-3.5 shrink-0" />
+      )}
       {!compact && <span className="truncate">{label}</span>}
     </span>
   );

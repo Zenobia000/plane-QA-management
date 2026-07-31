@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Загрузка…",
+    "load_error": "Не удалось загрузить обзор проекта.",
+    "progress": {
+      "title": "Прогресс",
+      "out_of_scope": "Вне объёма работ, поэтому не учитывается в полосе"
+    },
+    "properties": {
+      "title": "Свойства",
+      "state": "Состояние",
+      "state_label": "Состояние проекта",
+      "priority": "Приоритет",
+      "priority_label": "Приоритет проекта",
+      "start": "Начало",
+      "start_label": "Дата начала проекта",
+      "target": "Цель",
+      "target_label": "Целевая дата проекта",
+      "not_set": "Не задано",
+      "not_saved_title": "Изменение не сохранено",
+      "not_saved_message": "Не удалось обновить проект. Обновите страницу, чтобы увидеть текущие значения."
+    },
+    "links": {
+      "title": "Ссылки",
+      "empty": "Ссылок пока нет.",
+      "name_label": "Название ссылки",
+      "name_placeholder": "Название",
+      "url_label": "URL ссылки",
+      "add": "Добавить",
+      "remove_label": "Удалить {name}",
+      "invalid_url": "Введите URL, например https://example.com.",
+      "url_too_long": "Ограничьте URL до {max} символов.",
+      "title_too_long": "Ограничьте название до {max} символов.",
+      "not_added_title": "Ссылка не добавлена",
+      "not_added_message": "Не удалось сохранить ссылку.",
+      "not_removed_title": "Ссылка не удалена",
+      "not_removed_message": "Не удалось удалить ссылку."
+    },
+    "milestones": {
+      "title": "Вехи",
+      "empty": "Вех пока нет. Добавьте веху, чтобы отслеживать обязательство.",
+      "name_label": "Название вехи",
+      "name_placeholder": "Название вехи",
+      "target_date_label": "Целевая дата вехи",
+      "new_name_label": "Название новой вехи",
+      "new_target_date_label": "Целевая дата новой вехи",
+      "add": "Добавить",
+      "save": "Сохранить",
+      "edit_label": "Изменить {name}",
+      "remove_label": "Удалить {name}",
+      "not_created_title": "Веха не создана",
+      "not_created_message": "Не удалось создать веху.",
+      "not_saved_title": "Веха не сохранена",
+      "not_saved_message": "Не удалось сохранить изменение.",
+      "not_removed_title": "Веха не удалена",
+      "not_removed_message": "Не удалось удалить веху."
+    },
+    "activity": {
+      "title": "Активность",
+      "empty": "Пока ничего не произошло.",
+      "someone": "Кто-то",
+      "load_more": "Загрузить ещё",
+      "loading": "Загрузка…",
+      "not_loaded_title": "Не удалось загрузить больше активности",
+      "not_loaded_message": "Не удалось загрузить следующую страницу."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Показать # предыдущее обновление} few {Показать # предыдущих обновления} many {Показать # предыдущих обновлений} other {Показать # предыдущих обновления}}",
+      "load_error": "Не удалось загрузить остальную часть обсуждения."
+    }
   }
 }

@@ -414,5 +414,75 @@
         }
       }
     }
+  },
+  "project_overview": {
+    "loading": "Načítání…",
+    "load_error": "Přehled projektu se nepodařilo načíst.",
+    "progress": {
+      "title": "Průběh",
+      "out_of_scope": "Mimo rozsah, proto se do pruhu nepočítá"
+    },
+    "properties": {
+      "title": "Vlastnosti",
+      "state": "Stav",
+      "state_label": "Stav projektu",
+      "priority": "Priorita",
+      "priority_label": "Priorita projektu",
+      "start": "Začátek",
+      "start_label": "Datum zahájení projektu",
+      "target": "Cíl",
+      "target_label": "Cílové datum projektu",
+      "not_set": "Nenastaveno",
+      "not_saved_title": "Změna neuložena",
+      "not_saved_message": "Projekt se nepodařilo aktualizovat. Načtěte stránku znovu, abyste viděli aktuální hodnoty."
+    },
+    "links": {
+      "title": "Odkazy",
+      "empty": "Zatím žádné odkazy.",
+      "name_label": "Název odkazu",
+      "name_placeholder": "Název",
+      "url_label": "URL odkazu",
+      "add": "Přidat",
+      "remove_label": "Odebrat {name}",
+      "invalid_url": "Zadejte URL, například https://example.com.",
+      "url_too_long": "Ponechte URL kratší než {max} znaků.",
+      "title_too_long": "Ponechte název kratší než {max} znaků.",
+      "not_added_title": "Odkaz nebyl přidán",
+      "not_added_message": "Odkaz se nepodařilo uložit.",
+      "not_removed_title": "Odkaz nebyl odebrán",
+      "not_removed_message": "Odkaz se nepodařilo odebrat."
+    },
+    "milestones": {
+      "title": "Milníky",
+      "empty": "Zatím žádné milníky. Přidejte jeden pro sledování závazku.",
+      "name_label": "Název milníku",
+      "name_placeholder": "Název milníku",
+      "target_date_label": "Cílové datum milníku",
+      "new_name_label": "Název nového milníku",
+      "new_target_date_label": "Cílové datum nového milníku",
+      "add": "Přidat",
+      "save": "Uložit",
+      "edit_label": "Upravit {name}",
+      "remove_label": "Odebrat {name}",
+      "not_created_title": "Milník nebyl vytvořen",
+      "not_created_message": "Milník se nepodařilo vytvořit.",
+      "not_saved_title": "Milník nebyl uložen",
+      "not_saved_message": "Změnu se nepodařilo uložit.",
+      "not_removed_title": "Milník nebyl odebrán",
+      "not_removed_message": "Milník se nepodařilo odebrat."
+    },
+    "activity": {
+      "title": "Aktivita",
+      "empty": "Zatím se nic nestalo.",
+      "someone": "Někdo",
+      "load_more": "Načíst více",
+      "loading": "Načítání…",
+      "not_loaded_title": "Nepodařilo se načíst další aktivitu",
+      "not_loaded_message": "Další stránku se nepodařilo načíst."
+    },
+    "updates": {
+      "show_earlier": "{count, plural, one {Zobrazit # starší aktualizaci} few {Zobrazit # starší aktualizace} many {Zobrazit # starší aktualizace} other {Zobrazit # starších aktualizací}}",
+      "load_error": "Zbytek vlákna se nepodařilo načíst."
+    }
   }
 }

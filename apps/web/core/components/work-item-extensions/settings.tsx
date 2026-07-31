@@ -77,6 +77,8 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
   const [propertyKind, setPropertyKind] = useState<TWorkItemPropertyKind>("text");
   const [propertyRequired, setPropertyRequired] = useState(false);
   const [propertyOptions, setPropertyOptions] = useState("");
+  // null means the property applies to every type, which stays the default.
+  const [propertyType, setPropertyType] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -143,6 +145,7 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
     setPropertyKind("text");
     setPropertyRequired(false);
     setPropertyOptions("");
+    setPropertyType(null);
   };
 
   const editProperty = (definition: TWorkItemProperty) => {
@@ -152,6 +155,7 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
     setPropertyKind(definition.kind);
     setPropertyRequired(definition.is_required);
     setPropertyOptions(definition.options.map((item) => item.label).join(", "));
+    setPropertyType(definition.type);
   };
 
   const saveProperty = async () => {
@@ -165,6 +169,7 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
       kind: propertyKind,
       is_required: propertyRequired,
       is_active: true,
+      type: propertyType,
       options: propertyKind === "select" || propertyKind === "multi_select" ? options : [],
     };
     try {
@@ -337,6 +342,11 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
                 <span className="ml-2 rounded bg-layer-2 px-1.5 py-0.5 text-10 text-secondary">
                   {propertyKindLabels[definition.kind] ?? definition.kind}
                 </span>
+                {definition.type && (
+                  <span className="ml-2 text-10 text-tertiary">
+                    {projectTypes?.find((item) => item.type.id === definition.type)?.type.name ?? "One type"} only
+                  </span>
+                )}
                 {definition.is_required && <span className="ml-2 text-10 text-danger-primary">Required</span>}
                 {!definition.is_active && <span className="ml-2 text-10 text-tertiary">Inactive</span>}
                 {definition.description && (
@@ -404,6 +414,29 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
                 {propertyKinds.map((kind) => (
                   <CustomSelect.Option key={kind} value={kind}>
                     {propertyKindLabels[kind]}
+                  </CustomSelect.Option>
+                ))}
+              </CustomSelect>
+              {/* Scope. "All types" is the default and what every property was before this
+                  existed; picking a type narrows who is asked for the value. */}
+              <CustomSelect
+                className="w-full"
+                value={propertyType}
+                label={
+                  <span className="truncate">
+                    {propertyType
+                      ? (projectTypes?.find((item) => item.type.id === propertyType)?.type.name ?? "All types")
+                      : "All types"}
+                  </span>
+                }
+                onChange={(value: string | null) => setPropertyType(value)}
+                buttonClassName={selectButtonClass}
+                maxHeight="lg"
+              >
+                <CustomSelect.Option value={null}>All types</CustomSelect.Option>
+                {(projectTypes ?? []).map((item) => (
+                  <CustomSelect.Option key={item.type.id} value={item.type.id}>
+                    {item.type.name}
                   </CustomSelect.Option>
                 ))}
               </CustomSelect>

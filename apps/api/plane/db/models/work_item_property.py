@@ -9,7 +9,19 @@ from .project import ProjectBaseModel
 
 
 class WorkItemProperty(ProjectBaseModel):
-    """A project-scoped custom field definition for work items."""
+    """A custom field definition for work items, optionally narrowed to one work item type.
+
+    `type` null means the property applies to every work item in the project, which is what
+    every property created before this field existed does and what the plain case still is.
+    Setting it narrows the property to one type -- a Severity that only Bugs carry, or a
+    Business Value that only Epics do -- which is how upstream EE scopes properties and the
+    reason an epic could not have a field of its own here before.
+
+    Narrowing affects who is *asked* for a value, not what is stored: a value already
+    recorded against a work item survives the property being narrowed away from that item's
+    type, because deleting user data to satisfy a settings change would be the worse of the
+    two surprises. Such a value stops being rendered and stops being required.
+    """
 
     class Kind(models.TextChoices):
         TEXT = "text", "Text"
@@ -27,16 +39,33 @@ class WorkItemProperty(ProjectBaseModel):
     is_active = models.BooleanField(default=True)
     sort_order = models.FloatField(default=65535)
     default_value = models.JSONField(null=True, blank=True)
+    type = models.ForeignKey(
+        "db.IssueType",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="work_item_properties",
+    )
 
     class Meta:
         db_table = "work_item_properties"
         ordering = ("sort_order", "created_at")
+        # Two constraints rather than one over (project, type, name), because Postgres treats
+        # NULLs as distinct in a unique index: a single constraint would let a project hold
+        # any number of untyped properties all called "Severity", which is exactly what the
+        # original constraint existed to prevent. The pair keeps that guarantee for untyped
+        # properties while letting Bug and Epic each carry their own "Severity".
         constraints = [
             models.UniqueConstraint(
                 fields=["project", "name"],
-                condition=Q(deleted_at__isnull=True),
+                condition=Q(deleted_at__isnull=True, type__isnull=True),
                 name="work_item_property_unique_name_project_when_active",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["project", "type", "name"],
+                condition=Q(deleted_at__isnull=True, type__isnull=False),
+                name="work_item_property_unique_name_project_type_when_active",
+            ),
         ]
 
 

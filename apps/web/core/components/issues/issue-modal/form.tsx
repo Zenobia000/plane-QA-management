@@ -482,6 +482,7 @@ export const IssueFormRoot = observer(function IssueFormRoot(props: IssueFormPro
               <WorkItemModalAdditionalProperties
                 isDraft={isDraft}
                 workItemId={data?.id ?? data?.sourceIssueId}
+                workItemTypeId={watch("type_id")}
                 projectId={projectId}
                 workspaceSlug={workspaceSlug?.toString()}
               />

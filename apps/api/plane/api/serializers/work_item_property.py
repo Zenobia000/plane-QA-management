@@ -33,6 +33,7 @@ class WorkItemPropertySerializer(BaseSerializer):
             "sort_order",
             "default_value",
             "options",
+            "type",
             "project",
             "workspace",
             "created_at",

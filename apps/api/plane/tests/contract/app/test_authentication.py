@@ -17,7 +17,7 @@ from plane.authentication.provider.credentials.magic_code import MagicCodeProvid
 from plane.authentication.rate_limit import AuthenticationThrottle
 from plane.db.models import User
 from plane.settings.redis import redis_instance
-from plane.license.models import Instance
+from plane.license.models import Instance, InstanceConfiguration
 
 
 def _clear_auth_throttle_keys():
@@ -58,7 +58,19 @@ def _reset_auth_throttle_cache():
 
 @pytest.fixture
 def setup_instance(db):
-    """Create and configure an instance for authentication tests"""
+    """Create and configure an instance for authentication tests.
+
+    `is_setup_done` alone is not enough for magic-link auth. `MagicCodeProvider.__init__`
+    refuses with SMTP_NOT_CONFIGURED when `EMAIL_HOST` resolves empty, so every test in
+    this file that generates or verifies a code got a 400 before it reached the behaviour
+    it was written to check -- twelve of them, asserting on responses the endpoint never
+    produced.
+
+    Configuration resolves out of `InstanceConfiguration` rather than the environment,
+    because `SKIP_ENV_VAR` defaults to "1"; setting an env var here would be read by
+    nothing. `ENABLE_MAGIC_LINK_LOGIN` is set explicitly rather than left to its default so
+    the fixture states the precondition instead of inheriting it.
+    """
     instance_id = uuid.uuid4() if not Instance.objects.exists() else Instance.objects.first().id
 
     # Create or update instance with all required fields
@@ -73,6 +85,12 @@ def setup_instance(db):
             "is_setup_done": True,
         },
     )
+
+    for key, value in (("EMAIL_HOST", "smtp.test.invalid"), ("ENABLE_MAGIC_LINK_LOGIN", "1")):
+        InstanceConfiguration.objects.update_or_create(
+            key=key, defaults={"value": value, "is_encrypted": False}
+        )
+
     return instance
 
 

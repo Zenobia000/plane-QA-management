@@ -164,7 +164,24 @@ class _ItemBuilder:
         services=None,
         promised_in=None,
         assign=True,
+        starts_in=None,
+        due_in=None,
     ):
+        # A sprint dates the work it holds, which is why most items take their window from
+        # the cycle and nothing else. An epic belongs to no sprint -- it spans them -- so
+        # without an explicit window it carries no dates at all, and three surfaces read
+        # exactly this pair: the gantt and calendar layouts place a row by it, and
+        # `EpicAnalyticsEndpoint` counts a descendant overdue when its target date has
+        # passed while its state group is still open. Both offsets are days from today,
+        # because a seed re-run next month has to stay as plausible as it was today.
+        today = timezone.now().date()
+        start_date = self.cycles["previous"].start_date.date() if cycle == "previous" else None
+        target_date = self.cycles[cycle].end_date.date() if cycle else None
+        if starts_in is not None:
+            start_date = today + datetime.timedelta(days=starts_in)
+        if due_in is not None:
+            target_date = today + datetime.timedelta(days=due_in)
+
         issue = Issue.objects.create(
             workspace=self.workspace,
             project=self.project,
@@ -177,8 +194,8 @@ class _ItemBuilder:
             milestone=self.milestones[milestone] if milestone else None,
             estimate_point=self.points[points] if points else None,
             created_by=self.owner,
-            start_date=self.cycles["previous"].start_date.date() if cycle == "previous" else None,
-            target_date=self.cycles[cycle].end_date.date() if cycle else None,
+            start_date=start_date,
+            target_date=target_date,
             # This seed spells it "non_functional"; the field calls the same thing
             # "quality", after the characteristic it names rather than after what it isn't.
             requirement_kind="quality" if kind == "non_functional" else kind,
@@ -229,14 +246,49 @@ def create_hierarchy(workspace, project, owner, context):
     builder = _ItemBuilder(workspace, project, owner, context)
     item = builder.build
 
+    # --- The epic layer ---
+    #
+    # Five, not two, and deliberately not five variations of the same row. The Epics page
+    # is the work-item list scoped to `type__is_epic`, so everything it can do -- group by
+    # state, group by priority, the gantt and calendar layouts, the per-epic progress bar --
+    # it can only demonstrate against epics that differ along those axes. Two started,
+    # high-priority, dateless epics exercise none of it.
+    #
+    # What each one is here to show:
+    #   trace     a fully populated epic: descendants in all five state groups, one overdue
+    #   notify    a second started epic, so grouping by state has more than a singleton
+    #   reconcile not started yet, with a window entirely in the future
+    #   console   cancelled, with cancelled work beneath it -- the bar counts it, see below
+    #   selfcare  no descendants at all, so the progress section renders nothing
+    #
+    # `console` is the one worth pausing on. `EpicProgressSection` keeps cancelled work in
+    # the denominator on purpose, so a dropped epic reads as dropped rather than as nearly
+    # complete. Nothing in the seed proved that until there was cancelled work to count.
     trace = item(
         "訂單歷程與退貨追溯能力", "讓客服能追查任一筆訂單在各處理階段的結果與異常紀錄。",
         "Epic", "In progress", "functional", module="訂單查詢", regions=("TW", "JP"),
-        audited=True, labels=("法規稽核",),
+        audited=True, labels=("法規稽核",), priority="urgent", starts_in=-55, due_in=25,
     )
     notify = item(
         "通知服務可靠性", "通知必須及時、穩定地送達使用者,否則客服失去溝通依據。",
         "Epic", "In progress", "non_functional", module="通知服務", regions=("TW", "JP", "SEA"),
+        starts_in=-30, due_in=45,
+    )
+    reconcile = item(
+        "對帳報表與法規保存", "把歷程與退貨結果匯出為對帳報表,並滿足保留一年的稽核義務。",
+        "Epic", "Next Sprint", "functional", module="訂單查詢", milestone="M3 對帳報表與合規",
+        priority="medium", regions=("TW", "JP"), audited=True, starts_in=14, due_in=75,
+        labels=("法規稽核",),
+    )
+    console = item(
+        "客服工作台前端改版", "整套重寫客服工作台介面。已停止:查詢與退貨兩條線各自改版即可,不需整包重來。",
+        "Epic", "Canceled", "functional", module="訂單查詢", priority="low",
+        starts_in=-90, due_in=-20,
+    )
+    selfcare = item(
+        "消費者自助退貨申請", "讓消費者自行提出退貨申請,不必經過客服。尚未拆解,先放進 backlog 佔位。",
+        "Epic", "Backlog", "functional", module="訂單查詢", priority="none",
+        regions=("TW", "JP", "SEA"),
     )
     query = item(
         "訂單與物流單號查詢", "支援以訂單編號或物流單號查詢完整處理歷程。",
@@ -252,13 +304,23 @@ def create_hierarchy(workspace, project, owner, context):
         "通知送達即時性", "事件發生到使用者收到通知的延遲必須可控。",
         "Feature", "In progress", "non_functional", parent=notify, module="通知服務",
     )
+    ledger = item(
+        "對帳報表產出與保存", "產出每日對帳差異清單,並依保存期限歸檔。",
+        "Feature", "Next Sprint", "functional", parent=reconcile, module="訂單查詢",
+        milestone="M3 對帳報表與合規", priority="medium", audited=True, starts_in=14, due_in=60,
+    )
 
     items = {
         "epic_trace": trace,
         "epic_notify": notify,
+        "epic_reconcile": reconcile,
+        "epic_console": console,
+        # Deliberately childless -- see the epic block above.
+        "epic_selfcare": selfcare,
         "feature_query": query,
         "feature_review": review,
         "feature_latency": latency,
+        "feature_ledger": ledger,
         # --- Sprint 2026-07B, delivered ---
         "order_query": item(
             "客服以訂單編號查詢處理歷程", "輸入訂單編號後顯示各處理階段的進入與完成時間與系統判定結果。",
@@ -341,6 +403,50 @@ def create_hierarchy(workspace, project, owner, context):
             "Story", "Todo", "non_functional", parent=latency, cycle="current", module="通知服務",
             priority="medium", points="13", regions=("TW", "JP", "SEA"), services=12,
             labels=("常駐維運",),
+        ),
+        # --- Not scheduled into any sprint ---
+        #
+        # The three below exist so `trace` reports every state group its progress bar can
+        # draw. Without them the bar has two segments out of five and the reader cannot
+        # tell whether the other three are empty or unsupported.
+        #
+        # None of them joins a cycle, which is the point: they are the work a team has
+        # decided about without yet committing to a window. Putting them in a sprint would
+        # also move both burn-downs, and those charts are asserted against elsewhere.
+        "history_retention": item(
+            "歷程資料保存與清理策略", "歷程資料保存一年後自動清理,清理動作本身也要留下稽核紀錄。",
+            "Story", "Backlog", "non_functional", parent=query, module="訂單查詢",
+            milestone="M3 對帳報表與合規", priority="low", regions=("TW", "JP"),
+            audited=True, services=6, labels=("法規稽核",),
+        ),
+        # Dropped rather than delivered. The progress bar keeps it in the denominator, so
+        # a feature that shed half its scope does not read as half finished.
+        "auto_approve": item(
+            "小額退貨自動核准", "已停止:法遵要求每一筆退貨都留下人工判定,自動核准與該要求相衝突。",
+            "Story", "Canceled", "functional", parent=review, module="訂單查詢",
+            priority="medium", points="5", services=4, assign=False,
+        ),
+        # Open and past its target date, which is the only combination the epic analytics
+        # endpoint counts as overdue -- a completed or cancelled item whose date has passed
+        # was finished or dropped, not missed.
+        "evidence_pack": item(
+            "退貨稽核紀錄封存包", "把退貨審核的判定與佐證打包封存,供稽核調閱。承諾日已過,仍在實作中。",
+            "Story", "In developing", "functional", parent=review, module="訂單查詢",
+            milestone="M2 退貨審核與回寫", points="5", audited=True, services=4,
+            due_in=-6, promised_in=-6, labels=("法規稽核", "客戶承諾"),
+        ),
+        # --- Under the not-yet-started epic ---
+        "ledger_diff": item(
+            "每日對帳差異清單", "每日產出金流與訂單的差異清單,供財務核對。",
+            "Story", "Next Sprint", "functional", parent=ledger, module="訂單查詢",
+            milestone="M3 對帳報表與合規", priority="medium", points="8",
+            audited=True, services=6, starts_in=14, due_in=45,
+        ),
+        # --- Under the cancelled epic ---
+        "console_rewrite": item(
+            "客服工作台整包重寫", "已停止:與 epic 一同取消,改由各功能線分別改版。",
+            "Story", "Canceled", "functional", parent=console, module="訂單查詢",
+            priority="low", points="13", assign=False,
         ),
     }
     return items

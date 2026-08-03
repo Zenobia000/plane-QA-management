@@ -82,7 +82,7 @@ class Command(BaseCommand):
         for issue in items.values():
             name = issue.type.name if issue.type else "untyped"
             counts[name] = counts.get(name, 0) + 1
-        plurals = (("Epic", "epics"), ("Feature", "features"), ("Story", "stories"))
+        plurals = (("Epic", "epics"), ("Feature", "features"), ("Story", "stories"), ("Task", "tasks"))
         return " / ".join(f"{counts[name]} {plural}" for name, plural in plurals if name in counts)
 
     def _report(self, workspace, result):
@@ -101,6 +101,10 @@ class Command(BaseCommand):
         write("  Breakdown and schedule")
         write(f"    initiative   {result['initiative'].name} -> 1 project")
         write(f"    items        {self._breakdown(result['items'])}")
+        write(
+            "    epics        5 across backlog / unstarted / started / cancelled, "
+            "each with its own window"
+        )
         write(f"    milestones   {', '.join(result['milestones'])}")
         write("    sprints      2026-07B delivered, 2026-08A in flight, one story carried over")
         write("    relations    2 blocked_by, 2 relates_to")
@@ -126,12 +130,15 @@ class Command(BaseCommand):
         write("What to look at, and what it teaches:")
         write("  a story's parent, sprint, module, milestone, kind and labels are six independent facts")
         write("  coverage rolls up, so features and epics report the contracts beneath them")
+        write("  an epic's progress bar is computed from its descendants, never from its own state")
+        write("  the cancelled epic stays in its own denominator -- dropped work is not progress")
         write("  a scheduled story with no contract blocks the gate, and so does a failing SLO")
         write("  the closed sprint keeps the contract version it pinned, though the library moved on")
         write("  views filter the breakdown and the schedule -- never coverage, which is a separate query")
         write("  the overview groups field reports by a property the project chose, not one the code names")
         write("")
         write(f"  project   /{workspace.slug}/projects/{project.id}/overview")
+        write(f"  epics     /{workspace.slug}/projects/{project.id}/epics")
         write(f"  overview  {base}/overview")
         write(f"  cases     {base}/cases")
         write(f"  runs      {base}/runs")

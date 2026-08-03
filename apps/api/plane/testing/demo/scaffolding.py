@@ -64,6 +64,13 @@ def create_project(workspace, owner, identifier):
     `intake_view` genuinely does default off, deliberately -- it exposes a public submission
     form, which is a decision a real project should make on purpose. The demo turns it on
     because the seeded field reports have nowhere to be read otherwise.
+
+    `is_issue_type_enabled` also defaults off, and leaving it there was incoherent for this
+    project in particular: every work item it creates is typed, and the whole breakdown axis
+    is carried by `IssueType.level`, yet the settings page that lets a reader see those types
+    stayed switched off. `is_epic_enabled` is stated for the same reason the view flags are
+    -- it defaults on today, and the Epics page is the surface most of the epic layer below
+    exists to fill.
     """
     project = Project.objects.create(
         workspace=workspace,
@@ -76,6 +83,8 @@ def create_project(workspace, owner, identifier):
         module_view=True,
         issue_views_view=True,
         intake_view=True,
+        is_issue_type_enabled=True,
+        is_epic_enabled=True,
     )
     State.objects.bulk_create(
         [

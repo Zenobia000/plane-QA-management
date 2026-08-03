@@ -37,6 +37,10 @@ export type TEntityUpdate = {
   description: string;
   parent: string | null;
   reply_count: number;
+  /** Topics this update was filed under. Project labels, chosen by the team, not an enum. */
+  label_ids: string[];
+  /** Whether the text was rewritten after it was published. See `edited_at` on the model. */
+  is_edited: boolean;
   actor_detail: {
     id: string;
     display_name: string;
@@ -51,6 +55,7 @@ export type TEntityUpdatePayload = {
   status: TUpdateStatus;
   description?: string;
   parent?: string | null;
+  label_ids?: string[];
 };
 
 export type TProjectActivityEvent = {

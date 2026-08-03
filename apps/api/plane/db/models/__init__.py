@@ -86,7 +86,7 @@ from .issue_type import IssueType, ProjectIssueType
 
 from .portfolio import Initiative, InitiativeProject, Milestone
 
-from .update import EntityUpdate
+from .update import EntityUpdate, EntityUpdateLabel
 
 from .workflow import StateTransition, StateTransitionApprover
 

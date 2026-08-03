@@ -127,10 +127,11 @@ export class ProjectOverviewService extends APIService {
     workspaceSlug: string,
     projectId: string,
     entityName: TUpdateEntityName = "project",
-    entityIdentifier?: string
+    entityIdentifier?: string,
+    labelId?: string
   ): Promise<TEntityUpdate[]> {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/updates/`, {
-      params: { entity_name: entityName, entity_identifier: entityIdentifier },
+      params: { entity_name: entityName, entity_identifier: entityIdentifier, label: labelId },
     })
       .then((response) => response.data)
       .catch((error) => {
@@ -162,6 +163,20 @@ export class ProjectOverviewService extends APIService {
 
   async createUpdate(workspaceSlug: string, projectId: string, payload: TEntityUpdatePayload): Promise<TEntityUpdate> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/updates/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /** Rewriting an update, or refiling it under different topics. Author or admin only. */
+  async updateUpdate(
+    workspaceSlug: string,
+    projectId: string,
+    updateId: string,
+    payload: Partial<TEntityUpdatePayload>
+  ): Promise<TEntityUpdate> {
+    return this.patch(`/api/workspaces/${workspaceSlug}/projects/${projectId}/updates/${updateId}/`, payload)
       .then((response) => response.data)
       .catch((error) => {
         throw error?.response?.data;

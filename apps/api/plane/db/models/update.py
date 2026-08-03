@@ -55,6 +55,10 @@ class EntityUpdate(ProjectBaseModel):
         null=True,
         related_name="entity_updates",
     )
+    # Set when the text is rewritten after publication, and only then. `updated_at` moves
+    # for reasons a reader does not care about -- a soft delete, a label attached -- so it
+    # cannot answer "was this announcement changed after I read it".
+    edited_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Entity Update"
@@ -67,3 +71,37 @@ class EntityUpdate(ProjectBaseModel):
 
     def __str__(self):
         return f"{self.entity_name} {self.entity_identifier} {self.status}"
+
+
+class EntityUpdateLabel(ProjectBaseModel):
+    """What an update is about, as opposed to what it says about the schedule.
+
+    `EntityUpdate.status` is a health verdict -- on track, at risk, off track -- and cannot
+    double as a topic. A noticeboard that carries market, commercial and customer news
+    beside engineering ones needs a second axis, and the set of topics is a property of how
+    a team works rather than something this codebase can enumerate.
+
+    So topics are `Label`s: already per-project, already coloured, already hierarchical,
+    already managed from project settings. This table only records which of them an update
+    carries, which means the structure migrates once and the vocabulary never does. No
+    category name appears anywhere in the source.
+    """
+
+    entity_update = models.ForeignKey(EntityUpdate, on_delete=models.CASCADE, related_name="labels")
+    label = models.ForeignKey("db.Label", on_delete=models.CASCADE, related_name="entity_updates")
+
+    class Meta:
+        verbose_name = "Entity Update Label"
+        verbose_name_plural = "Entity Update Labels"
+        db_table = "entity_update_labels"
+        ordering = ("-created_at",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=["entity_update", "label"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="entity_update_label_unique",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.entity_update_id} {self.label_id}"

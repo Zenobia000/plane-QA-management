@@ -28,16 +28,26 @@ from collections import defaultdict
 
 # Django imports
 from django.db.models import Count, Q
+from django.utils import timezone
 
 # Third party imports
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 # Module imports
-from plane.app.permissions import ProjectEntityPermission
+from plane.app.permissions import ROLE, ProjectEntityPermission
 from plane.app.serializers import EntityUpdateSerializer, MilestoneSerializer, ProjectLinkSerializer
 from plane.app.views.base import BaseAPIView, BaseViewSet
-from plane.db.models import EntityUpdate, Issue, IssueActivity, Milestone, ProjectLink
+from plane.db.models import (
+    EntityUpdate,
+    EntityUpdateLabel,
+    Issue,
+    IssueActivity,
+    Milestone,
+    ProjectLink,
+    ProjectMember,
+)
 
 STATE_GROUPS = ("backlog", "unstarted", "started", "completed", "cancelled")
 
@@ -90,15 +100,81 @@ class EntityUpdateViewSet(BaseViewSet):
         return context
 
     def perform_create(self, serializer):
-        serializer.save(project_id=self.kwargs.get("project_id"), actor=self.request.user)
+        label_ids = serializer.validated_data.pop("label_ids", [])
+        update = serializer.save(project_id=self.kwargs.get("project_id"), actor=self.request.user)
+        self._set_labels(update, label_ids)
+
+    def perform_update(self, serializer):
+        label_ids = serializer.validated_data.pop("label_ids", None)
+        # Only a rewrite of what the update says counts as an edit. Attaching a topic is
+        # filing, not revision, and should not put "edited" on somebody else's announcement.
+        edited = "description" in serializer.validated_data and (
+            serializer.validated_data["description"] != serializer.instance.description
+        )
+        update = serializer.save(**({"edited_at": timezone.now()} if edited else {}))
+        if label_ids is not None:
+            self._set_labels(update, label_ids)
+
+    def _set_labels(self, update, label_ids):
+        """Replace the update's topics with exactly this set."""
+        wanted = {str(label_id) for label_id in label_ids}
+        existing = {str(link.label_id): link for link in update.labels.all()}
+
+        for label_id, link in existing.items():
+            if label_id not in wanted:
+                link.delete()
+        # `workspace_id` is set by hand because `bulk_create` skips `save()`, and
+        # `ProjectBaseModel.save()` is the only thing that normally derives it.
+        EntityUpdateLabel.objects.bulk_create(
+            [
+                EntityUpdateLabel(
+                    entity_update=update,
+                    label_id=label_id,
+                    project_id=update.project_id,
+                    workspace_id=update.workspace_id,
+                )
+                for label_id in wanted
+                if label_id not in existing
+            ]
+        )
+
+    def destroy(self, request, slug, project_id, pk):
+        update = self.get_queryset().get(pk=pk)
+        self._assert_may_change(update)
+        update.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def partial_update(self, request, slug, project_id, pk):
+        self._assert_may_change(self.get_queryset().get(pk=pk))
+        return super().partial_update(request, slug, project_id, pk)
+
+    def _assert_may_change(self, update):
+        """An announcement belongs to whoever posted it, or to a project admin.
+
+        Editing someone else's post on a shared noticeboard changes what they are recorded
+        as having said. Admins keep the ability because a board nobody can moderate is its
+        own problem.
+        """
+        if update.actor_id == self.request.user.id:
+            return
+        is_admin = ProjectMember.objects.filter(
+            project_id=update.project_id,
+            member=self.request.user,
+            role=ROLE.ADMIN.value,
+            is_active=True,
+        ).exists()
+        if not is_admin:
+            raise PermissionDenied("Only the author or a project admin can change this update.")
 
     def get_queryset(self):
         project_id = self.kwargs.get("project_id")
         entity_name = self.request.query_params.get("entity_name", EntityUpdate.EntityName.PROJECT)
         entity_identifier = self.request.query_params.get("entity_identifier") or project_id
         parent = self.request.query_params.get("parent")
+        # Topic filter. Absent means every topic, which is what the board opens on.
+        label = self.request.query_params.get("label")
 
-        return (
+        queryset = (
             super()
             .get_queryset()
             .filter(workspace__slug=self.kwargs.get("slug"))
@@ -110,10 +186,14 @@ class EntityUpdateViewSet(BaseViewSet):
                 project__project_projectmember__is_active=True,
             )
             .select_related("actor")
+            .prefetch_related("labels")
             .annotate(reply_count=Count("replies", distinct=True))
             .order_by("-created_at")
             .distinct()
         )
+        if label:
+            queryset = queryset.filter(labels__label_id=label, labels__deleted_at__isnull=True)
+        return queryset
 
 
 class MilestoneViewSet(BaseViewSet):

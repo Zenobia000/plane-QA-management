@@ -1,6 +1,6 @@
 # Plane QA 工程守則與專案設定手冊
 
-> 狀態:v1.1 · 2026-07-28 · 基準 commit `ec79aef5b`
+> 狀態:v1.2 · 2026-08-03 · 基準 commit `f8956b2412`
 > Part A 對象:修改這個平台的人與 agent · Part B 對象:用這個平台跑專案的 PM / QA / RD
 
 ## 這份手冊在哪一層
@@ -100,7 +100,7 @@ UI 動作  ⇒  MCP tool 存在且參數等價  ⇒  CLI 指令存在且參數�
 **已知實作陷阱:**
 
 - **換掉編輯器會打壞執行工作區的鍵盤流。** P/F/B/S 快捷鍵目前只擋 `HTMLInputElement` 與 `HTMLTextAreaElement`。富文本編輯器是 `contentEditable`,不屬於這兩者——換上去之後在編輯器裡打的每個 p、f、b、s 都會送出一筆結果,而**結果是 append-only,送出就收不回來**。改動時必須同步擴充焦點判斷並補回歸測試
-- **`TestCase` 目前沒有 `type` 欄位**(缺口 #17)。要區分功能 / 效能 / 安全契約,得先補這個欄位,不要用 tag 硬撐
+- **契約的分類欄位是 `TestCaseVersion.case_type`**(functional / performance / security / reliability / compliance),服務層 `create_test_case` 已收這個參數。它在 version 上而不是在 `TestCase` 上,因為改分類等於改契約內容,要發新版本。**不要用 tag 硬撐。** 缺口 #17 剩下的是門檻的結構化與趨勢圖,不是這個欄位
 - **`TestFolder.parent` 有階層,UI 卻渲染成扁平清單**(缺口 #19)。動資料夾相關功能時別假設 UI 已經是樹
 
 ## A4 · 什麼才算做完
@@ -150,6 +150,10 @@ UI 動作  ⇒  MCP tool 存在且參數等價  ⇒  CLI 指令存在且參數�
 
 三處已於 v1.0 同批回寫。**下一次:回寫與程式碼放同一個 PR,不留到下次。**
 
+> **後續(2026-08-03):第三筆的兩種寫法都不是最終答案。** 那次回寫把文件改成跟 DEMO 一致(用 type),但 type 同時承載 `level`,所以每多一種需求性質就要在每一層複製一次 type——`type 數量 = 層數 × 性質數`。一個 workspace 因此長到九個 type,其中 level 0 兩個、level 2 四個。現在性質由 `Issue.requirement_kind` 承載,property 與 type 兩種寫法都已移除。詳見 B2。
+>
+> 值得記下的是:**當年那次「回寫」讓文件與程式一致了,卻也把一個設計錯誤寫進了規範**。一致不等於正確。
+
 ## A6 · Commit 與 PR
 
 Commit message 三段式:WHY(背景動機)/ WHAT(關鍵決策與取捨,不重複 diff)/ IMPACT(影響範圍、破壞性變更、後續動作)。Subject 用祈使句、≤ 72 字元,禁止 `fix` / `update` / `misc` 這種無意義 subject。
@@ -192,8 +196,8 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
    │ Feature │ level 1  ◄─────┘
    └────┬────┘
    ┌────┴──────────────────┐
-   │  Story  │  品質需求   │ level 2   ◄── 唯一的直接量測點
-   └────┬──────────────────┘
+   │  Story  │    Bug      │ level 2   ◄── 唯一的直接量測點
+   └────┬──────────────────┘            requirement_kind 標性質
    ┌────┴────┐
    │  Task   │
    └─────────┘
@@ -259,7 +263,7 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 | Program Epic / Capability        | **Epic**                | `IssueType` level 0 + `is_epic`         |
 | Feature                          | **Feature**             | level 1                                 |
 | Story                            | **Story**               | level 2 ← 契約掛這裡                    |
-| Enabler / NFR                    | **Quality requirement** | level 2,**與 Story 同階**               |
+| Enabler / NFR                    | **Story + `requirement_kind=quality`** | 不是獨立型別,見 B2                 |
 | PI / Release                     | **Milestone**           | project 層檢查點,`Issue.milestone`      |
 | Iteration / Sprint               | **Cycle**               | `start_date` / `end_date`               |
 | Value Stream / ART               | **Module**              | 依產品能力切                            |
@@ -273,20 +277,21 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 4. **排程軸刻意不是階層** —— 保留一個 work item 同時屬於多個切面的能力
 5. **量測只在 Story 層發生** —— 上層一律 roll-up,不允許獨立填報,避免各層數字互相矛盾
 
-### 這個架構目前缺的兩塊
+### 這個架構目前缺的一塊
 
 - **接合點 D 只有一半** —— `TestRun.cycle` 資料層支援,run builder 不送出(#10)。「這個 sprint 驗了什麼」現在答不了
-- **④ 證據軸只收得下可執行的驗證** —— 審查簽核與持續 SLO 進不來(#15),因此 Availability、Maintainability、Compliance 這類需求在 Epic / Feature 層的 roll-up 裡是隱形的(見 B3)
+
+~~**④ 證據軸只收得下可執行的驗證**(#15)~~ —— **已完成。** `ReleaseEvidence`(`kind` = slo / scan / review / other)承接測試產不出來的證據,出貨閘門會讀它:`failing` 與 `pending` 都是 blocker。所以審查簽核與持續 SLO 現在**攔得到**,不再需要靠人工在出貨會議上逐條念。B3 的四形態表因此全部有歸屬。
 
 ## B1 · 開一個新專案的順序
 
-可執行的參考實作是 `python manage.py seed_testing_demo --workspace <slug>`——它建立完整的 Epic → Feature → Story 階層、契約、一輪驗證與一個缺陷迴圈,全程走服務層。**要看「正確設定長什麼樣」,先 seed 一個 DEMO 來讀。**
+可執行的參考實作是 `python manage.py seed_testing_demo --workspace <slug>`——它建立完整的 Epic → Feature → Story → Task 階層、契約、一輪驗證與一個缺陷迴圈,全程走服務層。**要看「正確設定長什麼樣」,先 seed 一個 DEMO 來讀。**
 
 | 步驟 | 做什麼                                   | 指令                                                              |
 | ---- | ---------------------------------------- | ----------------------------------------------------------------- |
 | 0    | 連線設定                                 | env:`PLANE_URL` `PLANE_API_KEY` `PLANE_WORKSPACE` `PLANE_PROJECT` |
-| 1    | 建立 work item type 階層(含品質需求型別) | `plane-qa type create`                                            |
-| 2    | (選用)在型別之下再細分性質               | `plane-qa property create` / `property set`                       |
+| 1    | 建立 work item type 階層(四層 + Bug)     | `plane-qa type create`                                            |
+| 2    | (選用)加專案自訂欄位                     | `plane-qa property create` / `property set`                       |
 | 3    | 建立 Module(能力分組)與 Cycle(時間箱)    | REST `modules/` `cycles/`                                         |
 | 4    | 建立需求階層                             | `plane-qa issue create --parent ...`                              |
 | 5    | 建立測試資料夾                           | `plane-qa folder create`                                          |
@@ -295,12 +300,15 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 
 第 1 步的階層由 `IssueType.level` 與 `is_epic` 表達。DEMO 的定義:
 
-| 名稱                | level | is_epic | 意義                       |
-| ------------------- | ----- | ------- | -------------------------- |
-| Epic                | 0     | ✅      | 跨數個 feature 的商業能力  |
-| Feature             | 1     | —       | 一組連貫的系統能力         |
-| Story               | 2     | —       | 一次迭代交付的使用者價值   |
-| Quality requirement | 2     | —       | 對系統表現程度的非功能約束 |
+| 名稱    | level | is_epic | 意義                                 |
+| ------- | ----- | ------- | ------------------------------------ |
+| Epic    | 0     | ✅      | 跨數個 feature 的商業能力            |
+| Feature | 1     | —       | 一組連貫的系統能力                   |
+| Story   | 2     | —       | 一次迭代交付的使用者價值,契約掛這裡  |
+| Bug     | 2     | —       | 缺陷,走一般交付流程                  |
+| Task    | 3     | —       | story 底下的實作或維運工作           |
+
+**只有這四層加 Bug,不要再開型別。** 需求性質(FR / NFR)由 `Issue.requirement_kind` 承載——多開一個「Quality requirement」型別會讓 type 數量變成 `層數 × 性質數`,理由見 B2。
 
 **Module 依產品能力切,不是依團隊或技術層。**
 
@@ -316,21 +324,26 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 兩者交叉:FR 與 NFR 橫跨每一個工作層級。
 
 ```
-Business Goal
-└── Epic
-    └── Feature
-        ├── Story
-        │   ├── FR / Acceptance Criteria
-        │   ├── BDD Scenario
-        │   └── Task
-        └── Feature-level NFR
-System
-└── System-level NFR
+Epic          level 0        ── 拆解軸由 IssueType.level 承載
+└── Feature   level 1
+    └── Story level 2        ← 契約掛這裡,唯一的直接量測點
+        └── Task level 3
+Bug           level 2        ── 缺陷是一般 work item,同樣有 type
+
+每一層都可以帶 requirement_kind = functional | quality | none
 ```
 
 **刻意的結構壓縮**:本模型把 FR / AC / BDD / Test Case 四層壓縮成 **test case 一個物件**。若追蹤重心在 Feature → Story 的價值交付,這個壓縮划算;若需要 `FR-XXX-001` 這種可獨立追蹤的識別碼,FR 就得各自成為 work item,數量會顯著膨脹。**這是取捨,不是缺陷——但要在專案開始時就決定,中途改要重建階層。**
 
-**承載這個分類的是 work item type**(DEMO 用「Quality requirement」,`level` 與 Story 同階),不是 property。用 type 的理由是兩個維度在建立物件時就分開:工作拆解層級由 `level` 承載,需求性質由 type 的身分承載。property 適合在 type 之下再細分,不該拿來承載主要分類。
+**承載這個分類的是 `Issue.requirement_kind` 欄位**,既不是 type 也不是 property。
+
+這一條改過兩次,兩次都錯,所以理由值得寫清楚:
+
+- **不能用 type**,因為 type 已經透過 `level` 承載「多寬」。再讓它承載「什麼性質」,type 的數量就變成 `層數 × 性質數`——一個 workspace 因此長到九個 type(level 0 兩個、level 2 四個),而「Feature 層的效能要求」還會再逼出第三個。
+- **不能用 property**,因為 property 是**專案層級**的定義。每開一個新專案都要先建它,問題才問得出來;跨專案的報表則根本問不出來。
+- **`none` 不是 null**。Epic 是需求的集合、Task 是需求的實作,兩者都不是需求本身。null 會被讀成「還沒分類」,那是另一件事。
+
+> **一致不等於正確。** 2026-07 那次把文件從 property 改成 type,理由是「跟 DEMO 一致」——文件與程式確實一致了,但一致的是一個會讓 type 數量相乘的設計。A5 那張漂移表的第三筆講的就是這件事。
 
 **一個必須記住的區分:**
 
@@ -382,7 +395,11 @@ NFR 不是「跑一次測試就驗完」。四種形態的節奏與證據來源�
 
 **一個類別橫跨兩個形態時要拆成兩條需求**,不要混在一條裡——混寫的結果是其中一半永遠驗不了,而閘門看不出來少了什麼。
 
-**目前的承接落差:** 形態 1、2 今天完全進得了系統。形態 3 **沒有 checklist 物件**、形態 4 **沒有介面**,因此 Availability、Maintainability、Security 的審查面、Compliance 的簽核面現在只能寫在 work item 描述裡,**出貨閘門攔不到**。這是缺口 **#15**(release gate 外部證據接口),上游是 #17。在 #15 落地前,這類 NFR 要靠人工在出貨會議上逐條確認,而不是假裝閘門已經涵蓋。
+**四種形態現在都有歸屬。** 形態 1、2 進 case 庫;形態 3、4 走 `ReleaseEvidence`,一筆一個 `key`(專案內唯一,重覆送同一個 key 是更新而不是累積歷史),`status` 為 `passing` / `failing` / `pending`。**出貨閘門把 `failing` 與 `pending` 都列為 blocker**——所以「還沒有人簽」跟「簽了但沒過」一樣擋得住,這正是形態 3、4 最容易被跳過的地方。
+
+寫入方式:`plane-qa` CLI 或 `POST .../testing/release-evidence/`。CI 掃描完直接送 `kind=scan`;可用性從監控系統定期送 `kind=slo`;架構審查簽核後送 `kind=review`。
+
+> **這一段以前寫的是「缺口 #15,閘門攔不到」。** 那是舊的——`ReleaseEvidence` 與閘門的判定早已落地(見 `report.py` 的 blockers 組裝)。文件比程式晚了一個版本,而這正是 A5 那條規則存在的理由。
 
 ## B4 · 契約撰寫規範
 

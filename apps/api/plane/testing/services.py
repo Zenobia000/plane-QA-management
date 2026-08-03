@@ -14,6 +14,7 @@ from django.utils.html import escape
 from plane.db.models import (
     Cycle,
     Issue,
+    IssueType,
     Module,
     Project,
     TestCase,
@@ -249,6 +250,33 @@ def record_test_result(
 
 
 @transaction.atomic
+def _defect_type(project_id):
+    """The project's Bug type, or None where it has not enabled one.
+
+    Defects were created untyped, which is not a cosmetic gap: an untyped work item carries
+    no `level`, so the hierarchy rule cannot constrain what it hangs under, and it is absent
+    from every list filtered by type -- including the one a tester opens to see what testing
+    has raised. The doc calls a defect "a real work item"; without this it was the only kind
+    that was not.
+
+    Matched by name because nothing on `IssueType` marks a type as the defect type -- there
+    is `is_epic` and no counterpart. Returning None where no Bug type exists keeps the
+    previous behaviour for projects that never defined one, rather than inventing a type on
+    a path whose job is recording a test outcome.
+    """
+    return (
+        IssueType.objects.filter(
+            project_issue_types__project_id=project_id,
+            project_issue_types__deleted_at__isnull=True,
+            name__iexact="Bug",
+            is_active=True,
+            is_epic=False,
+        )
+        .order_by("created_at")
+        .first()
+    )
+
+
 def create_defect_from_result(*, result_id, run_case_id, project_id, created_by, name=None, priority="high"):
     try:
         result = (
@@ -340,6 +368,7 @@ def create_defect_from_result(*, result_id, run_case_id, project_id, created_by,
     issue = Issue.objects.create(
         project=result.project,
         workspace=result.workspace,
+        type=_defect_type(result.project_id),
         name=defect_name[:255],
         description_html=description_html,
         description_json={

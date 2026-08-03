@@ -243,13 +243,13 @@ class Command(BaseCommand):
         return types
 
     def _create_properties(self, project):
+        # "Requirement kind" used to be seeded here as a custom SELECT property. It is now
+        # `Issue.requirement_kind`, a first-class field, because a custom property is
+        # per-project: every new project had to define it before the question "which of
+        # these are quality requirements" could be asked, and a report spanning projects
+        # could not ask it at all. Seeding it as a property as well would leave the demo
+        # teaching a pattern the model no longer uses, and two places to disagree.
         definitions = (
-            (
-                "Requirement kind",
-                WorkItemProperty.Kind.SELECT,
-                "Functional requirements define behavior; NFRs define measurable quality.",
-                (("Functional", "functional"), ("Non-functional", "non_functional")),
-            ),
             (
                 "AI capabilities",
                 WorkItemProperty.Kind.MULTI_SELECT,
@@ -462,9 +462,12 @@ class Command(BaseCommand):
                 start_date=cycles[cycle].start_date.date() if cycle else None,
                 target_date=cycles[cycle].end_date.date() if cycle else None,
                 created_by=owner,
+                # The seed has always spelled this "non_functional"; the field calls the
+                # same thing "quality", after ISO 25010's quality characteristics rather
+                # than after what it is not.
+                requirement_kind="quality" if requirement_kind == "non_functional" else requirement_kind,
             )
             values = {
-                "Requirement kind": requirement_kind,
                 "AI capabilities": list(capabilities),
                 "Delivery note": f"Demo scope: {description}",
                 "Story points": points,
@@ -1354,7 +1357,22 @@ class Command(BaseCommand):
         write("")
         write(f"  Initiative       {initiative.name}")
         write("  Delivery graph   2 epics / 4 features / 10 stories / 6 tasks / 2 bugs")
-        write("  Configuration    5 work-item types / 8 fields covering all 7 kinds / 14 labels")
+        # Counted, not written down. The field total was hardcoded and went stale the moment
+        # "Requirement kind" moved off a property and onto `Issue.requirement_kind`: the
+        # summary claimed eight while the seed created seven, and the test asserting on this
+        # line passed anyway because it asserted on the same wrong string.
+        field_count = WorkItemProperty.objects.filter(project=project, deleted_at__isnull=True).count()
+        kind_count = (
+            WorkItemProperty.objects.filter(project=project, deleted_at__isnull=True)
+            .values("kind")
+            .distinct()
+            .count()
+        )
+        type_count = ProjectIssueType.objects.filter(project=project, deleted_at__isnull=True).count()
+        write(
+            f"  Configuration    {type_count} work-item types / {field_count} fields "
+            f"covering all {kind_count} kinds / 14 labels"
+        )
         write(f"  QA library       {len(cases)} versioned cases in 7 folders with Story traceability")
         write("  Evidence         1 closed manual run / 1 CI ingestion / 1 active release run")
         write(f"  Defect loop      {project.identifier}-{defect.sequence_id} fixed and retested append-only")

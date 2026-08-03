@@ -39,21 +39,35 @@ def test_seed_ai_software_demo_builds_connected_delivery_and_qa_graph(workspace)
 
     project = Project.objects.get(workspace=workspace, identifier="AIDEMO")
     assert project.name == "AI DevFlow Copilot Demo"
-    assert "5 work-item types / 8 fields" in stdout.getvalue()
+    assert "5 work-item types / 7 fields" in stdout.getvalue()
 
     enabled_types = ProjectIssueType.objects.filter(project=project).select_related("issue_type")
     assert {row.issue_type.name for row in enabled_types} == {"Epic", "Feature", "Story", "Task", "Bug"}
     assert IssueType.objects.filter(workspace=workspace, name="Epic", is_epic=True, level=0).exists()
 
     properties = WorkItemProperty.objects.filter(project=project)
-    assert properties.count() == 8
+    # Seven, not eight: "Requirement kind" is `Issue.requirement_kind` now, and the
+    # remaining seven still cover every property kind the schema supports.
+    assert properties.count() == 7
     assert set(properties.values_list("kind", flat=True)) == set(WorkItemProperty.Kind.values)
+
+    # The classification the property used to carry now lives on the work item, and the
+    # seed has to demonstrate both values or it teaches half the model.
+    kinds = set(Issue.objects.filter(project=project).values_list("requirement_kind", flat=True))
+    assert {"functional", "quality"} <= kinds
+
+    # A defect raised from a failed result is a work item like any other, which means it
+    # carries a type. Untyped, it is missing from every list filtered by type -- including
+    # the one a tester opens to see what testing has raised.
+    defects = Issue.objects.filter(project=project, type__name="Bug")
+    assert defects.exists()
+    assert not Issue.objects.filter(project=project, type__isnull=True).exists()
     assert Label.objects.filter(project=project).count() == 14
     assert Milestone.objects.filter(project=project).count() == 2
     assert InitiativeProject.objects.filter(project=project).count() == 1
 
     rich_evidence = Issue.objects.get(project=project, name__startswith="QA 實測結果支援")
-    assert rich_evidence.property_values.count() == 8
+    assert rich_evidence.property_values.count() == 7
     assert rich_evidence.label_issue.count() >= 4
     assert rich_evidence.parent.type.name == "Feature"
     assert rich_evidence.issue_cycle.count() == 1

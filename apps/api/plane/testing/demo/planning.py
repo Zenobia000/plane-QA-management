@@ -179,9 +179,11 @@ class _ItemBuilder:
             created_by=self.owner,
             start_date=self.cycles["previous"].start_date.date() if cycle == "previous" else None,
             target_date=self.cycles[cycle].end_date.date() if cycle else None,
+            # This seed spells it "non_functional"; the field calls the same thing
+            # "quality", after the characteristic it names rather than after what it isn't.
+            requirement_kind="quality" if kind == "non_functional" else kind,
         )
 
-        self._set_property(issue, "Requirement kind", kind)
         self._set_property(issue, "目標區域", list(regions))
         self._set_property(issue, "需法規稽核", audited)
         if services is not None:

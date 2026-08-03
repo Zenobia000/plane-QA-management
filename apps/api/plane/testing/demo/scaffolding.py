@@ -95,15 +95,21 @@ def create_project(workspace, owner, identifier):
 def create_work_item_types(workspace, project):
     """Axis one: how the work is broken down.
 
-    Epic, feature and story only. An earlier version of this seed also created a
-    "Quality requirement" type sitting beside Story, which quietly folded the
-    requirement-nature axis into the breakdown axis -- exactly the collapse the product
-    definition warns against. Nature is a property; see below.
+    Breadth only. An earlier version of this seed also created a "Quality requirement" type
+    sitting beside Story, which folded the requirement-nature axis into the breakdown axis.
+    That collapse is not merely untidy: because a type carries a level, every nature needs
+    a type at every level, and the number of types becomes the product of the two axes. One
+    workspace here reached nine types that way. Nature lives on `Issue.requirement_kind`.
+
+    Task and Bug were missing, so a project seeded here had nowhere to put implementation
+    work or a defect, and the fourth level of the hierarchy existed only in the docs.
     """
     definitions = [
         ("Epic", "A business capability spanning several features.", 0, True),
         ("Feature", "A coherent set of system capabilities.", 1, False),
         ("Story", "User-visible value delivered in one iteration.", 2, False),
+        ("Bug", "A defect managed through the normal delivery workflow.", 2, False),
+        ("Task", "Implementation or operational work beneath a story.", 3, False),
     ]
     types = {}
     for name, description, level, is_epic in definitions:
@@ -122,13 +128,11 @@ def create_work_item_types(workspace, project):
 
 
 # name -> (kind, description, [(label, value), ...])
+#
+# "Requirement kind" is deliberately absent. It is `Issue.requirement_kind` now, because a
+# custom property is defined per project: every new project had to declare it before the
+# question could be asked at all, and no report spanning projects could ask it.
 PROPERTY_DEFINITIONS = (
-    (
-        "Requirement kind",
-        WorkItemProperty.Kind.SELECT,
-        "Functional requirements say what the system does; non-functional ones say how well.",
-        (("Functional (FR)", "functional"), ("Non-functional (NFR)", "non_functional")),
-    ),
     (
         "目標區域",
         WorkItemProperty.Kind.MULTI_SELECT,
@@ -157,16 +161,16 @@ PROPERTY_DEFINITIONS = (
 
 
 def create_properties(project):
-    """Axis two and its neighbours: what kind of requirement this is.
+    """Typed facts about a requirement that the schema does not name itself.
 
-    Requirement kind crosses the breakdown rather than nesting inside it -- an epic, a
-    feature and a story can each be functional or non-functional. Keeping it a property
-    is what lets a feature carry a quality constraint without inventing a parallel
-    hierarchy for it.
+    Requirement kind used to be seeded here and is no longer: it crosses the breakdown
+    rather than nesting inside it -- an epic, a feature and a story can each be functional
+    or a quality constraint -- and a question asked that often belongs on the model, not on
+    a definition each project has to remember to create.
 
-    The other four exist to show every property kind the schema supports, and to make
-    the point that a property is a typed fact about the requirement. None of them is a
-    label, and none belongs in the item's title.
+    What remains exists to show every property kind the schema supports, and to make the
+    point that a property is a typed fact about the requirement. None of them is a label,
+    and none belongs in the item's title.
     """
     properties = {}
     for index, (name, kind, description, options) in enumerate(PROPERTY_DEFINITIONS):

@@ -20,6 +20,7 @@ import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { ActivityPanel, LinksPanel, MilestonesPanel } from "./panels";
 import { OverviewHeader } from "./header";
 import { ProgressBar } from "./progress-bar";
+import { ReadinessPanel } from "./readiness-panel";
 import { PropertiesPanel } from "./properties-panel";
 import { UpdatesPanel } from "@/components/updates";
 
@@ -194,6 +195,7 @@ export default observer(function ProjectOverviewPage() {
         {overview && (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div className="flex flex-col gap-4">
+              <ReadinessPanel workspaceSlug={slug} projectId={id} />
               <ProgressBar progress={overview.progress} />
               <UpdatesPanel
                 entityName="project"

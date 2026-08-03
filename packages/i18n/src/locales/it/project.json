@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {Mostra # aggiornamento precedente} many {Mostra # aggiornamenti precedenti} other {Mostra # aggiornamenti precedenti}}",
       "load_error": "Impossibile caricare il resto della discussione."
+    },
+    "readiness": {
+      "ready": "Pronto per il rilascio",
+      "not_ready": "Non pronto per il rilascio",
+      "open_testing": "Apri Testing",
+      "coverage": "Requisiti coperti",
+      "latest_run": "Ultima esecuzione superata",
+      "open_defects": "Difetti aperti"
     }
   }
 }

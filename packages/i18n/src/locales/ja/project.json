@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {以前の更新を # 件表示} other {以前の更新を # 件表示}}",
       "load_error": "スレッドの残りを読み込めませんでした。"
+    },
+    "readiness": {
+      "ready": "リリース可能",
+      "not_ready": "リリース不可",
+      "open_testing": "Testing を開く",
+      "coverage": "カバー済みの要件",
+      "latest_run": "直近の実行で合格",
+      "open_defects": "未解決の不具合"
     }
   }
 }

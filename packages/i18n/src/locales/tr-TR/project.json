@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {# önceki güncellemeyi göster} other {# önceki güncellemeyi göster}}",
       "load_error": "Konuşmanın kalanı yüklenemedi."
+    },
+    "readiness": {
+      "ready": "Yayına hazır",
+      "not_ready": "Yayına hazır değil",
+      "open_testing": "Testing’i aç",
+      "coverage": "Kapsanan gereksinimler",
+      "latest_run": "Son çalıştırmada geçen",
+      "open_defects": "Açık hatalar"
     }
   }
 }

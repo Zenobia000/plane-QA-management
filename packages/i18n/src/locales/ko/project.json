@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {이전 업데이트 #개 표시} other {이전 업데이트 #개 표시}}",
       "load_error": "스레드의 나머지를 불러오지 못했습니다."
+    },
+    "readiness": {
+      "ready": "출시 가능",
+      "not_ready": "출시 불가",
+      "open_testing": "Testing 열기",
+      "coverage": "커버된 요구사항",
+      "latest_run": "최근 실행 통과",
+      "open_defects": "미해결 결함"
     }
   }
 }

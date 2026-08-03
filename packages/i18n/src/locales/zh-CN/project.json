@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {显示 # 条较早的更新} other {显示 # 条较早的更新}}",
       "load_error": "无法加载该讨论串的其余部分。"
+    },
+    "readiness": {
+      "ready": "可以发布",
+      "not_ready": "尚不可发布",
+      "open_testing": "打开 Testing",
+      "coverage": "已覆盖的需求",
+      "latest_run": "最近一次执行通过",
+      "open_defects": "未关闭的缺陷"
     }
   }
 }

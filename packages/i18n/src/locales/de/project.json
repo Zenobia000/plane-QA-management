@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {# frühere Aktualisierung anzeigen} other {# frühere Aktualisierungen anzeigen}}",
       "load_error": "Der Rest des Verlaufs konnte nicht geladen werden."
+    },
+    "readiness": {
+      "ready": "Auslieferbereit",
+      "not_ready": "Nicht auslieferbereit",
+      "open_testing": "Testing öffnen",
+      "coverage": "Abgedeckte Anforderungen",
+      "latest_run": "Letzter Lauf bestanden",
+      "open_defects": "Offene Fehler"
     }
   }
 }

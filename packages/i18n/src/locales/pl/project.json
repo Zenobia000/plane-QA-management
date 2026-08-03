@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {Pokaż # wcześniejszą aktualizację} few {Pokaż # wcześniejsze aktualizacje} many {Pokaż # wcześniejszych aktualizacji} other {Pokaż # wcześniejszej aktualizacji}}",
       "load_error": "Nie udało się załadować reszty wątku."
+    },
+    "readiness": {
+      "ready": "Gotowe do wydania",
+      "not_ready": "Niegotowe do wydania",
+      "open_testing": "Otwórz Testing",
+      "coverage": "Pokryte wymagania",
+      "latest_run": "Ostatnie uruchomienie zaliczone",
+      "open_defects": "Otwarte defekty"
     }
   }
 }

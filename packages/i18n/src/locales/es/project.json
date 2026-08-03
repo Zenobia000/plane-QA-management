@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {Mostrar # actualización anterior} other {Mostrar # actualizaciones anteriores}}",
       "load_error": "No se pudo cargar el resto del hilo."
+    },
+    "readiness": {
+      "ready": "Listo para entregar",
+      "not_ready": "No listo para entregar",
+      "open_testing": "Abrir Testing",
+      "coverage": "Requisitos cubiertos",
+      "latest_run": "Última ejecución superada",
+      "open_defects": "Defectos abiertos"
     }
   }
 }

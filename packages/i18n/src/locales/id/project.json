@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {Tampilkan # pembaruan sebelumnya} other {Tampilkan # pembaruan sebelumnya}}",
       "load_error": "Sisa utas tidak dapat dimuat."
+    },
+    "readiness": {
+      "ready": "Siap dirilis",
+      "not_ready": "Belum siap dirilis",
+      "open_testing": "Buka Testing",
+      "coverage": "Kebutuhan yang tercakup",
+      "latest_run": "Lulus pada eksekusi terakhir",
+      "open_defects": "Defek terbuka"
     }
   }
 }

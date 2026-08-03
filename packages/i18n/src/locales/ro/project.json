@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {Afișați # actualizare anterioară} few {Afișați # actualizări anterioare} other {Afișați # de actualizări anterioare}}",
       "load_error": "Restul discuției nu a putut fi încărcat."
+    },
+    "readiness": {
+      "ready": "Gata de livrare",
+      "not_ready": "Nu este gata de livrare",
+      "open_testing": "Deschideți Testing",
+      "coverage": "Cerințe acoperite",
+      "latest_run": "Ultima execuție trecută",
+      "open_defects": "Defecte deschise"
     }
   }
 }

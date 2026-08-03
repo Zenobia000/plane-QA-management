@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {Mostrar # atualização anterior} many {Mostrar # atualizações anteriores} other {Mostrar # atualizações anteriores}}",
       "load_error": "Não foi possível carregar o restante da conversa."
+    },
+    "readiness": {
+      "ready": "Pronto para lançar",
+      "not_ready": "Não está pronto para lançar",
+      "open_testing": "Abrir Testing",
+      "coverage": "Requisitos cobertos",
+      "latest_run": "Última execução aprovada",
+      "open_defects": "Defeitos abertos"
     }
   }
 }

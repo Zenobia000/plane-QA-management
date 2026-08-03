@@ -483,6 +483,14 @@
     "updates": {
       "load_error": "Could not load the rest of the thread.",
       "show_earlier": "Show {count, plural, one {# earlier update} other {# earlier updates}}"
+    },
+    "readiness": {
+      "ready": "Ready to ship",
+      "not_ready": "Not ready to ship",
+      "open_testing": "Open Testing",
+      "coverage": "Requirements covered",
+      "latest_run": "Latest run passed",
+      "open_defects": "Open defects"
     }
   }
 }

@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {Hiển thị # cập nhật trước đó} other {Hiển thị # cập nhật trước đó}}",
       "load_error": "Không thể tải phần còn lại của chuỗi thảo luận."
+    },
+    "readiness": {
+      "ready": "Sẵn sàng phát hành",
+      "not_ready": "Chưa sẵn sàng phát hành",
+      "open_testing": "Mở Testing",
+      "coverage": "Yêu cầu đã được bao phủ",
+      "latest_run": "Đã đạt ở lần chạy gần nhất",
+      "open_defects": "Lỗi chưa đóng"
     }
   }
 }

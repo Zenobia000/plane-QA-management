@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {Afficher # mise à jour antérieure} many {Afficher # mises à jour antérieures} other {Afficher # mises à jour antérieures}}",
       "load_error": "Impossible de charger la suite du fil."
+    },
+    "readiness": {
+      "ready": "Prêt à livrer",
+      "not_ready": "Pas prêt à livrer",
+      "open_testing": "Ouvrir Testing",
+      "coverage": "Exigences couvertes",
+      "latest_run": "Dernière exécution réussie",
+      "open_defects": "Anomalies ouvertes"
     }
   }
 }

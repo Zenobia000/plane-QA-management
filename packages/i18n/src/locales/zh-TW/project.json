@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {顯示 # 則較早的更新} other {顯示 # 則較早的更新}}",
       "load_error": "無法載入此討論串的其餘部分。"
+    },
+    "readiness": {
+      "ready": "可以發布",
+      "not_ready": "尚不可發布",
+      "open_testing": "開啟 Testing",
+      "coverage": "已涵蓋的需求",
+      "latest_run": "最近一次執行通過",
+      "open_defects": "未關閉的缺陷"
     }
   }
 }

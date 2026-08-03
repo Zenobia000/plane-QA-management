@@ -483,6 +483,14 @@
     "updates": {
       "show_earlier": "{count, plural, one {Zobraziť # staršiu aktualizáciu} few {Zobraziť # staršie aktualizácie} many {Zobraziť # staršej aktualizácie} other {Zobraziť # starších aktualizácií}}",
       "load_error": "Zvyšok vlákna sa nepodarilo načítať."
+    },
+    "readiness": {
+      "ready": "Pripravené na vydanie",
+      "not_ready": "Nie je pripravené na vydanie",
+      "open_testing": "Otvoriť Testing",
+      "coverage": "Pokryté požiadavky",
+      "latest_run": "Posledný beh prešiel",
+      "open_defects": "Otvorené defekty"
     }
   }
 }

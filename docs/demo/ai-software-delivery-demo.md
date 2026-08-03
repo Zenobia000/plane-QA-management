@@ -41,7 +41,6 @@ The seed covers every supported property kind.
 
 | Field             | Kind         | Example                                            |
 | ----------------- | ------------ | -------------------------------------------------- |
-| Requirement kind  | select       | `functional`, `non_functional`                     |
 | AI capabilities   | multi-select | `llm`, `rag`, `agents`, `evaluation`, `guardrails` |
 | Delivery note     | text         | Acceptance and scope note                          |
 | Story points      | number       | `8`                                                |
@@ -49,6 +48,14 @@ The seed covers every supported property kind.
 | AI assisted       | boolean      | `true`                                             |
 | Risk level        | select       | `low`, `medium`, `high`, `critical`                |
 | Specification URL | URL          | Canonical demo specification                       |
+
+**Requirement kind is deliberately absent from that table.** It was seeded here as a custom
+`select` property and is now `Issue.requirement_kind`, a first-class field carrying
+`functional` / `quality` / `none`. A custom property is defined per project, so every new
+project had to declare it before "which of these are quality requirements" could be asked at
+all, and a report spanning projects could never ask it. Seeding it as a property _as well_
+would leave the demo teaching a pattern the model no longer uses, and give the same question
+two places to disagree. See `docs/process/plane-qa-guideline.md` B2.
 
 ## Labels
 

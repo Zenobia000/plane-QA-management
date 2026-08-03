@@ -422,20 +422,6 @@
       "title": "Priebeh",
       "out_of_scope": "Mimo rozsahu, preto sa do pruhu nepočíta"
     },
-    "properties": {
-      "title": "Vlastnosti",
-      "state": "Stav",
-      "state_label": "Stav projektu",
-      "priority": "Priorita",
-      "priority_label": "Priorita projektu",
-      "start": "Začiatok",
-      "start_label": "Dátum začiatku projektu",
-      "target": "Cieľ",
-      "target_label": "Cieľový dátum projektu",
-      "not_set": "Nenastavené",
-      "not_saved_title": "Zmena neuložená",
-      "not_saved_message": "Projekt sa nepodarilo aktualizovať. Načítajte stránku znova, aby ste videli aktuálne hodnoty."
-    },
     "links": {
       "title": "Odkazy",
       "empty": "Zatiaľ žiadne odkazy.",

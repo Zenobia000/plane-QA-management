@@ -21,7 +21,6 @@ import { ActivityPanel, LinksPanel, MilestonesPanel } from "./panels";
 import { OverviewHeader } from "./header";
 import { ProgressBar } from "./progress-bar";
 import { ReadinessPanel } from "./readiness-panel";
-import { PropertiesPanel } from "./properties-panel";
 import { UpdatesPanel } from "@/components/updates";
 
 const overviewService = new ProjectOverviewService();
@@ -215,15 +214,6 @@ export default observer(function ProjectOverviewPage() {
               />
             </div>
             <div className="flex flex-col gap-4">
-              {project && (
-                <PropertiesPanel
-                  project={project}
-                  disabled={!canEdit}
-                  onChange={async (changes) => {
-                    await updateProject(slug, id, changes);
-                  }}
-                />
-              )}
               <MilestonesPanel
                 milestones={overview.milestones}
                 disabled={!canEdit}

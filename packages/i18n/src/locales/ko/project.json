@@ -422,20 +422,6 @@
       "title": "진행률",
       "out_of_scope": "범위 밖이므로 막대에 집계되지 않습니다"
     },
-    "properties": {
-      "title": "속성",
-      "state": "상태",
-      "state_label": "프로젝트 상태",
-      "priority": "우선순위",
-      "priority_label": "프로젝트 우선순위",
-      "start": "시작",
-      "start_label": "프로젝트 시작일",
-      "target": "목표",
-      "target_label": "프로젝트 목표일",
-      "not_set": "설정되지 않음",
-      "not_saved_title": "변경 사항이 저장되지 않았습니다",
-      "not_saved_message": "프로젝트를 업데이트하지 못했습니다. 현재 값을 보려면 다시 불러오십시오."
-    },
     "links": {
       "title": "링크",
       "empty": "아직 링크가 없습니다.",

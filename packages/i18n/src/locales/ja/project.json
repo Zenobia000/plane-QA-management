@@ -422,20 +422,6 @@
       "title": "進捗",
       "out_of_scope": "対象範囲外のため、バーには数えられません"
     },
-    "properties": {
-      "title": "プロパティー",
-      "state": "状態",
-      "state_label": "プロジェクトの状態",
-      "priority": "優先度",
-      "priority_label": "プロジェクトの優先度",
-      "start": "開始",
-      "start_label": "プロジェクトの開始日",
-      "target": "目標",
-      "target_label": "プロジェクトの目標日",
-      "not_set": "未設定",
-      "not_saved_title": "変更は保存されていません",
-      "not_saved_message": "プロジェクトを更新できませんでした。現在の値を確認するには再読み込みしてください。"
-    },
     "links": {
       "title": "リンク",
       "empty": "リンクはまだありません。",

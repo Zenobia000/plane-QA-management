@@ -422,20 +422,6 @@
       "title": "İlerleme",
       "out_of_scope": "Kapsam dışı olduğu için çubukta sayılmaz"
     },
-    "properties": {
-      "title": "Özellikler",
-      "state": "Durum",
-      "state_label": "Proje durumu",
-      "priority": "Öncelik",
-      "priority_label": "Proje önceliği",
-      "start": "Başlangıç",
-      "start_label": "Projenin başlangıç tarihi",
-      "target": "Hedef",
-      "target_label": "Projenin hedef tarihi",
-      "not_set": "Ayarlanmadı",
-      "not_saved_title": "Değişiklik kaydedilmedi",
-      "not_saved_message": "Proje güncellenemedi. Güncel değerleri görmek için sayfayı yeniden yükleyiniz."
-    },
     "links": {
       "title": "Bağlantılar",
       "empty": "Henüz bağlantı yok.",

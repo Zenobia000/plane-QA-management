@@ -422,20 +422,6 @@
       "title": "Progress",
       "out_of_scope": "Out of scope, so not counted in the bar"
     },
-    "properties": {
-      "title": "Properties",
-      "state": "State",
-      "state_label": "Project state",
-      "priority": "Priority",
-      "priority_label": "Project priority",
-      "start": "Start",
-      "start_label": "Project start date",
-      "target": "Target",
-      "target_label": "Project target date",
-      "not_set": "Not set",
-      "not_saved_title": "Change not saved",
-      "not_saved_message": "The project could not be updated. Reload to see its current values."
-    },
     "links": {
       "title": "Links",
       "empty": "No links yet.",

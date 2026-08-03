@@ -422,20 +422,6 @@
       "title": "Progres",
       "out_of_scope": "În afara domeniului, deci nu este numărat în bară"
     },
-    "properties": {
-      "title": "Proprietăți",
-      "state": "Stare",
-      "state_label": "Starea proiectului",
-      "priority": "Prioritate",
-      "priority_label": "Prioritatea proiectului",
-      "start": "Început",
-      "start_label": "Data de început a proiectului",
-      "target": "Țintă",
-      "target_label": "Data-țintă a proiectului",
-      "not_set": "Nedefinit",
-      "not_saved_title": "Modificare nesalvată",
-      "not_saved_message": "Proiectul nu a putut fi actualizat. Reîncărcați pentru a vedea valorile curente."
-    },
     "links": {
       "title": "Linkuri",
       "empty": "Încă niciun link.",

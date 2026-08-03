@@ -422,20 +422,6 @@
       "title": "Progres",
       "out_of_scope": "Di luar cakupan sehingga tidak dihitung dalam bilah"
     },
-    "properties": {
-      "title": "Properti",
-      "state": "Status",
-      "state_label": "Status proyek",
-      "priority": "Prioritas",
-      "priority_label": "Prioritas proyek",
-      "start": "Mulai",
-      "start_label": "Tanggal mulai proyek",
-      "target": "Target",
-      "target_label": "Tanggal target proyek",
-      "not_set": "Belum diatur",
-      "not_saved_title": "Perubahan tidak tersimpan",
-      "not_saved_message": "Tidak dapat memperbarui proyek. Muat ulang untuk melihat nilai saat ini."
-    },
     "links": {
       "title": "Tautan",
       "empty": "Belum ada tautan.",

@@ -422,20 +422,6 @@
       "title": "進度",
       "out_of_scope": "超出範圍，因此不計入進度列"
     },
-    "properties": {
-      "title": "屬性",
-      "state": "狀態",
-      "state_label": "專案狀態",
-      "priority": "優先順序",
-      "priority_label": "專案優先順序",
-      "start": "開始",
-      "start_label": "專案開始日期",
-      "target": "目標",
-      "target_label": "專案目標日期",
-      "not_set": "未設定",
-      "not_saved_title": "變更未儲存",
-      "not_saved_message": "無法更新專案。請重新載入以查看目前的值。"
-    },
     "links": {
       "title": "連結",
       "empty": "尚無連結。",

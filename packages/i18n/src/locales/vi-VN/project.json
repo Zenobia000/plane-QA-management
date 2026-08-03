@@ -422,20 +422,6 @@
       "title": "Tiến độ",
       "out_of_scope": "Ngoài phạm vi nên không được tính vào thanh tiến độ"
     },
-    "properties": {
-      "title": "Thuộc tính",
-      "state": "Trạng thái",
-      "state_label": "Trạng thái dự án",
-      "priority": "Mức ưu tiên",
-      "priority_label": "Mức ưu tiên của dự án",
-      "start": "Bắt đầu",
-      "start_label": "Ngày bắt đầu dự án",
-      "target": "Mục tiêu",
-      "target_label": "Ngày mục tiêu của dự án",
-      "not_set": "Chưa đặt",
-      "not_saved_title": "Thay đổi chưa được lưu",
-      "not_saved_message": "Không thể cập nhật dự án. Vui lòng tải lại để xem các giá trị hiện tại."
-    },
     "links": {
       "title": "Liên kết",
       "empty": "Chưa có liên kết nào.",

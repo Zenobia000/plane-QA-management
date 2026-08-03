@@ -422,20 +422,6 @@
       "title": "Průběh",
       "out_of_scope": "Mimo rozsah, proto se do pruhu nepočítá"
     },
-    "properties": {
-      "title": "Vlastnosti",
-      "state": "Stav",
-      "state_label": "Stav projektu",
-      "priority": "Priorita",
-      "priority_label": "Priorita projektu",
-      "start": "Začátek",
-      "start_label": "Datum zahájení projektu",
-      "target": "Cíl",
-      "target_label": "Cílové datum projektu",
-      "not_set": "Nenastaveno",
-      "not_saved_title": "Změna neuložena",
-      "not_saved_message": "Projekt se nepodařilo aktualizovat. Načtěte stránku znovu, abyste viděli aktuální hodnoty."
-    },
     "links": {
       "title": "Odkazy",
       "empty": "Zatím žádné odkazy.",

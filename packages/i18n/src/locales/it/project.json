@@ -422,20 +422,6 @@
       "title": "Avanzamento",
       "out_of_scope": "Fuori ambito, quindi non conteggiato nella barra"
     },
-    "properties": {
-      "title": "Proprietà",
-      "state": "Stato",
-      "state_label": "Stato del progetto",
-      "priority": "Priorità",
-      "priority_label": "Priorità del progetto",
-      "start": "Inizio",
-      "start_label": "Data di inizio del progetto",
-      "target": "Scadenza",
-      "target_label": "Data di scadenza del progetto",
-      "not_set": "Non impostato",
-      "not_saved_title": "Modifica non salvata",
-      "not_saved_message": "Impossibile aggiornare il progetto. Ricarichi per vedere i valori attuali."
-    },
     "links": {
       "title": "Collegamenti",
       "empty": "Nessun collegamento.",

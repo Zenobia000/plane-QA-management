@@ -116,7 +116,7 @@ export function LinksPanel({
             )}
           </li>
         ))}
-        {!links.length && <li className="text-12 text-tertiary">{t("project_overview.links.empty")}</li>}
+        {!links.length && disabled && <li className="text-12 text-tertiary">{t("project_overview.links.empty")}</li>}
       </ul>
 
       {!disabled && (
@@ -382,6 +382,18 @@ export function ActivityPanel({
   onLoadMore: () => void;
 }) {
   const { t } = useTranslation();
+
+  // Read-only and empty is nothing to act on, so it says so in one line rather than
+  // reserving a panel. A page whose empty regions weigh the same as its full ones pushes
+  // what it does have to the edges.
+  if (!activities.length) {
+    return (
+      <p className="text-12 text-tertiary">
+        {t("project_overview.activity.title")} · {t("project_overview.activity.empty")}
+      </p>
+    );
+  }
+
   return (
     <section className="rounded border border-subtle p-4">
       <h2 className="text-13 font-medium text-primary">{t("project_overview.activity.title")}</h2>

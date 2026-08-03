@@ -422,20 +422,6 @@
       "title": "Progression",
       "out_of_scope": "Hors périmètre, donc non compté dans la barre"
     },
-    "properties": {
-      "title": "Propriétés",
-      "state": "État",
-      "state_label": "État du projet",
-      "priority": "Priorité",
-      "priority_label": "Priorité du projet",
-      "start": "Début",
-      "start_label": "Date de début du projet",
-      "target": "Échéance",
-      "target_label": "Date d’échéance du projet",
-      "not_set": "Non défini",
-      "not_saved_title": "Modification non enregistrée",
-      "not_saved_message": "Impossible de mettre à jour le projet. Rechargez pour voir ses valeurs actuelles."
-    },
     "links": {
       "title": "Liens",
       "empty": "Aucun lien pour l’instant.",

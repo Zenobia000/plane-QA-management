@@ -422,20 +422,6 @@
       "title": "Progresso",
       "out_of_scope": "Fora do escopo, portanto não contabilizado na barra"
     },
-    "properties": {
-      "title": "Propriedades",
-      "state": "Estado",
-      "state_label": "Estado do projeto",
-      "priority": "Prioridade",
-      "priority_label": "Prioridade do projeto",
-      "start": "Início",
-      "start_label": "Data de início do projeto",
-      "target": "Meta",
-      "target_label": "Data-alvo do projeto",
-      "not_set": "Não definido",
-      "not_saved_title": "Alteração não salva",
-      "not_saved_message": "Não foi possível atualizar o projeto. Recarregue para ver os valores atuais."
-    },
     "links": {
       "title": "Links",
       "empty": "Ainda não há links.",

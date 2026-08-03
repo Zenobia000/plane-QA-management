@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('db', '0140_entityupdate_edited_at_entityupdatelabel'),
+        ('db', '0141_entityupdate_edited_at_entityupdatelabel'),
     ]
 
     operations = [

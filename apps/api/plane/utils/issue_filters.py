@@ -435,6 +435,11 @@ def wants_leaf_only(params):
     return str(params.get("leaf_only", "false")).lower() in ("true", "1")
 
 
+def wants_epic(params):
+    """Whether a request asked for the epics. Read by two filters, so it lives out here."""
+    return str(params.get("epic", "false")).lower() in ("true", "1")
+
+
 def filter_leaf_only(params, issue_filter, method, prefix=""):
     """Keep only the nodes that are not summaries of other nodes.
 
@@ -453,8 +458,17 @@ def filter_leaf_only(params, issue_filter, method, prefix=""):
 
     Defects survive, which is intended. They are parentless and nobody breaks them down, so
     they are leaves -- and a defect is precisely a thing somebody has to do.
+
+    **Yields to `epic`.** The paragraph above says this filter exists to drop summaries, and
+    an epic is the summary it names -- so `epic=true&leaf_only=true` asks for exactly the
+    rows the two clauses each remove, and can only ever return the epics nobody has broken
+    down yet. That is not a narrower answer, it is an empty one dressed as data: the epics
+    list read this way showed 1 of 5 on the demo project, and would have shown 0 before a
+    childless epic happened to be seeded. Neither combination is worth serving, and refusing
+    it here rather than in one client keeps the CLI, MCP, SDK and any saved view from
+    reproducing the same silent hole.
     """
-    if not wants_leaf_only(params):
+    if wants_epic(params) or not wants_leaf_only(params):
         return issue_filter
 
     # A positive `pk__in`, because `issue_filters` returns kwargs for `.filter(**filters)`
@@ -475,8 +489,11 @@ def filter_epic(params, issue_filter, method, prefix=""):
     include untyped work items, which is `type IS NULL OR is_epic = false` -- an OR that a
     kwargs dict returned for `.filter(**filters)` cannot carry. Nothing needs it today, and
     an `epic=false` that quietly dropped every untyped item would be worse than its absence.
+
+    Takes precedence over `leaf_only`, which is resolved in `filter_leaf_only` -- see the
+    note there on why the two cannot both apply.
     """
-    if str(params.get("epic", "false")).lower() in ("true", "1"):
+    if wants_epic(params):
         issue_filter[f"{prefix}type__is_epic"] = True
     return issue_filter
 

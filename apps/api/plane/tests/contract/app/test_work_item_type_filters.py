@@ -31,7 +31,13 @@ def names(payload):
 
 @pytest.fixture
 def typed_backlog(db, workspace, create_user):
-    """One epic, one story, one bug, and one work item with no type at all."""
+    """One epic, one story, one bug, and one work item with no type at all.
+
+    The story sits **under** the epic, which is what makes the `leaf_only` interaction
+    testable: that filter drops nodes holding a live child, so an epic nobody has broken
+    down is indistinguishable from one the filter would have kept anyway. Parenting an
+    existing row rather than adding one keeps every count below unchanged.
+    """
     project = Project.objects.create(
         name="Typed", identifier="TYPD", workspace=workspace, created_by=create_user, is_issue_type_enabled=True
     )
@@ -45,14 +51,17 @@ def typed_backlog(db, workspace, create_user):
         )
         types[name] = issue_type
 
-    def make(name, issue_type=None):
-        return Issue.objects.create(workspace=workspace, project=project, name=name, type=issue_type)
+    def make(name, issue_type=None, parent=None):
+        return Issue.objects.create(
+            workspace=workspace, project=project, name=name, type=issue_type, parent=parent
+        )
 
+    epic = make("Search everywhere", types["Epic"])
     return {
         "project": project,
         "types": types,
-        "epic": make("Search everywhere", types["Epic"]),
-        "story": make("Look up by serial", types["Story"]),
+        "epic": epic,
+        "story": make("Look up by serial", types["Story"], parent=epic),
         "bug": make("Write-back returns 503", types["Bug"]),
         "untyped": make("Legacy item"),
     }
@@ -115,6 +124,42 @@ class TestWorkItemTypeFilters:
 
         assert names(response.json()) == {
             "Search everywhere",
+            "Look up by serial",
+            "Write-back returns 503",
+            "Legacy item",
+        }
+
+    def test_epic_survives_leaf_only(self, session_client, workspace, typed_backlog):
+        """The regression: the epics list sent both and got back the epics nobody had used.
+
+        `leaf_only` drops nodes that summarise other nodes, which is what an epic *is* --
+        so the two clauses each remove exactly what the other asks for. The web client sent
+        `leaf_only=true` by default and the page rendered 1 epic of 5 on the demo project,
+        the only one with no feature under it yet. `epic` wins, here rather than in one
+        client, so the CLI, MCP and any saved view cannot reproduce the same silent hole.
+        """
+        response = session_client.get(
+            list_url(workspace.slug, typed_backlog["project"].id), {"epic": "true", "leaf_only": "true"}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert names(response.json()) == {"Search everywhere"}
+
+    def test_leaf_only_still_drops_summaries_when_epic_is_not_asked_for(
+        self, session_client, workspace, typed_backlog
+    ):
+        """The yield is scoped to `epic`; the filter's own job is untouched.
+
+        Without it this fix would read as "leaf_only stopped working", which is the failure
+        that would actually matter to the work-item list.
+        """
+        response = session_client.get(
+            list_url(workspace.slug, typed_backlog["project"].id), {"leaf_only": "true"}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        # The epic holds a live child, so it is a summary and drops out.
+        assert names(response.json()) == {
             "Look up by serial",
             "Write-back returns 503",
             "Legacy item",

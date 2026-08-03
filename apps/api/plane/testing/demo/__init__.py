@@ -21,7 +21,15 @@ from django.db import transaction
 
 # Module imports
 from plane.db.models import Initiative, IssueView, Project, State
-from plane.testing.demo import contracts, evidence, execution, planning, saved_views, scaffolding
+from plane.testing.demo import (
+    contracts,
+    evidence,
+    execution,
+    frontline,
+    planning,
+    saved_views,
+    scaffolding,
+)
 
 # Read from the modules that create them rather than restated here. Both were duplicated
 # literals until a rename in planning.py left this file purging a name nothing created,
@@ -127,6 +135,11 @@ def seed(workspace, owner, identifier):
     evidence.record_release_evidence(workspace, project, owner)
     evidence.record_ingestion(project, runs["current"][0], owner)
 
+    # Last, because the overview reads across everything above it: the noticeboard sits on
+    # the project, the field reports become work items, and both are only interesting once
+    # there is a project for them to be about.
+    field = frontline.create_frontline(workspace, project, owner, labels)
+
     views = saved_views.create_views(workspace, project, owner, context)
 
     return {
@@ -141,4 +154,5 @@ def seed(workspace, owner, identifier):
         "runs": runs,
         "defect": defect,
         "views": views,
+        "frontline": field,
     }

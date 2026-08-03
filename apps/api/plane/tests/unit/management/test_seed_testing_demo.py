@@ -18,7 +18,20 @@ from io import StringIO
 import pytest
 from django.core.management import call_command
 
-from plane.db.models import Cycle, Issue, IssueView, Label, Project, State, TestResultIssueLink
+from plane.db.models import (
+    Cycle,
+    EntityUpdate,
+    EntityUpdateLabel,
+    IntakeIssue,
+    Issue,
+    IssueView,
+    Label,
+    Project,
+    State,
+    TestResultIssueLink,
+    WorkItemProperty,
+    WorkItemPropertyValue,
+)
 from plane.db.models.state import SDLC_STATES, StateGroup
 from plane.utils.analytics_plot import burndown_plot
 
@@ -200,3 +213,59 @@ def test_seed_creates_the_saved_views_it_reports(seeded):
     assert views.count() == 6
     standup = views.get(name="本期進行中")
     assert standup.display_filters["group_by"] == "state"
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+class TestSeededFrontline:
+    """The overview's newest panels are invisible until someone has used them.
+
+    A project with no intake shows no frontline panel and a project with no announcements
+    shows an empty board -- correct in production, useless in a demo. These assertions say
+    the seed leaves enough behind for both to render something, and that the field reports
+    are not all in one triage state, which would make the panel look like a queue nobody
+    has touched.
+    """
+
+    def test_the_grouping_dimension_is_marked_and_is_the_only_one(self, seeded):
+        dimensions = WorkItemProperty.objects.filter(project=seeded, is_grouping_dimension=True)
+
+        assert dimensions.count() == 1
+        assert dimensions.first().kind == WorkItemProperty.Kind.MULTI_SELECT
+
+    def test_field_reports_cover_every_triage_answer(self, seeded):
+        """One uniform status would demo a queue, not a triage surface."""
+        statuses = set(IntakeIssue.objects.filter(project=seeded).values_list("status", flat=True))
+
+        assert {-2, 1, -1} <= statuses
+
+    def test_every_report_is_attributed(self, seeded):
+        reports = IntakeIssue.objects.filter(project=seeded)
+        dimension = WorkItemProperty.objects.get(project=seeded, is_grouping_dimension=True)
+        attributed = WorkItemPropertyValue.objects.filter(
+            property=dimension, issue_id__in=reports.values_list("issue_id", flat=True)
+        )
+
+        assert reports.count() == attributed.count() > 0
+
+    def test_one_report_reaches_two_accounts(self, seeded):
+        """A multi-select dimension is only worth having if the seed exercises it."""
+        dimension = WorkItemProperty.objects.get(project=seeded, is_grouping_dimension=True)
+        widths = [
+            len(value.value)
+            for value in WorkItemPropertyValue.objects.filter(property=dimension)
+            if isinstance(value.value, list)
+        ]
+
+        assert max(widths) > 1
+
+    def test_the_noticeboard_carries_posts_that_are_not_all_engineering(self, seeded):
+        posts = EntityUpdate.objects.filter(project=seeded, parent__isnull=True)
+        topics = EntityUpdateLabel.objects.filter(entity_update__in=posts)
+
+        assert posts.count() >= 3
+        assert topics.values("label_id").distinct().count() >= 2
+
+    def test_intake_is_reachable_from_the_sidebar(self, seeded):
+        """The panel links to Intake; a project with the module off would 404 the reader."""
+        assert seeded.intake_view is True

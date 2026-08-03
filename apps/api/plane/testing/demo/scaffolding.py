@@ -54,12 +54,16 @@ PROJECT_DESCRIPTION = (
 def create_project(workspace, owner, identifier):
     """The project, with every axis it is about to be populated with made reachable.
 
-    The three `*_view` flags are set explicitly rather than left to the model default. They
-    now default on, so this is redundant today -- and that is the point. This seed creates
-    two sprints, two modules and seven saved views; if a future upstream rebase flips the
-    default back, the demo would go on creating all of it while the sidebar showed none of
-    it, which is exactly the failure that made these lines necessary in the first place.
+    The four `*_view` flags are set explicitly rather than left to the model default. Three
+    of them now default on, so those are redundant today -- and that is the point. This seed
+    creates two sprints, two modules and seven saved views; if a future upstream rebase flips
+    the default back, the demo would go on creating all of it while the sidebar showed none
+    of it, which is exactly the failure that made these lines necessary in the first place.
     Stating the intent here means the demo breaks loudly instead of quietly.
+
+    `intake_view` genuinely does default off, deliberately -- it exposes a public submission
+    form, which is a decision a real project should make on purpose. The demo turns it on
+    because the seeded field reports have nowhere to be read otherwise.
     """
     project = Project.objects.create(
         workspace=workspace,
@@ -71,6 +75,7 @@ def create_project(workspace, owner, identifier):
         cycle_view=True,
         module_view=True,
         issue_views_view=True,
+        intake_view=True,
     )
     State.objects.bulk_create(
         [

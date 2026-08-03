@@ -113,10 +113,10 @@ EntityUpdateLabel(entity_update, label, project, workspace)
 
 **結構動一次 migration,分類值永遠由使用者決定。** 沒有任何分類名稱寫進程式碼。
 
-### 客戶 → 用既有的 WorkItemProperty,零 migration
+### 客戶 → 用既有的 WorkItemProperty,加一個指標欄位
 
 `WorkItemProperty` 已經支援 7 種型別、可綁定特定 work item type、可設必填與預設值。
-建三個屬性即可,全部透過現有設定頁:
+屬性本身完全由使用者在設定頁建立,程式不預設任何一個。建議(不是預設值):
 
 | 屬性       | 型別                             | 它改變什麼決定                        |
 | ---------- | -------------------------------- | ------------------------------------- |
@@ -125,6 +125,9 @@ EntityUpdateLabel(entity_update, label, project, workspace)
 | 客戶承諾日 | `date`                           | **已存在**;有無對外承諾 → 排程硬約束  |
 
 綁在 Bug 與 Intake 相關的 type 上,不要綁全部 —— 內部技術債不該被問哪個客戶。
+
+唯一寫進 schema 的是**指標**:哪一個屬性拿來分組(`is_grouping_dimension`)。
+屬性的名字、選項、顏色一律是資料。
 
 專案層而非 workspace 層:專案彼此獨立,同一個客戶若跨專案合作就各自建立。等到跨專案
 查詢真的變成需求,再升級成 workspace 實體,那時才會知道要存什麼欄位。

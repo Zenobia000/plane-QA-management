@@ -509,6 +509,36 @@
       "coverage": "Kapsanan gereksinimler",
       "latest_run": "Son çalıştırmada geçen",
       "open_defects": "Açık hatalar"
+    },
+    "frontline": {
+      "unattributed": "Atanmamış",
+      "open_intake": "Intake’i aç",
+      "summary": "{pending} bekliyor · {accepted} planlandı · {declined} reddedildi",
+      "pending_count": "{count, plural, one {# bekliyor} other {# bekliyor}}",
+      "all_scheduled": "Tümü planlandı",
+      "accept": "Planla",
+      "decline": "Reddet",
+      "more_in_group": "{count, plural, one {# tane daha} other {# tane daha}}",
+      "triage": {
+        "pending": "Bekliyor",
+        "accepted": "Planlandı",
+        "declined": "Reddedildi"
+      },
+      "not_triaged_title": "Durum değiştirilmedi",
+      "not_triaged_message": "Durum değiştirilemedi."
+    },
+    "attention": {
+      "title": "Dikkat gerekiyor",
+      "summary": "{overdue} gecikmiş · {urgent} acil",
+      "overdue_by": "{count, plural, one {# gün gecikmiş} other {# gün gecikmiş}}",
+      "urgent": "Acil",
+      "unassigned": "Atanmamış",
+      "more": "{count, plural, one {# tane daha} other {# tane daha}}"
+    },
+    "meeting_notes": {
+      "title": "Toplantı notları",
+      "description": "Sözlü alınan bir karar bir alana değil, bir belgeye aittir.",
+      "open_pages": "Sayfalar’ı aç"
     }
   }
 }

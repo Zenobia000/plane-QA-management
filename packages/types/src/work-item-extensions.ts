@@ -45,6 +45,13 @@ export type TWorkItemProperty = {
   kind: TWorkItemPropertyKind;
   is_required: boolean;
   is_active: boolean;
+  /**
+   * Whether the project overview groups its intake panel by this property.
+   *
+   * At most one per project, enforced by the database. Only a select or multi-select can
+   * carry it -- grouping by free text makes one bucket per typo.
+   */
+  is_grouping_dimension: boolean;
   sort_order: number;
   default_value: unknown;
   options: TWorkItemPropertyOption[];

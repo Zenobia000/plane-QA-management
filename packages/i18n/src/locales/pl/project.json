@@ -509,6 +509,36 @@
       "coverage": "Pokryte wymagania",
       "latest_run": "Ostatnie uruchomienie zaliczone",
       "open_defects": "Otwarte defekty"
+    },
+    "frontline": {
+      "unattributed": "Nieprzypisane",
+      "open_intake": "Otwórz Intake",
+      "summary": "Oczekujące: {pending} · zaplanowane: {accepted} · odrzucone: {declined}",
+      "pending_count": "{count, plural, one {# oczekujące} few {# oczekujące} many {# oczekujących} other {# oczekującego}}",
+      "all_scheduled": "Wszystko zaplanowane",
+      "accept": "Zaplanuj",
+      "decline": "Odrzuć",
+      "more_in_group": "{count, plural, one {jeszcze #} few {jeszcze #} many {jeszcze #} other {jeszcze #}}",
+      "triage": {
+        "pending": "Oczekuje",
+        "accepted": "Zaplanowane",
+        "declined": "Odrzucone"
+      },
+      "not_triaged_title": "Nie zmieniono statusu",
+      "not_triaged_message": "Nie udało się zmienić statusu."
+    },
+    "attention": {
+      "title": "Wymaga uwagi",
+      "summary": "Po terminie: {overdue} · pilne: {urgent}",
+      "overdue_by": "{count, plural, one {# dzień po terminie} few {# dni po terminie} many {# dni po terminie} other {# dnia po terminie}}",
+      "urgent": "Pilne",
+      "unassigned": "Nieprzypisane",
+      "more": "{count, plural, one {jeszcze #} few {jeszcze #} many {jeszcze #} other {jeszcze #}}"
+    },
+    "meeting_notes": {
+      "title": "Notatki ze spotkań",
+      "description": "Decyzja podjęta ustnie należy do dokumentu, nie do pola.",
+      "open_pages": "Otwórz Strony"
     }
   }
 }

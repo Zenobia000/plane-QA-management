@@ -509,6 +509,36 @@
       "coverage": "커버된 요구사항",
       "latest_run": "최근 실행 통과",
       "open_defects": "미해결 결함"
+    },
+    "frontline": {
+      "unattributed": "미분류",
+      "open_intake": "Intake 열기",
+      "summary": "대기 {pending} · 예정 {accepted} · 보류 {declined}",
+      "pending_count": "{count, plural, one {대기 #건} other {대기 #건}}",
+      "all_scheduled": "모두 예정됨",
+      "accept": "일정에 넣기",
+      "decline": "보류",
+      "more_in_group": "{count, plural, one {#건 더 있음} other {#건 더 있음}}",
+      "triage": {
+        "pending": "대기",
+        "accepted": "예정",
+        "declined": "보류"
+      },
+      "not_triaged_title": "상태를 변경하지 못했습니다",
+      "not_triaged_message": "상태를 변경하지 못했습니다."
+    },
+    "attention": {
+      "title": "주의 필요",
+      "summary": "기한 초과 {overdue} · 긴급 {urgent}",
+      "overdue_by": "{count, plural, one {#일 지연} other {#일 지연}}",
+      "urgent": "긴급",
+      "unassigned": "담당자 없음",
+      "more": "{count, plural, one {#건 더 있음} other {#건 더 있음}}"
+    },
+    "meeting_notes": {
+      "title": "회의록",
+      "description": "말로 정한 결정은 필드가 아니라 문서에 남깁니다.",
+      "open_pages": "페이지 열기"
     }
   }
 }

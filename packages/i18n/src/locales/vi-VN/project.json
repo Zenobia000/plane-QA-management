@@ -509,6 +509,36 @@
       "coverage": "Yêu cầu đã được bao phủ",
       "latest_run": "Đã đạt ở lần chạy gần nhất",
       "open_defects": "Lỗi chưa đóng"
+    },
+    "frontline": {
+      "unattributed": "Chưa quy thuộc",
+      "open_intake": "Mở Intake",
+      "summary": "{pending} đang chờ · {accepted} đã lên lịch · {declined} đã từ chối",
+      "pending_count": "{count, plural, one {# đang chờ} other {# đang chờ}}",
+      "all_scheduled": "Đã lên lịch tất cả",
+      "accept": "Đưa vào lịch",
+      "decline": "Từ chối",
+      "more_in_group": "{count, plural, one {còn # nữa} other {còn # nữa}}",
+      "triage": {
+        "pending": "Đang chờ",
+        "accepted": "Đã lên lịch",
+        "declined": "Đã từ chối"
+      },
+      "not_triaged_title": "Chưa đổi được trạng thái",
+      "not_triaged_message": "Không thể thay đổi trạng thái."
+    },
+    "attention": {
+      "title": "Cần chú ý",
+      "summary": "{overdue} quá hạn · {urgent} khẩn cấp",
+      "overdue_by": "{count, plural, one {trễ # ngày} other {trễ # ngày}}",
+      "urgent": "Khẩn cấp",
+      "unassigned": "Chưa giao",
+      "more": "{count, plural, one {còn # nữa} other {còn # nữa}}"
+    },
+    "meeting_notes": {
+      "title": "Biên bản họp",
+      "description": "Quyết định đưa ra bằng lời thuộc về tài liệu, không phải một trường dữ liệu.",
+      "open_pages": "Mở Trang"
     }
   }
 }

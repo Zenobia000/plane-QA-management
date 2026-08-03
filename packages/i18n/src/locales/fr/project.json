@@ -509,6 +509,36 @@
       "coverage": "Exigences couvertes",
       "latest_run": "Dernière exécution réussie",
       "open_defects": "Anomalies ouvertes"
+    },
+    "frontline": {
+      "unattributed": "Non attribué",
+      "open_intake": "Ouvrir Intake",
+      "summary": "{pending} en attente · {accepted} planifiés · {declined} refusés",
+      "pending_count": "{count, plural, one {# en attente} many {# en attente} other {# en attente}}",
+      "all_scheduled": "Tout est planifié",
+      "accept": "Planifier",
+      "decline": "Refuser",
+      "more_in_group": "{count, plural, one {# de plus} many {# de plus} other {# de plus}}",
+      "triage": {
+        "pending": "En attente",
+        "accepted": "Planifié",
+        "declined": "Refusé"
+      },
+      "not_triaged_title": "Statut non modifié",
+      "not_triaged_message": "Impossible de modifier le statut."
+    },
+    "attention": {
+      "title": "À surveiller",
+      "summary": "{overdue} en retard · {urgent} urgents",
+      "overdue_by": "{count, plural, one {# jour de retard} many {# jours de retard} other {# jours de retard}}",
+      "urgent": "Urgent",
+      "unassigned": "Non assigné",
+      "more": "{count, plural, one {# de plus} many {# de plus} other {# de plus}}"
+    },
+    "meeting_notes": {
+      "title": "Comptes rendus de réunion",
+      "description": "Une décision prise à l’oral appartient à un document, pas à un champ.",
+      "open_pages": "Ouvrir Pages"
     }
   }
 }

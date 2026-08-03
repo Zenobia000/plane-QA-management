@@ -509,6 +509,36 @@
       "coverage": "Requirements covered",
       "latest_run": "Latest run passed",
       "open_defects": "Open defects"
+    },
+    "frontline": {
+      "unattributed": "Not attributed",
+      "open_intake": "Open Intake",
+      "summary": "{pending} waiting · {accepted} scheduled · {declined} declined",
+      "pending_count": "{count, plural, one {# waiting} other {# waiting}}",
+      "all_scheduled": "All scheduled",
+      "accept": "Schedule it",
+      "decline": "Decline",
+      "more_in_group": "{count, plural, one {# more} other {# more}}",
+      "triage": {
+        "pending": "Waiting",
+        "accepted": "Scheduled",
+        "declined": "Declined"
+      },
+      "not_triaged_title": "Status not changed",
+      "not_triaged_message": "The status could not be changed."
+    },
+    "attention": {
+      "title": "Needs attention",
+      "summary": "{overdue} overdue · {urgent} urgent",
+      "overdue_by": "{count, plural, one {# day late} other {# days late}}",
+      "urgent": "Urgent",
+      "unassigned": "Unassigned",
+      "more": "{count, plural, one {# more} other {# more}}"
+    },
+    "meeting_notes": {
+      "title": "Meeting notes",
+      "description": "Decisions made out loud belong in a document, not a field.",
+      "open_pages": "Open Pages"
     }
   }
 }

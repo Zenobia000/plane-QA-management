@@ -509,6 +509,36 @@
       "coverage": "Requisiti coperti",
       "latest_run": "Ultima esecuzione superata",
       "open_defects": "Difetti aperti"
+    },
+    "frontline": {
+      "unattributed": "Non attribuito",
+      "open_intake": "Apri Intake",
+      "summary": "{pending} in attesa · {accepted} pianificati · {declined} rifiutati",
+      "pending_count": "{count, plural, one {# in attesa} many {# in attesa} other {# in attesa}}",
+      "all_scheduled": "Tutto pianificato",
+      "accept": "Pianifica",
+      "decline": "Rifiuta",
+      "more_in_group": "{count, plural, one {# in più} many {# in più} other {# in più}}",
+      "triage": {
+        "pending": "In attesa",
+        "accepted": "Pianificato",
+        "declined": "Rifiutato"
+      },
+      "not_triaged_title": "Stato non modificato",
+      "not_triaged_message": "Impossibile modificare lo stato."
+    },
+    "attention": {
+      "title": "Richiede attenzione",
+      "summary": "{overdue} in ritardo · {urgent} urgenti",
+      "overdue_by": "{count, plural, one {# giorno di ritardo} many {# giorni di ritardo} other {# giorni di ritardo}}",
+      "urgent": "Urgente",
+      "unassigned": "Non assegnato",
+      "more": "{count, plural, one {# in più} many {# in più} other {# in più}}"
+    },
+    "meeting_notes": {
+      "title": "Verbali delle riunioni",
+      "description": "Una decisione presa a voce appartiene a un documento, non a un campo.",
+      "open_pages": "Apri Pagine"
     }
   }
 }

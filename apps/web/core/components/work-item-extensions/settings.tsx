@@ -178,6 +178,32 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
     }
   };
 
+  /**
+   * Move the overview's grouping to this property, or turn it off.
+   *
+   * The unique constraint is per project, so the outgoing holder is cleared before the
+   * incoming one is set. Doing it the other way round fails on the database and surfaces
+   * as a button that appears to do nothing.
+   */
+  const setGroupingDimension = async (definition: TWorkItemProperty) => {
+    const next = !definition.is_grouping_dimension;
+    try {
+      if (next) {
+        const current = properties?.find((item) => item.is_grouping_dimension && item.id !== definition.id);
+        if (current)
+          await workItemExtensionService.updateProperty(workspaceSlug, projectId, current.id, {
+            is_grouping_dimension: false,
+          });
+      }
+      await workItemExtensionService.updateProperty(workspaceSlug, projectId, definition.id, {
+        is_grouping_dimension: next,
+      });
+      await mutateProperties();
+    } catch (caught) {
+      setError(errorMessage(caught));
+    }
+  };
+
   const resetPropertyForm = () => {
     setPropertyId(null);
     setPropertyName("");
@@ -438,6 +464,11 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
                 )}
                 {definition.is_required && <span className="ml-2 text-10 text-danger-primary">Required</span>}
                 {!definition.is_active && <span className="ml-2 text-10 text-tertiary">Inactive</span>}
+                {definition.is_grouping_dimension && (
+                  <span className="ml-2 rounded bg-accent-subtle px-1.5 py-0.5 text-10 text-accent-primary">
+                    Overview grouping
+                  </span>
+                )}
                 {definition.description && (
                   <p className="mt-1 truncate text-11 text-tertiary">{definition.description}</p>
                 )}
@@ -449,6 +480,22 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
               >
                 <Pencil className="size-3.5" /> Edit
               </button>
+              {/* What the project overview groups its intake panel by. Offered only on
+                  select-like properties: grouping by free text produces one bucket per
+                  typo, which is the server's rule too and not a UI preference.
+
+                  Clearing the previous holder first, because the database allows one per
+                  project -- sending the new one straight in would fail the constraint and
+                  read to the user as "the button does nothing". */}
+              {(definition.kind === "select" || definition.kind === "multi_select") && (
+                <button
+                  type="button"
+                  className={`${buttonClass} bg-layer-2 text-secondary`}
+                  onClick={() => void setGroupingDimension(definition)}
+                >
+                  {definition.is_grouping_dimension ? "Stop grouping by this" : "Group overview by this"}
+                </button>
+              )}
               <button
                 type="button"
                 className={`${buttonClass} bg-layer-2 text-secondary`}

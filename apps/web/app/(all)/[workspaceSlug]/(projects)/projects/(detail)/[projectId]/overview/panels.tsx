@@ -5,7 +5,8 @@
  */
 
 import { useState } from "react";
-import { ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { Link } from "react-router";
 import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TProjectActivityEvent, TProjectOverviewLink, TProjectMilestoneSummary } from "@plane/types";
@@ -154,7 +155,7 @@ export function LinksPanel({
               disabled={busy || !url.trim()}
               onClick={() => void add()}
             >
-              Add
+              {t("project_overview.links.add")}
             </button>
           </div>
           {invalid && <p className="mt-1.5 text-11 text-danger-primary">{invalid}</p>}
@@ -381,6 +382,7 @@ export function ActivityPanel({
   loadingMore: boolean;
   onLoadMore: () => void;
 }) {
+  const [open, setOpen] = useState(false);
   const { t } = useTranslation();
 
   // Read-only and empty is nothing to act on, so it says so in one line rather than
@@ -396,48 +398,97 @@ export function ActivityPanel({
 
   return (
     <section className="rounded border border-subtle p-4">
-      <h2 className="text-13 font-medium text-primary">{t("project_overview.activity.title")}</h2>
-      {/* The feed is unbounded by nature -- a row per field change per work item -- so it
+      {/* Collapsed by default. Activity is the rawest thing on the page -- a row per field
+          change -- and every panel above it exists because someone had to read this feed
+          and work the answer out by hand. It stays reachable for when the answer is wrong. */}
+      <button
+        type="button"
+        className="flex w-full items-center gap-1.5 text-left"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        {open ? (
+          <ChevronDown className="size-3.5 shrink-0 text-tertiary" />
+        ) : (
+          <ChevronRight className="size-3.5 shrink-0 text-tertiary" />
+        )}
+        <h2 className="text-13 font-medium text-primary">{t("project_overview.activity.title")}</h2>
+        <span className="text-11 text-tertiary">{activities.length}</span>
+      </button>
+      {!open ? null : (
+        <>
+          {/* The feed is unbounded by nature -- a row per field change per work item -- so it
           scrolls inside the panel instead of stretching the page to whatever the server
           last returned. */}
-      <ul className="mt-2 max-h-96 space-y-2 overflow-y-auto pr-1">
-        {activities.map((activity) => {
-          const from = readValue(activity.old_value);
-          const to = readValue(activity.new_value);
-          return (
-            <li key={activity.id} className="text-12 text-secondary">
-              <span className="text-primary">
-                {activity.actor?.display_name ?? t("project_overview.activity.someone")}
-              </span>{" "}
-              {activity.verb} {activity.field ?? ""}
-              {activity.work_item && <span className="text-tertiary"> on {activity.work_item.name}</span>}
-              <time className="ml-1 text-11 text-tertiary" dateTime={activity.created_at}>
-                {new Date(activity.created_at).toLocaleDateString()}
-              </time>
-              {/* The endpoint has always sent these; nothing rendered them, so every row
+          <ul className="mt-2 max-h-96 space-y-2 overflow-y-auto pr-1">
+            {activities.map((activity) => {
+              const from = readValue(activity.old_value);
+              const to = readValue(activity.new_value);
+              return (
+                <li key={activity.id} className="text-12 text-secondary">
+                  <span className="text-primary">
+                    {activity.actor?.display_name ?? t("project_overview.activity.someone")}
+                  </span>{" "}
+                  {activity.verb} {activity.field ?? ""}
+                  {activity.work_item && <span className="text-tertiary"> on {activity.work_item.name}</span>}
+                  <time className="ml-1 text-11 text-tertiary" dateTime={activity.created_at}>
+                    {new Date(activity.created_at).toLocaleDateString()}
+                  </time>
+                  {/* The endpoint has always sent these; nothing rendered them, so every row
                   read as "someone changed something" with no before or after. */}
-              {(from || to) && (
-                <span className="ml-1 text-11 text-tertiary">
-                  {from && <span className="line-through">{from}</span>}
-                  {from && to && " → "}
-                  {to && <span className="text-secondary">{to}</span>}
-                </span>
-              )}
-            </li>
-          );
-        })}
-        {!activities.length && <li className="text-12 text-tertiary">{t("project_overview.activity.empty")}</li>}
-      </ul>
-      {hasMore && (
-        <button
-          type="button"
-          className="mt-2 text-12 font-medium text-accent-primary hover:underline disabled:opacity-50"
-          disabled={loadingMore}
-          onClick={onLoadMore}
-        >
-          {loadingMore ? t("project_overview.activity.loading") : t("project_overview.activity.load_more")}
-        </button>
+                  {(from || to) && (
+                    <span className="ml-1 text-11 text-tertiary">
+                      {from && <span className="line-through">{from}</span>}
+                      {from && to && " → "}
+                      {to && <span className="text-secondary">{to}</span>}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+            {!activities.length && <li className="text-12 text-tertiary">{t("project_overview.activity.empty")}</li>}
+          </ul>
+          {hasMore && (
+            <button
+              type="button"
+              className="mt-2 text-12 font-medium text-accent-primary hover:underline disabled:opacity-50"
+              disabled={loadingMore}
+              onClick={onLoadMore}
+            >
+              {loadingMore ? t("project_overview.activity.loading") : t("project_overview.activity.load_more")}
+            </button>
+          )}
+        </>
       )}
+    </section>
+  );
+}
+
+/**
+ * A way into Pages, for the meeting notes the overview cannot hold.
+ *
+ * A war-room page needs the decisions that were made out loud -- the weekly, the customer
+ * call, the go/no-go -- and those are documents, not fields. Pages is already the right
+ * home for them; what was missing was any acknowledgement on this page that it exists.
+ *
+ * A link rather than an embedded list. Rendering the last few page titles here would put a
+ * second, worse Pages index on the overview, and the reason someone goes looking for a
+ * meeting note is almost always to read the whole thing.
+ */
+export function MeetingNotesPanel({ workspaceSlug, projectId }: { workspaceSlug: string; projectId: string }) {
+  const { t } = useTranslation();
+
+  return (
+    <section className="rounded border border-subtle p-4">
+      <h2 className="text-13 font-medium text-primary">{t("project_overview.meeting_notes.title")}</h2>
+      <p className="mt-0.5 text-11 text-tertiary">{t("project_overview.meeting_notes.description")}</p>
+      <Link
+        to={`/${workspaceSlug}/projects/${projectId}/pages`}
+        className="mt-2 inline-flex items-center gap-0.5 text-12 font-medium text-accent-primary hover:underline"
+      >
+        {t("project_overview.meeting_notes.open_pages")}
+        <ChevronRight className="size-3.5" />
+      </Link>
     </section>
   );
 }

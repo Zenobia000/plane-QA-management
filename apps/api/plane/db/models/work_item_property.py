@@ -37,6 +37,16 @@ class WorkItemProperty(ProjectBaseModel):
     kind = models.CharField(max_length=32, choices=Kind.choices)
     is_required = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    # The one property the project overview groups its intake panel by.
+    #
+    # Which dimension a team cares about is a product decision, not ours: for one project
+    # it is the customer, for another the tenant, the region or the pilot cohort. Marking
+    # a property instead of naming one in code means the label on the panel is whatever
+    # the team typed into settings, and no category name is compiled into the product.
+    #
+    # Project-level rather than per-viewer because everyone reading the overview should be
+    # looking at the same board.
+    is_grouping_dimension = models.BooleanField(default=False)
     sort_order = models.FloatField(default=65535)
     default_value = models.JSONField(null=True, blank=True)
     type = models.ForeignKey(
@@ -65,6 +75,13 @@ class WorkItemProperty(ProjectBaseModel):
                 fields=["project", "type", "name"],
                 condition=Q(deleted_at__isnull=True, type__isnull=False),
                 name="work_item_property_unique_name_project_type_when_active",
+            ),
+            # One dimension per project. Two would mean the panel silently picking a
+            # winner, and the loser's owner wondering why their choice did nothing.
+            models.UniqueConstraint(
+                fields=["project"],
+                condition=Q(deleted_at__isnull=True, is_grouping_dimension=True),
+                name="work_item_property_one_grouping_dimension_per_project",
             ),
         ]
 

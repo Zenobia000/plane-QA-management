@@ -42,12 +42,17 @@ from plane.app.views.base import BaseAPIView, BaseViewSet
 from plane.db.models import (
     EntityUpdate,
     EntityUpdateLabel,
+    IntakeIssue,
     Issue,
     IssueActivity,
+    IssueAssignee,
     Milestone,
     ProjectLink,
     ProjectMember,
+    WorkItemProperty,
+    WorkItemPropertyValue,
 )
+from plane.db.models.intake import IntakeIssueStatus
 
 STATE_GROUPS = ("backlog", "unstarted", "started", "completed", "cancelled")
 
@@ -358,6 +363,7 @@ class ProjectOverviewEndpoint(BaseAPIView):
                 parent__isnull=True,
             )
             .select_related("actor")
+            .prefetch_related("labels")
             .annotate(reply_count=Count("replies", distinct=True))
             .order_by("-created_at")
         )
@@ -413,3 +419,202 @@ class ProjectOverviewEndpoint(BaseAPIView):
             }
             for milestone in milestones
         ]
+
+
+class ProjectFrontlineEndpoint(BaseAPIView):
+    """Intake, grouped by whichever dimension the project decided matters.
+
+    The question this answers is the one a product manager opens the overview for: which
+    customers are complaining, about what, and has anyone picked it up. Intake already holds
+    the raw material -- everything filed from outside the team lands there with a source and
+    a status -- but as a flat list it answers "how many" and never "whose".
+
+    Nothing here names a category. The grouping property is whatever a project marked with
+    `is_grouping_dimension`, so the row headings read Acme and Globex on one project and
+    APAC and EMEA on the next, and the panel's own title comes from the property's name. A
+    hardcoded "customer" field would have been wrong for every team that thinks in tenants,
+    regions or pilot cohorts -- and there is no reason to make them all think in ours.
+
+    Returns `dimension: null` when no property is marked, which is the signal for the panel
+    to stay off the page rather than render an empty frame.
+    """
+
+    permission_classes = [ProjectEntityPermission]
+
+    # Per group, so one noisy account cannot push every other group off the screen. The
+    # group's own `total` says what is being held back; `open_intake` goes to the rest.
+    ITEMS_PER_GROUP = 5
+
+    #: Intake statuses, folded into the three answers a reader wants.
+    TRIAGE = {
+        IntakeIssueStatus.PENDING: "pending",
+        IntakeIssueStatus.SNOOZED: "pending",
+        IntakeIssueStatus.ACCEPTED: "accepted",
+        IntakeIssueStatus.REJECTED: "declined",
+        IntakeIssueStatus.DUPLICATE: "declined",
+    }
+
+    def get(self, request, slug, project_id):
+        dimension = WorkItemProperty.objects.filter(
+            project_id=project_id,
+            workspace__slug=slug,
+            is_grouping_dimension=True,
+            is_active=True,
+            deleted_at__isnull=True,
+        ).first()
+        if dimension is None:
+            return Response({"dimension": None, "groups": [], "totals": self._empty_totals()})
+
+        intake_rows = list(
+            IntakeIssue.objects.filter(project_id=project_id, workspace__slug=slug)
+            .select_related("issue", "issue__state")
+            .order_by("-created_at")
+        )
+        issue_ids = [row.issue_id for row in intake_rows]
+
+        labels = {option.value: option.label for option in dimension.options.all()}
+        buckets = self._group(intake_rows, self._dimension_values(dimension, issue_ids))
+
+        return Response(
+            {
+                "dimension": {
+                    "id": str(dimension.id),
+                    "name": dimension.name,
+                    "kind": dimension.kind,
+                },
+                "groups": [
+                    {
+                        "value": value,
+                        # Falls back to the raw value for a group whose option was renamed
+                        # or removed: dropping the row would hide work that still exists.
+                        "label": labels.get(value, value) if value is not None else None,
+                        "total": len(rows),
+                        **self._counts(rows),
+                        "items": [self._item(row) for row in rows[: self.ITEMS_PER_GROUP]],
+                    }
+                    for value, rows in buckets
+                ],
+                "totals": self._counts(intake_rows),
+            }
+        )
+
+    def _dimension_values(self, dimension, issue_ids):
+        """issue id -> the values it carries on the grouping property.
+
+        A list either way. A multi-select puts one work item under several headings, which
+        is the honest rendering of a bug two customers reported.
+        """
+        values = {}
+        for property_value in WorkItemPropertyValue.objects.filter(
+            property=dimension, issue_id__in=issue_ids, deleted_at__isnull=True
+        ):
+            raw = property_value.value
+            if raw is None or raw == "":
+                continue
+            values[property_value.issue_id] = raw if isinstance(raw, list) else [raw]
+        return values
+
+    def _group(self, intake_rows, values):
+        """Buckets in descending size, with the untagged pile last.
+
+        Untagged is deliberately kept rather than dropped. It is the pile that says how much
+        of the intake nobody has attributed yet, and a panel that hides it reports a
+        tidier project than the one that exists.
+        """
+        buckets = defaultdict(list)
+        for row in intake_rows:
+            for value in values.get(row.issue_id) or [None]:
+                buckets[value].append(row)
+        return sorted(buckets.items(), key=lambda item: (item[0] is None, -len(item[1]), str(item[0] or "")))
+
+    def _counts(self, rows):
+        counts = self._empty_totals()
+        for row in rows:
+            counts[self.TRIAGE.get(row.status, "pending")] += 1
+        return counts
+
+    def _empty_totals(self):
+        return {"pending": 0, "accepted": 0, "declined": 0}
+
+    def _item(self, row):
+        return {
+            "id": str(row.id),
+            "issue_id": str(row.issue_id),
+            "name": row.issue.name,
+            "sequence_id": row.issue.sequence_id,
+            "status": row.status,
+            "triage": self.TRIAGE.get(row.status, "pending"),
+            "priority": row.issue.priority,
+            "state_group": row.issue.state.group if row.issue.state_id else None,
+            "source": row.source,
+            "created_at": row.created_at,
+        }
+
+
+class ProjectAttentionEndpoint(BaseAPIView):
+    """The few work items that will go wrong first.
+
+    Overdue before urgent, because a missed date is a fact and a priority is an opinion --
+    and within overdue, the oldest miss first. Everything already completed or cancelled is
+    excluded: an item finished late is a retrospective, not a thing to do today.
+
+    Capped hard. A list of forty items is a work-item view with worse filtering, and the
+    reason to put this on the overview is to be readable at a glance. `total_overdue` and
+    `total_urgent` say how much sits behind the cap so the number is never quietly rounded
+    down to what fits.
+    """
+
+    permission_classes = [ProjectEntityPermission]
+
+    LIMIT = 5
+
+    def get(self, request, slug, project_id):
+        today = timezone.now().date()
+        live = Issue.issue_objects.filter(project_id=project_id, workspace__slug=slug).exclude(
+            state__group__in=["completed", "cancelled"]
+        )
+
+        overdue = live.filter(target_date__lt=today).order_by("target_date", "-priority")
+        # Urgent items already counted as overdue are not repeated -- the same row twice
+        # reads as two problems.
+        urgent = live.filter(priority="urgent").exclude(target_date__lt=today).order_by("target_date", "created_at")
+
+        total_overdue = overdue.count()
+        total_urgent = urgent.count()
+        rows = list(overdue.select_related("state")[: self.LIMIT])
+        if len(rows) < self.LIMIT:
+            rows += list(urgent.select_related("state")[: self.LIMIT - len(rows)])
+
+        assignees = defaultdict(list)
+        for link in (
+            IssueAssignee.objects.filter(issue_id__in=[row.id for row in rows])
+            .select_related("assignee")
+            .order_by("created_at")
+        ):
+            assignees[link.issue_id].append(
+                {
+                    "id": str(link.assignee_id),
+                    "display_name": link.assignee.display_name,
+                    "avatar_url": link.assignee.avatar_url,
+                }
+            )
+
+        return Response(
+            {
+                "total_overdue": total_overdue,
+                "total_urgent": total_urgent,
+                "items": [
+                    {
+                        "id": str(row.id),
+                        "name": row.name,
+                        "sequence_id": row.sequence_id,
+                        "priority": row.priority,
+                        "target_date": row.target_date,
+                        "days_overdue": (today - row.target_date).days if row.target_date and row.target_date < today else 0,
+                        "state_group": row.state.group if row.state_id else None,
+                        "assignees": assignees.get(row.id, []),
+                    }
+                    for row in rows
+                ],
+            }
+        )

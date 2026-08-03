@@ -509,6 +509,36 @@
       "coverage": "Cerințe acoperite",
       "latest_run": "Ultima execuție trecută",
       "open_defects": "Defecte deschise"
+    },
+    "frontline": {
+      "unattributed": "Neatribuit",
+      "open_intake": "Deschideți Intake",
+      "summary": "{pending} în așteptare · {accepted} planificate · {declined} refuzate",
+      "pending_count": "{count, plural, one {# în așteptare} few {# în așteptare} other {# în așteptare}}",
+      "all_scheduled": "Totul este planificat",
+      "accept": "Planificați",
+      "decline": "Refuzați",
+      "more_in_group": "{count, plural, one {încă #} few {încă #} other {încă #}}",
+      "triage": {
+        "pending": "În așteptare",
+        "accepted": "Planificat",
+        "declined": "Refuzat"
+      },
+      "not_triaged_title": "Starea nu a fost modificată",
+      "not_triaged_message": "Starea nu a putut fi modificată."
+    },
+    "attention": {
+      "title": "Necesită atenție",
+      "summary": "{overdue} întârziate · {urgent} urgente",
+      "overdue_by": "{count, plural, one {# zi întârziere} few {# zile întârziere} other {# de zile întârziere}}",
+      "urgent": "Urgent",
+      "unassigned": "Neatribuit",
+      "more": "{count, plural, one {încă #} few {încă #} other {încă #}}"
+    },
+    "meeting_notes": {
+      "title": "Procese-verbale",
+      "description": "O decizie luată cu voce tare aparține unui document, nu unui câmp.",
+      "open_pages": "Deschideți Pagini"
     }
   }
 }

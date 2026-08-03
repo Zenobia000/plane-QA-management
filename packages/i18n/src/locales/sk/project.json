@@ -509,6 +509,36 @@
       "coverage": "Pokryté požiadavky",
       "latest_run": "Posledný beh prešiel",
       "open_defects": "Otvorené defekty"
+    },
+    "frontline": {
+      "unattributed": "Bez priradenia",
+      "open_intake": "Otvoriť Intake",
+      "summary": "Čaká: {pending} · naplánované: {accepted} · odmietnuté: {declined}",
+      "pending_count": "{count, plural, one {# čaká} few {# čakajú} many {# čaká} other {# čaká}}",
+      "all_scheduled": "Všetko naplánované",
+      "accept": "Naplánovať",
+      "decline": "Odmietnuť",
+      "more_in_group": "{count, plural, one {ešte #} few {ešte #} many {ešte #} other {ešte #}}",
+      "triage": {
+        "pending": "Čaká",
+        "accepted": "Naplánované",
+        "declined": "Odmietnuté"
+      },
+      "not_triaged_title": "Stav nebol zmenený",
+      "not_triaged_message": "Stav sa nepodarilo zmeniť."
+    },
+    "attention": {
+      "title": "Vyžaduje pozornosť",
+      "summary": "Po termíne: {overdue} · naliehavé: {urgent}",
+      "overdue_by": "{count, plural, one {# deň po termíne} few {# dni po termíne} many {# dňa po termíne} other {# dní po termíne}}",
+      "urgent": "Naliehavé",
+      "unassigned": "Bez riešiteľa",
+      "more": "{count, plural, one {ešte #} few {ešte #} many {ešte #} other {ešte #}}"
+    },
+    "meeting_notes": {
+      "title": "Zápisy zo stretnutí",
+      "description": "Rozhodnutie prijaté nahlas patrí do dokumentu, nie do poľa.",
+      "open_pages": "Otvoriť Stránky"
     }
   }
 }

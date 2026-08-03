@@ -509,6 +509,36 @@
       "coverage": "Покрытые требования",
       "latest_run": "Пройдено в последнем прогоне",
       "open_defects": "Открытые дефекты"
+    },
+    "frontline": {
+      "unattributed": "Без привязки",
+      "open_intake": "Открыть Intake",
+      "summary": "Ожидают: {pending} · запланировано: {accepted} · отклонено: {declined}",
+      "pending_count": "{count, plural, one {# ожидает} few {# ожидают} many {# ожидают} other {# ожидает}}",
+      "all_scheduled": "Всё запланировано",
+      "accept": "Запланировать",
+      "decline": "Отклонить",
+      "more_in_group": "{count, plural, one {ещё #} few {ещё #} many {ещё #} other {ещё #}}",
+      "triage": {
+        "pending": "Ожидает",
+        "accepted": "Запланировано",
+        "declined": "Отклонено"
+      },
+      "not_triaged_title": "Статус не изменён",
+      "not_triaged_message": "Не удалось изменить статус."
+    },
+    "attention": {
+      "title": "Требует внимания",
+      "summary": "Просрочено: {overdue} · срочных: {urgent}",
+      "overdue_by": "{count, plural, one {просрочено на # день} few {просрочено на # дня} many {просрочено на # дней} other {просрочено на # дня}}",
+      "urgent": "Срочно",
+      "unassigned": "Без исполнителя",
+      "more": "{count, plural, one {ещё #} few {ещё #} many {ещё #} other {ещё #}}"
+    },
+    "meeting_notes": {
+      "title": "Протоколы встреч",
+      "description": "Решение, принятое вслух, место которому в документе, а не в поле.",
+      "open_pages": "Открыть Страницы"
     }
   }
 }

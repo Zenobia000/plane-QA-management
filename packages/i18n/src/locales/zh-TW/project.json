@@ -509,6 +509,36 @@
       "coverage": "已涵蓋的需求",
       "latest_run": "最近一次執行通過",
       "open_defects": "未關閉的缺陷"
+    },
+    "frontline": {
+      "unattributed": "尚未歸屬",
+      "open_intake": "開啟 Intake",
+      "summary": "待處理 {pending} · 已排入 {accepted} · 已婉拒 {declined}",
+      "pending_count": "{count, plural, one {待處理 #} other {待處理 #}}",
+      "all_scheduled": "全數已排入",
+      "accept": "排入開發",
+      "decline": "婉拒",
+      "more_in_group": "{count, plural, one {還有 # 筆} other {還有 # 筆}}",
+      "triage": {
+        "pending": "待處理",
+        "accepted": "已排入",
+        "declined": "已婉拒"
+      },
+      "not_triaged_title": "狀態未變更",
+      "not_triaged_message": "無法變更狀態。"
+    },
+    "attention": {
+      "title": "需要注意",
+      "summary": "逾期 {overdue} · 緊急 {urgent}",
+      "overdue_by": "{count, plural, one {逾期 # 天} other {逾期 # 天}}",
+      "urgent": "緊急",
+      "unassigned": "未指派",
+      "more": "{count, plural, one {還有 # 筆} other {還有 # 筆}}"
+    },
+    "meeting_notes": {
+      "title": "會議紀錄",
+      "description": "當面做成的決定該寫成文件，不是欄位。",
+      "open_pages": "開啟頁面"
     }
   }
 }

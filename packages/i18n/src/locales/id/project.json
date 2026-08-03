@@ -509,6 +509,36 @@
       "coverage": "Kebutuhan yang tercakup",
       "latest_run": "Lulus pada eksekusi terakhir",
       "open_defects": "Defek terbuka"
+    },
+    "frontline": {
+      "unattributed": "Belum diatribusikan",
+      "open_intake": "Buka Intake",
+      "summary": "{pending} menunggu · {accepted} dijadwalkan · {declined} ditolak",
+      "pending_count": "{count, plural, one {# menunggu} other {# menunggu}}",
+      "all_scheduled": "Semua sudah dijadwalkan",
+      "accept": "Jadwalkan",
+      "decline": "Tolak",
+      "more_in_group": "{count, plural, one {# lainnya} other {# lainnya}}",
+      "triage": {
+        "pending": "Menunggu",
+        "accepted": "Dijadwalkan",
+        "declined": "Ditolak"
+      },
+      "not_triaged_title": "Status tidak diubah",
+      "not_triaged_message": "Status tidak dapat diubah."
+    },
+    "attention": {
+      "title": "Perlu perhatian",
+      "summary": "{overdue} lewat tenggat · {urgent} mendesak",
+      "overdue_by": "{count, plural, one {telat # hari} other {telat # hari}}",
+      "urgent": "Mendesak",
+      "unassigned": "Belum ditugaskan",
+      "more": "{count, plural, one {# lainnya} other {# lainnya}}"
+    },
+    "meeting_notes": {
+      "title": "Notulen rapat",
+      "description": "Keputusan yang diambil secara lisan tempatnya di dokumen, bukan di sebuah bidang.",
+      "open_pages": "Buka Halaman"
     }
   }
 }

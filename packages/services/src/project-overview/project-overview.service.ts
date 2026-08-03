@@ -6,6 +6,8 @@
 
 import { API_BASE_URL } from "@plane/constants";
 import type {
+  TProjectAttention,
+  TProjectFrontline,
   TEntityUpdate,
   TEntityUpdatePayload,
   TMilestone,
@@ -47,6 +49,30 @@ export class ProjectOverviewService extends APIService {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/activity/`, {
       params: cursor ? { cursor } : undefined,
     })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Intake grouped by the project's chosen dimension.
+   *
+   * Separate from `getOverview` because it is the one part of the page a project can switch
+   * off: a team that marked no grouping property gets `dimension: null` and the panel never
+   * renders. Bundling it would make every overview pay for a query most projects skip.
+   */
+  async getFrontline(workspaceSlug: string, projectId: string): Promise<TProjectFrontline> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/frontline/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /** Overdue and urgent work items, capped at five. */
+  async getAttention(workspaceSlug: string, projectId: string): Promise<TProjectAttention> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/attention/`)
       .then((response) => response.data)
       .catch((error) => {
         throw error?.response?.data;

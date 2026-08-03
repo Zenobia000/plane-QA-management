@@ -23,6 +23,8 @@ from plane.app.views import (
     EntityUpdateViewSet,
     ProjectProgressEndpoint,
     ProjectActivityEndpoint,
+    ProjectAttentionEndpoint,
+    ProjectFrontlineEndpoint,
     ProjectOverviewEndpoint,
     StateTransitionViewSet,
     WorklogViewSet,
@@ -155,6 +157,16 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/activity/",
         ProjectActivityEndpoint.as_view(),
         name="project-activity",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/frontline/",
+        ProjectFrontlineEndpoint.as_view(),
+        name="project-frontline",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/attention/",
+        ProjectAttentionEndpoint.as_view(),
+        name="project-attention",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/links/",

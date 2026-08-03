@@ -135,3 +135,68 @@ export type TProjectOverview = {
   updates_total: number;
   milestones: TProjectMilestoneSummary[];
 };
+
+/**
+ * How a piece of intake was triaged, folded down from `IntakeIssue.status`.
+ *
+ * Five statuses become three answers because three is what a reader of the overview asks:
+ * has anyone looked at it, is it going to be done, or was it turned down. Snoozed is still
+ * waiting; duplicate is still a decision not to do the work twice.
+ */
+export type TFrontlineTriage = "pending" | "accepted" | "declined";
+
+export type TFrontlineItem = {
+  id: string;
+  /** The work item, which is what the triage endpoint and the detail page are keyed by. */
+  issue_id: string;
+  name: string;
+  sequence_id: number;
+  status: number;
+  triage: TFrontlineTriage;
+  priority: string;
+  state_group: string | null;
+  source: string | null;
+  created_at: string;
+};
+
+export type TFrontlineGroup = {
+  /** The raw property value, or null for intake nobody has attributed yet. */
+  value: string | null;
+  label: string | null;
+  total: number;
+  pending: number;
+  accepted: number;
+  declined: number;
+  items: TFrontlineItem[];
+};
+
+/**
+ * Intake grouped by whatever dimension the project marked.
+ *
+ * `dimension` is null when no property carries `is_grouping_dimension`, which is the signal
+ * to leave the panel off the page entirely. The dimension's `name` is the panel's heading:
+ * no category name is compiled into the client.
+ */
+export type TProjectFrontline = {
+  dimension: { id: string; name: string; kind: string } | null;
+  groups: TFrontlineGroup[];
+  totals: { pending: number; accepted: number; declined: number };
+};
+
+export type TAttentionItem = {
+  id: string;
+  name: string;
+  sequence_id: number;
+  priority: string;
+  target_date: string | null;
+  days_overdue: number;
+  state_group: string | null;
+  assignees: { id: string; display_name: string; avatar_url: string | null }[];
+};
+
+/** The few work items that will go wrong first. Capped; the totals say by how much. */
+export type TProjectAttention = {
+  total_overdue: number;
+  total_urgent: number;
+  items: TAttentionItem[];
+};

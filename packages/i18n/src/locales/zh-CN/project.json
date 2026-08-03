@@ -509,6 +509,36 @@
       "coverage": "已覆盖的需求",
       "latest_run": "最近一次执行通过",
       "open_defects": "未关闭的缺陷"
+    },
+    "frontline": {
+      "unattributed": "尚未归属",
+      "open_intake": "打开 Intake",
+      "summary": "待处理 {pending} · 已排入 {accepted} · 已婉拒 {declined}",
+      "pending_count": "{count, plural, one {待处理 #} other {待处理 #}}",
+      "all_scheduled": "已全部排入",
+      "accept": "排入开发",
+      "decline": "婉拒",
+      "more_in_group": "{count, plural, one {还有 # 条} other {还有 # 条}}",
+      "triage": {
+        "pending": "待处理",
+        "accepted": "已排入",
+        "declined": "已婉拒"
+      },
+      "not_triaged_title": "状态未变更",
+      "not_triaged_message": "无法变更状态。"
+    },
+    "attention": {
+      "title": "需要注意",
+      "summary": "逾期 {overdue} · 紧急 {urgent}",
+      "overdue_by": "{count, plural, one {逾期 # 天} other {逾期 # 天}}",
+      "urgent": "紧急",
+      "unassigned": "未指派",
+      "more": "{count, plural, one {还有 # 条} other {还有 # 条}}"
+    },
+    "meeting_notes": {
+      "title": "会议记录",
+      "description": "当面做出的决定应写成文档，而不是字段。",
+      "open_pages": "打开页面"
     }
   }
 }

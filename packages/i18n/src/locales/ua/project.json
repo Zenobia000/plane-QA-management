@@ -509,6 +509,36 @@
       "coverage": "Покриті вимоги",
       "latest_run": "Пройдено в останньому прогоні",
       "open_defects": "Відкриті дефекти"
+    },
+    "frontline": {
+      "unattributed": "Без прив’язки",
+      "open_intake": "Відкрити Intake",
+      "summary": "Очікують: {pending} · заплановано: {accepted} · відхилено: {declined}",
+      "pending_count": "{count, plural, one {# очікує} few {# очікують} many {# очікують} other {# очікує}}",
+      "all_scheduled": "Усе заплановано",
+      "accept": "Запланувати",
+      "decline": "Відхилити",
+      "more_in_group": "{count, plural, one {ще #} few {ще #} many {ще #} other {ще #}}",
+      "triage": {
+        "pending": "Очікує",
+        "accepted": "Заплановано",
+        "declined": "Відхилено"
+      },
+      "not_triaged_title": "Статус не змінено",
+      "not_triaged_message": "Не вдалося змінити статус."
+    },
+    "attention": {
+      "title": "Потребує уваги",
+      "summary": "Прострочено: {overdue} · термінових: {urgent}",
+      "overdue_by": "{count, plural, one {прострочено на # день} few {прострочено на # дні} many {прострочено на # днів} other {прострочено на # дня}}",
+      "urgent": "Терміново",
+      "unassigned": "Без виконавця",
+      "more": "{count, plural, one {ще #} few {ще #} many {ще #} other {ще #}}"
+    },
+    "meeting_notes": {
+      "title": "Протоколи зустрічей",
+      "description": "Рішення, ухвалене вголос, належить документу, а не полю.",
+      "open_pages": "Відкрити Сторінки"
     }
   }
 }

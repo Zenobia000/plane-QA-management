@@ -509,6 +509,36 @@
       "coverage": "Requisitos cubiertos",
       "latest_run": "Última ejecución superada",
       "open_defects": "Defectos abiertos"
+    },
+    "frontline": {
+      "unattributed": "Sin atribuir",
+      "open_intake": "Abrir Intake",
+      "summary": "{pending} en espera · {accepted} planificados · {declined} rechazados",
+      "pending_count": "{count, plural, one {# en espera} other {# en espera}}",
+      "all_scheduled": "Todo planificado",
+      "accept": "Planificar",
+      "decline": "Rechazar",
+      "more_in_group": "{count, plural, one {# más} other {# más}}",
+      "triage": {
+        "pending": "En espera",
+        "accepted": "Planificado",
+        "declined": "Rechazado"
+      },
+      "not_triaged_title": "Estado no modificado",
+      "not_triaged_message": "No se pudo modificar el estado."
+    },
+    "attention": {
+      "title": "Requiere atención",
+      "summary": "{overdue} vencidos · {urgent} urgentes",
+      "overdue_by": "{count, plural, one {# día de retraso} other {# días de retraso}}",
+      "urgent": "Urgente",
+      "unassigned": "Sin asignar",
+      "more": "{count, plural, one {# más} other {# más}}"
+    },
+    "meeting_notes": {
+      "title": "Actas de reunión",
+      "description": "Una decisión tomada de viva voz pertenece a un documento, no a un campo.",
+      "open_pages": "Abrir Páginas"
     }
   }
 }

@@ -509,6 +509,36 @@
       "coverage": "Abgedeckte Anforderungen",
       "latest_run": "Letzter Lauf bestanden",
       "open_defects": "Offene Fehler"
+    },
+    "frontline": {
+      "unattributed": "Nicht zugeordnet",
+      "open_intake": "Intake öffnen",
+      "summary": "{pending} offen · {accepted} eingeplant · {declined} abgelehnt",
+      "pending_count": "{count, plural, one {# offen} other {# offen}}",
+      "all_scheduled": "Alles eingeplant",
+      "accept": "Einplanen",
+      "decline": "Ablehnen",
+      "more_in_group": "{count, plural, one {# weiterer} other {# weitere}}",
+      "triage": {
+        "pending": "Offen",
+        "accepted": "Eingeplant",
+        "declined": "Abgelehnt"
+      },
+      "not_triaged_title": "Status nicht geändert",
+      "not_triaged_message": "Der Status konnte nicht geändert werden."
+    },
+    "attention": {
+      "title": "Braucht Aufmerksamkeit",
+      "summary": "{overdue} überfällig · {urgent} dringend",
+      "overdue_by": "{count, plural, one {# Tag überfällig} other {# Tage überfällig}}",
+      "urgent": "Dringend",
+      "unassigned": "Nicht zugewiesen",
+      "more": "{count, plural, one {# weiterer} other {# weitere}}"
+    },
+    "meeting_notes": {
+      "title": "Besprechungsnotizen",
+      "description": "Mündlich getroffene Entscheidungen gehören in ein Dokument, nicht in ein Feld.",
+      "open_pages": "Seiten öffnen"
     }
   }
 }

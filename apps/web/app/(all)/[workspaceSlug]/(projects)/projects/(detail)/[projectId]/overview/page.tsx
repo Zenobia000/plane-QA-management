@@ -8,23 +8,32 @@ import { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { AlertTriangle } from "lucide-react";
 import { useParams } from "react-router";
-import { ProjectOverviewService } from "@plane/services";
+import { IntakeIssueService, ProjectOverviewService } from "@plane/services";
 import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
-import type { TProjectActivityEvent, TProjectOverview, TUpdateStatus } from "@plane/types";
+import type {
+  TProjectActivityEvent,
+  TProjectAttention,
+  TProjectFrontline,
+  TProjectOverview,
+  TUpdateStatus,
+} from "@plane/types";
 import { PageHead } from "@/components/core/page-title";
 import { readError } from "./errors";
 import { useProject } from "@/hooks/store/use-project";
 import { useLabel } from "@/hooks/store/use-label";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
-import { ActivityPanel, LinksPanel, MilestonesPanel } from "./panels";
+import { ActivityPanel, LinksPanel, MeetingNotesPanel, MilestonesPanel } from "./panels";
+import { AttentionPanel } from "./attention-panel";
+import { FrontlinePanel } from "./frontline-panel";
 import { OverviewHeader } from "./header";
 import { ProgressBar } from "./progress-bar";
 import { ReadinessPanel } from "./readiness-panel";
 import { UpdatesPanel } from "@/components/updates";
 
 const overviewService = new ProjectOverviewService();
+const intakeIssueService = new IntakeIssueService();
 
 /**
  * The project's landing page: how it is going, without opening the work-item list.
@@ -50,6 +59,8 @@ export default observer(function ProjectOverviewPage() {
   const { t } = useTranslation();
   const [overview, setOverview] = useState<TProjectOverview | null>(null);
   const [activities, setActivities] = useState<TProjectActivityEvent[]>([]);
+  const [frontline, setFrontline] = useState<TProjectFrontline | null>(null);
+  const [attention, setAttention] = useState<TProjectAttention | null>(null);
   const [activityCursor, setActivityCursor] = useState<string | null>(null);
   const [loadingMoreActivity, setLoadingMoreActivity] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,11 +82,18 @@ export default observer(function ProjectOverviewPage() {
   const load = useCallback(async () => {
     if (!slug || !id) return;
     try {
-      const [data, activity] = await Promise.all([
+      // The frontline and attention panels are allowed to fail on their own. Both are
+      // additions to a page that was useful without them, and a project with no intake
+      // should not see the whole overview replaced by an error banner.
+      const [data, activity, frontlineData, attentionData] = await Promise.all([
         overviewService.getOverview(slug, id),
         overviewService.getActivity(slug, id),
+        overviewService.getFrontline(slug, id).catch(() => null),
+        overviewService.getAttention(slug, id).catch(() => null),
       ]);
       setOverview(data);
+      setFrontline(frontlineData);
+      setAttention(attentionData);
       setActivities(activity.results ?? []);
       // Only the first page. Anything already loaded is discarded on purpose: a refetch
       // after a write has to agree with the server about where the feed now starts.
@@ -192,6 +210,28 @@ export default observer(function ProjectOverviewPage() {
     await load();
   };
 
+  /**
+   * Retriage without leaving the page.
+   *
+   * A status change, not a form -- the decision was already made in the reader's head by
+   * the time they got to the row, and sending them to Intake to click one button is how a
+   * queue stays untriaged. The whole page reloads afterwards because accepting a report
+   * also moves the progress bar and the attention list.
+   */
+  const triageIntake = async (issueId: string, status: number) => {
+    if (!slug || !id) return;
+    try {
+      await intakeIssueService.triage(slug, id, issueId, { status });
+      await load();
+    } catch (failure) {
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: t("project_overview.frontline.not_triaged_title"),
+        message: readError(failure, t("project_overview.frontline.not_triaged_message")),
+      });
+    }
+  };
+
   const addLink = async (url: string, title: string) => {
     if (!slug || !id) return;
     await overviewService.createLink(slug, id, { url, title });
@@ -259,7 +299,18 @@ export default observer(function ProjectOverviewPage() {
                 onReply={postReply}
                 onLoadAll={loadAllUpdates}
               />
+              <FrontlinePanel
+                workspaceSlug={slug}
+                projectId={id}
+                data={frontline}
+                canTriage={canModerate}
+                onTriage={triageIntake}
+              />
+              <AttentionPanel workspaceSlug={slug} projectId={id} data={attention} />
               <ProgressBar progress={overview.progress} />
+              {/* Last, and collapsed. Activity is the rawest thing on the page -- one row
+                  per field change -- so it belongs below every panel that has already
+                  turned those rows into an answer. */}
               <ActivityPanel
                 activities={activities}
                 hasMore={!!activityCursor}
@@ -275,6 +326,7 @@ export default observer(function ProjectOverviewPage() {
                 onRename={renameMilestone}
                 onRemove={removeMilestone}
               />
+              <MeetingNotesPanel workspaceSlug={slug} projectId={id} />
               <LinksPanel links={overview.links} disabled={!canEdit} onAdd={addLink} onRemove={removeLink} />
             </div>
           </div>

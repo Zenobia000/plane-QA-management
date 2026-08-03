@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {Mostrar # atualização anterior} many {Mostrar # atualizações anteriores} other {Mostrar # atualizações anteriores}}",
-      "load_error": "Não foi possível carregar o restante da conversa."
+      "load_error": "Não foi possível carregar o restante da conversa.",
+      "title": "Mural de avisos",
+      "subtitle_project": "O que a equipe comunica entre si sobre este projeto.",
+      "subtitle_work_item": "Em que ponto está este item de trabalho.",
+      "edited": "Editado",
+      "edit": "Editar",
+      "delete": "Excluir",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "post": "Publicar",
+      "posting": "Publicando…",
+      "description_label": "Descrição da atualização",
+      "description_placeholder": "O que mudou e o que isso significa para a data.",
+      "all_topics": "Tudo",
+      "clear_filter": "Limpar o filtro de assunto",
+      "none_in_topic": "Ainda não há nada publicado neste assunto.",
+      "empty": "Ainda não há atualizações.",
+      "reply": "Responder",
+      "reply_label": "Responder a esta atualização",
+      "reply_count": "{count, plural, one {# resposta} many {# respostas} other {# respostas}}",
+      "hide_replies": "Ocultar respostas",
+      "no_replies": "Ainda não há respostas.",
+      "send": "Enviar",
+      "not_posted": "Não foi possível publicar a atualização.",
+      "not_saved_title": "Atualização não salva",
+      "not_saved_message": "Não foi possível salvar a alteração.",
+      "not_removed_title": "Atualização não removida",
+      "not_removed_message": "Não foi possível remover a atualização.",
+      "status": {
+        "on_track": "No prazo",
+        "at_risk": "Em risco",
+        "off_track": "Fora do plano"
+      }
     },
     "readiness": {
       "ready": "Pronto para lançar",
@@ -477,6 +509,36 @@
       "coverage": "Requisitos cobertos",
       "latest_run": "Última execução aprovada",
       "open_defects": "Defeitos abertos"
+    },
+    "frontline": {
+      "unattributed": "Sem atribuição",
+      "open_intake": "Abrir Intake",
+      "summary": "{pending} aguardando · {accepted} planejados · {declined} recusados",
+      "pending_count": "{count, plural, one {# aguardando} many {# aguardando} other {# aguardando}}",
+      "all_scheduled": "Tudo planejado",
+      "accept": "Planejar",
+      "decline": "Recusar",
+      "more_in_group": "{count, plural, one {mais #} many {mais #} other {mais #}}",
+      "triage": {
+        "pending": "Aguardando",
+        "accepted": "Planejado",
+        "declined": "Recusado"
+      },
+      "not_triaged_title": "Status não alterado",
+      "not_triaged_message": "Não foi possível alterar o status."
+    },
+    "attention": {
+      "title": "Precisa de atenção",
+      "summary": "{overdue} atrasados · {urgent} urgentes",
+      "overdue_by": "{count, plural, one {# dia de atraso} many {# dias de atraso} other {# dias de atraso}}",
+      "urgent": "Urgente",
+      "unassigned": "Sem responsável",
+      "more": "{count, plural, one {mais #} many {mais #} other {mais #}}"
+    },
+    "meeting_notes": {
+      "title": "Atas de reunião",
+      "description": "Uma decisão tomada em voz alta pertence a um documento, não a um campo.",
+      "open_pages": "Abrir Páginas"
     }
   }
 }

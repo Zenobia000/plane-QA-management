@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {Zobrazit # starší aktualizaci} few {Zobrazit # starší aktualizace} many {Zobrazit # starší aktualizace} other {Zobrazit # starších aktualizací}}",
-      "load_error": "Zbytek vlákna se nepodařilo načíst."
+      "load_error": "Zbytek vlákna se nepodařilo načíst.",
+      "title": "Nástěnka",
+      "subtitle_project": "Co si tým o tomto projektu navzájem sděluje.",
+      "subtitle_work_item": "V jaké fázi je tato pracovní položka.",
+      "edited": "Upraveno",
+      "edit": "Upravit",
+      "delete": "Odstranit",
+      "save": "Uložit",
+      "cancel": "Zrušit",
+      "post": "Publikovat",
+      "posting": "Publikuje se…",
+      "description_label": "Popis aktualizace",
+      "description_placeholder": "Co se změnilo a co to znamená pro termín.",
+      "all_topics": "Vše",
+      "clear_filter": "Vymazat filtr tématu",
+      "none_in_topic": "V tomto tématu zatím nic není.",
+      "empty": "Zatím žádné aktualizace.",
+      "reply": "Odpovědět",
+      "reply_label": "Odpovědět na tuto aktualizaci",
+      "reply_count": "{count, plural, one {# odpověď} few {# odpovědi} many {# odpovědi} other {# odpovědí}}",
+      "hide_replies": "Skrýt odpovědi",
+      "no_replies": "Zatím žádné odpovědi.",
+      "send": "Odeslat",
+      "not_posted": "Aktualizaci se nepodařilo publikovat.",
+      "not_saved_title": "Aktualizace nebyla uložena",
+      "not_saved_message": "Změnu se nepodařilo uložit.",
+      "not_removed_title": "Aktualizace nebyla odstraněna",
+      "not_removed_message": "Aktualizaci se nepodařilo odstranit.",
+      "status": {
+        "on_track": "Podle plánu",
+        "at_risk": "Ohroženo",
+        "off_track": "Mimo plán"
+      }
     },
     "readiness": {
       "ready": "Připraveno k vydání",
@@ -477,6 +509,36 @@
       "coverage": "Pokryté požadavky",
       "latest_run": "Poslední běh prošel",
       "open_defects": "Otevřené defekty"
+    },
+    "frontline": {
+      "unattributed": "Bez přiřazení",
+      "open_intake": "Otevřít Intake",
+      "summary": "Čeká: {pending} · naplánováno: {accepted} · odmítnuto: {declined}",
+      "pending_count": "{count, plural, one {# čeká} few {# čekají} many {# čeká} other {# čeká}}",
+      "all_scheduled": "Vše naplánováno",
+      "accept": "Naplánovat",
+      "decline": "Odmítnout",
+      "more_in_group": "{count, plural, one {ještě #} few {ještě #} many {ještě #} other {ještě #}}",
+      "triage": {
+        "pending": "Čeká",
+        "accepted": "Naplánováno",
+        "declined": "Odmítnuto"
+      },
+      "not_triaged_title": "Stav nebyl změněn",
+      "not_triaged_message": "Stav se nepodařilo změnit."
+    },
+    "attention": {
+      "title": "Vyžaduje pozornost",
+      "summary": "Po termínu: {overdue} · naléhavé: {urgent}",
+      "overdue_by": "{count, plural, one {# den po termínu} few {# dny po termínu} many {# dne po termínu} other {# dní po termínu}}",
+      "urgent": "Naléhavé",
+      "unassigned": "Bez řešitele",
+      "more": "{count, plural, one {ještě #} few {ještě #} many {ještě #} other {ještě #}}"
+    },
+    "meeting_notes": {
+      "title": "Zápisy z jednání",
+      "description": "Rozhodnutí učiněné nahlas patří do dokumentu, ne do pole.",
+      "open_pages": "Otevřít Stránky"
     }
   }
 }

@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {以前の更新を # 件表示} other {以前の更新を # 件表示}}",
-      "load_error": "スレッドの残りを読み込めませんでした。"
+      "load_error": "スレッドの残りを読み込めませんでした。",
+      "title": "お知らせ掲示板",
+      "subtitle_project": "このプロジェクトについてチームが共有していることです。",
+      "subtitle_work_item": "この作業項目の現在の状況です。",
+      "edited": "編集済み",
+      "edit": "編集",
+      "delete": "削除",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "post": "投稿",
+      "posting": "投稿中……",
+      "description_label": "更新の内容",
+      "description_placeholder": "何が変わり、日程にどう影響するかを記入します。",
+      "all_topics": "すべて",
+      "clear_filter": "トピックの絞り込みを解除",
+      "none_in_topic": "このトピックにはまだ投稿がありません。",
+      "empty": "更新はまだありません。",
+      "reply": "返信",
+      "reply_label": "この更新に返信",
+      "reply_count": "{count, plural, one {返信 # 件} other {返信 # 件}}",
+      "hide_replies": "返信を非表示",
+      "no_replies": "返信はまだありません。",
+      "send": "送信",
+      "not_posted": "更新を投稿できませんでした。",
+      "not_saved_title": "更新を保存できませんでした",
+      "not_saved_message": "変更を保存できませんでした。",
+      "not_removed_title": "更新を削除できませんでした",
+      "not_removed_message": "更新を削除できませんでした。",
+      "status": {
+        "on_track": "順調",
+        "at_risk": "リスクあり",
+        "off_track": "遅延"
+      }
     },
     "readiness": {
       "ready": "リリース可能",
@@ -477,6 +509,36 @@
       "coverage": "カバー済みの要件",
       "latest_run": "直近の実行で合格",
       "open_defects": "未解決の不具合"
+    },
+    "frontline": {
+      "unattributed": "未割り当て",
+      "open_intake": "Intake を開く",
+      "summary": "未対応 {pending} 件・対応予定 {accepted} 件・見送り {declined} 件",
+      "pending_count": "{count, plural, one {未対応 # 件} other {未対応 # 件}}",
+      "all_scheduled": "すべて対応予定",
+      "accept": "対応予定にする",
+      "decline": "見送る",
+      "more_in_group": "{count, plural, one {他 # 件} other {他 # 件}}",
+      "triage": {
+        "pending": "未対応",
+        "accepted": "対応予定",
+        "declined": "見送り"
+      },
+      "not_triaged_title": "状態を変更できませんでした",
+      "not_triaged_message": "状態を変更できませんでした。"
+    },
+    "attention": {
+      "title": "要注意",
+      "summary": "期限超過 {overdue} 件・緊急 {urgent} 件",
+      "overdue_by": "{count, plural, one {# 日超過} other {# 日超過}}",
+      "urgent": "緊急",
+      "unassigned": "未割り当て",
+      "more": "{count, plural, one {他 # 件} other {他 # 件}}"
+    },
+    "meeting_notes": {
+      "title": "議事録",
+      "description": "その場で決まったことは項目ではなく文書に残します。",
+      "open_pages": "ページを開く"
     }
   }
 }

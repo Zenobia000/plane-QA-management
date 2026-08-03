@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {Afișați # actualizare anterioară} few {Afișați # actualizări anterioare} other {Afișați # de actualizări anterioare}}",
-      "load_error": "Restul discuției nu a putut fi încărcat."
+      "load_error": "Restul discuției nu a putut fi încărcat.",
+      "title": "Avizier",
+      "subtitle_project": "Ceea ce își comunică echipa despre acest proiect.",
+      "subtitle_work_item": "În ce stadiu se află acest element de lucru.",
+      "edited": "Editat",
+      "edit": "Editați",
+      "delete": "Ștergeți",
+      "save": "Salvați",
+      "cancel": "Anulați",
+      "post": "Publicați",
+      "posting": "Se publică…",
+      "description_label": "Descrierea actualizării",
+      "description_placeholder": "Ce s-a schimbat și ce înseamnă asta pentru termen.",
+      "all_topics": "Toate",
+      "clear_filter": "Ștergeți filtrul de subiect",
+      "none_in_topic": "Nu s-a publicat încă nimic la acest subiect.",
+      "empty": "Nicio actualizare deocamdată.",
+      "reply": "Răspundeți",
+      "reply_label": "Răspundeți la această actualizare",
+      "reply_count": "{count, plural, one {# răspuns} few {# răspunsuri} other {# de răspunsuri}}",
+      "hide_replies": "Ascundeți răspunsurile",
+      "no_replies": "Niciun răspuns deocamdată.",
+      "send": "Trimiteți",
+      "not_posted": "Actualizarea nu a putut fi publicată.",
+      "not_saved_title": "Actualizarea nu a fost salvată",
+      "not_saved_message": "Modificarea nu a putut fi salvată.",
+      "not_removed_title": "Actualizarea nu a fost ștearsă",
+      "not_removed_message": "Actualizarea nu a putut fi ștearsă.",
+      "status": {
+        "on_track": "Conform planului",
+        "at_risk": "În pericol",
+        "off_track": "În afara planului"
+      }
     },
     "readiness": {
       "ready": "Gata de livrare",
@@ -477,6 +509,36 @@
       "coverage": "Cerințe acoperite",
       "latest_run": "Ultima execuție trecută",
       "open_defects": "Defecte deschise"
+    },
+    "frontline": {
+      "unattributed": "Neatribuit",
+      "open_intake": "Deschideți Intake",
+      "summary": "{pending} în așteptare · {accepted} planificate · {declined} refuzate",
+      "pending_count": "{count, plural, one {# în așteptare} few {# în așteptare} other {# în așteptare}}",
+      "all_scheduled": "Totul este planificat",
+      "accept": "Planificați",
+      "decline": "Refuzați",
+      "more_in_group": "{count, plural, one {încă #} few {încă #} other {încă #}}",
+      "triage": {
+        "pending": "În așteptare",
+        "accepted": "Planificat",
+        "declined": "Refuzat"
+      },
+      "not_triaged_title": "Starea nu a fost modificată",
+      "not_triaged_message": "Starea nu a putut fi modificată."
+    },
+    "attention": {
+      "title": "Necesită atenție",
+      "summary": "{overdue} întârziate · {urgent} urgente",
+      "overdue_by": "{count, plural, one {# zi întârziere} few {# zile întârziere} other {# de zile întârziere}}",
+      "urgent": "Urgent",
+      "unassigned": "Neatribuit",
+      "more": "{count, plural, one {încă #} few {încă #} other {încă #}}"
+    },
+    "meeting_notes": {
+      "title": "Procese-verbale",
+      "description": "O decizie luată cu voce tare aparține unui document, nu unui câmp.",
+      "open_pages": "Deschideți Pagini"
     }
   }
 }

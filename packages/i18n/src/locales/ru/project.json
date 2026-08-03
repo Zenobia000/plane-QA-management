@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {Показать # предыдущее обновление} few {Показать # предыдущих обновления} many {Показать # предыдущих обновлений} other {Показать # предыдущих обновления}}",
-      "load_error": "Не удалось загрузить остальную часть обсуждения."
+      "load_error": "Не удалось загрузить остальную часть обсуждения.",
+      "title": "Доска объявлений",
+      "subtitle_project": "Что команда сообщает друг другу об этом проекте.",
+      "subtitle_work_item": "На каком этапе находится эта рабочая задача.",
+      "edited": "Изменено",
+      "edit": "Изменить",
+      "delete": "Удалить",
+      "save": "Сохранить",
+      "cancel": "Отмена",
+      "post": "Опубликовать",
+      "posting": "Публикация…",
+      "description_label": "Описание обновления",
+      "description_placeholder": "Что изменилось и что это значит для срока.",
+      "all_topics": "Все",
+      "clear_filter": "Сбросить фильтр по теме",
+      "none_in_topic": "В этой теме пока ничего не опубликовано.",
+      "empty": "Обновлений пока нет.",
+      "reply": "Ответить",
+      "reply_label": "Ответить на это обновление",
+      "reply_count": "{count, plural, one {# ответ} few {# ответа} many {# ответов} other {# ответа}}",
+      "hide_replies": "Скрыть ответы",
+      "no_replies": "Ответов пока нет.",
+      "send": "Отправить",
+      "not_posted": "Не удалось опубликовать обновление.",
+      "not_saved_title": "Обновление не сохранено",
+      "not_saved_message": "Не удалось сохранить изменение.",
+      "not_removed_title": "Обновление не удалено",
+      "not_removed_message": "Не удалось удалить обновление.",
+      "status": {
+        "on_track": "По плану",
+        "at_risk": "Под угрозой",
+        "off_track": "Отклонение от плана"
+      }
     },
     "readiness": {
       "ready": "Готово к выпуску",
@@ -477,6 +509,36 @@
       "coverage": "Покрытые требования",
       "latest_run": "Пройдено в последнем прогоне",
       "open_defects": "Открытые дефекты"
+    },
+    "frontline": {
+      "unattributed": "Без привязки",
+      "open_intake": "Открыть Intake",
+      "summary": "Ожидают: {pending} · запланировано: {accepted} · отклонено: {declined}",
+      "pending_count": "{count, plural, one {# ожидает} few {# ожидают} many {# ожидают} other {# ожидает}}",
+      "all_scheduled": "Всё запланировано",
+      "accept": "Запланировать",
+      "decline": "Отклонить",
+      "more_in_group": "{count, plural, one {ещё #} few {ещё #} many {ещё #} other {ещё #}}",
+      "triage": {
+        "pending": "Ожидает",
+        "accepted": "Запланировано",
+        "declined": "Отклонено"
+      },
+      "not_triaged_title": "Статус не изменён",
+      "not_triaged_message": "Не удалось изменить статус."
+    },
+    "attention": {
+      "title": "Требует внимания",
+      "summary": "Просрочено: {overdue} · срочных: {urgent}",
+      "overdue_by": "{count, plural, one {просрочено на # день} few {просрочено на # дня} many {просрочено на # дней} other {просрочено на # дня}}",
+      "urgent": "Срочно",
+      "unassigned": "Без исполнителя",
+      "more": "{count, plural, one {ещё #} few {ещё #} many {ещё #} other {ещё #}}"
+    },
+    "meeting_notes": {
+      "title": "Протоколы встреч",
+      "description": "Решение, принятое вслух, место которому в документе, а не в поле.",
+      "open_pages": "Открыть Страницы"
     }
   }
 }

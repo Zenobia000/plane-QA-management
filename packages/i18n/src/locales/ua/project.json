@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {Показати # попереднє оновлення} few {Показати # попередніх оновлення} many {Показати # попередніх оновлень} other {Показати # попередніх оновлення}}",
-      "load_error": "Не вдалося завантажити решту обговорення."
+      "load_error": "Не вдалося завантажити решту обговорення.",
+      "title": "Дошка оголошень",
+      "subtitle_project": "Що команда повідомляє одне одному про цей проєкт.",
+      "subtitle_work_item": "На якому етапі це робоче завдання.",
+      "edited": "Змінено",
+      "edit": "Змінити",
+      "delete": "Видалити",
+      "save": "Зберегти",
+      "cancel": "Скасувати",
+      "post": "Опублікувати",
+      "posting": "Публікація…",
+      "description_label": "Опис оновлення",
+      "description_placeholder": "Що змінилося і що це означає для терміну.",
+      "all_topics": "Усі",
+      "clear_filter": "Скинути фільтр за темою",
+      "none_in_topic": "У цій темі поки що нічого не опубліковано.",
+      "empty": "Оновлень поки немає.",
+      "reply": "Відповісти",
+      "reply_label": "Відповісти на це оновлення",
+      "reply_count": "{count, plural, one {# відповідь} few {# відповіді} many {# відповідей} other {# відповіді}}",
+      "hide_replies": "Сховати відповіді",
+      "no_replies": "Відповідей поки немає.",
+      "send": "Надіслати",
+      "not_posted": "Не вдалося опублікувати оновлення.",
+      "not_saved_title": "Оновлення не збережено",
+      "not_saved_message": "Не вдалося зберегти зміну.",
+      "not_removed_title": "Оновлення не видалено",
+      "not_removed_message": "Не вдалося видалити оновлення.",
+      "status": {
+        "on_track": "За планом",
+        "at_risk": "Під загрозою",
+        "off_track": "Відхилення від плану"
+      }
     },
     "readiness": {
       "ready": "Готово до випуску",
@@ -477,6 +509,36 @@
       "coverage": "Покриті вимоги",
       "latest_run": "Пройдено в останньому прогоні",
       "open_defects": "Відкриті дефекти"
+    },
+    "frontline": {
+      "unattributed": "Без прив’язки",
+      "open_intake": "Відкрити Intake",
+      "summary": "Очікують: {pending} · заплановано: {accepted} · відхилено: {declined}",
+      "pending_count": "{count, plural, one {# очікує} few {# очікують} many {# очікують} other {# очікує}}",
+      "all_scheduled": "Усе заплановано",
+      "accept": "Запланувати",
+      "decline": "Відхилити",
+      "more_in_group": "{count, plural, one {ще #} few {ще #} many {ще #} other {ще #}}",
+      "triage": {
+        "pending": "Очікує",
+        "accepted": "Заплановано",
+        "declined": "Відхилено"
+      },
+      "not_triaged_title": "Статус не змінено",
+      "not_triaged_message": "Не вдалося змінити статус."
+    },
+    "attention": {
+      "title": "Потребує уваги",
+      "summary": "Прострочено: {overdue} · термінових: {urgent}",
+      "overdue_by": "{count, plural, one {прострочено на # день} few {прострочено на # дні} many {прострочено на # днів} other {прострочено на # дня}}",
+      "urgent": "Терміново",
+      "unassigned": "Без виконавця",
+      "more": "{count, plural, one {ще #} few {ще #} many {ще #} other {ще #}}"
+    },
+    "meeting_notes": {
+      "title": "Протоколи зустрічей",
+      "description": "Рішення, ухвалене вголос, належить документу, а не полю.",
+      "open_pages": "Відкрити Сторінки"
     }
   }
 }

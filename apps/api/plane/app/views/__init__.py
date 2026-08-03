@@ -26,6 +26,8 @@ from .project.overview import (
     EntityUpdateViewSet,
     ProjectProgressEndpoint,
     ProjectActivityEndpoint,
+    ProjectAttentionEndpoint,
+    ProjectFrontlineEndpoint,
     ProjectOverviewEndpoint,
 )
 

@@ -16,6 +16,7 @@ from plane.app.serializers.user import UserLiteSerializer, UserAdminLiteSerializ
 from plane.db.models import (
     EntityUpdate,
     Issue,
+    Label,
     Milestone,
     Project,
     ProjectLink,
@@ -323,11 +324,35 @@ class MilestoneSerializer(BaseSerializer):
 class EntityUpdateSerializer(BaseSerializer):
     actor_detail = UserLiteSerializer(source="actor", read_only=True)
     reply_count = serializers.IntegerField(read_only=True)
+    label_ids = serializers.ListField(child=serializers.UUIDField(), required=False)
+    # `updated_at` moves on its own for reasons a reader does not care about, so the client
+    # is told plainly whether the text was rewritten after it was published. An announcement
+    # edited silently is worse than one that cannot be edited at all.
+    is_edited = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = EntityUpdate
         fields = "__all__"
         read_only_fields = ["workspace", "project", "actor", "created_by", "updated_by", "created_at", "updated_at"]
+
+    def get_is_edited(self, obj) -> bool:
+        return bool(obj.edited_at)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["label_ids"] = [str(link.label_id) for link in instance.labels.all()]
+        return data
+
+    def validate_label_ids(self, value):
+        """Topics have to belong to this project; the join table cannot enforce it."""
+        project_id = self.context.get("project_id")
+        known = set(
+            Label.objects.filter(project_id=project_id, id__in=value).values_list("id", flat=True)
+        )
+        unknown = [str(label_id) for label_id in value if label_id not in known]
+        if unknown:
+            raise serializers.ValidationError(f"Labels not in this project: {', '.join(unknown)}")
+        return value
 
     def validate(self, data):
         """Resolve the target inside the request's project before anything is written.

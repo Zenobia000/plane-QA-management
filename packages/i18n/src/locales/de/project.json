@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {# frühere Aktualisierung anzeigen} other {# frühere Aktualisierungen anzeigen}}",
-      "load_error": "Der Rest des Verlaufs konnte nicht geladen werden."
+      "load_error": "Der Rest des Verlaufs konnte nicht geladen werden.",
+      "title": "Anschlagbrett",
+      "subtitle_project": "Was das Team einander über dieses Projekt mitteilt.",
+      "subtitle_work_item": "Wo dieses Werkelement steht.",
+      "edited": "Bearbeitet",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "post": "Veröffentlichen",
+      "posting": "Wird veröffentlicht…",
+      "description_label": "Beschreibung der Aktualisierung",
+      "description_placeholder": "Was sich geändert hat und was das für den Termin bedeutet.",
+      "all_topics": "Alle",
+      "clear_filter": "Themenfilter zurücksetzen",
+      "none_in_topic": "Zu diesem Thema wurde noch nichts veröffentlicht.",
+      "empty": "Noch keine Aktualisierungen.",
+      "reply": "Antworten",
+      "reply_label": "Auf diese Aktualisierung antworten",
+      "reply_count": "{count, plural, one {# Antwort} other {# Antworten}}",
+      "hide_replies": "Antworten ausblenden",
+      "no_replies": "Noch keine Antworten.",
+      "send": "Senden",
+      "not_posted": "Die Aktualisierung konnte nicht veröffentlicht werden.",
+      "not_saved_title": "Aktualisierung nicht gespeichert",
+      "not_saved_message": "Die Änderung konnte nicht gespeichert werden.",
+      "not_removed_title": "Aktualisierung nicht entfernt",
+      "not_removed_message": "Die Aktualisierung konnte nicht entfernt werden.",
+      "status": {
+        "on_track": "Im Plan",
+        "at_risk": "Gefährdet",
+        "off_track": "Vom Plan abgewichen"
+      }
     },
     "readiness": {
       "ready": "Auslieferbereit",
@@ -477,6 +509,36 @@
       "coverage": "Abgedeckte Anforderungen",
       "latest_run": "Letzter Lauf bestanden",
       "open_defects": "Offene Fehler"
+    },
+    "frontline": {
+      "unattributed": "Nicht zugeordnet",
+      "open_intake": "Intake öffnen",
+      "summary": "{pending} offen · {accepted} eingeplant · {declined} abgelehnt",
+      "pending_count": "{count, plural, one {# offen} other {# offen}}",
+      "all_scheduled": "Alles eingeplant",
+      "accept": "Einplanen",
+      "decline": "Ablehnen",
+      "more_in_group": "{count, plural, one {# weiterer} other {# weitere}}",
+      "triage": {
+        "pending": "Offen",
+        "accepted": "Eingeplant",
+        "declined": "Abgelehnt"
+      },
+      "not_triaged_title": "Status nicht geändert",
+      "not_triaged_message": "Der Status konnte nicht geändert werden."
+    },
+    "attention": {
+      "title": "Braucht Aufmerksamkeit",
+      "summary": "{overdue} überfällig · {urgent} dringend",
+      "overdue_by": "{count, plural, one {# Tag überfällig} other {# Tage überfällig}}",
+      "urgent": "Dringend",
+      "unassigned": "Nicht zugewiesen",
+      "more": "{count, plural, one {# weiterer} other {# weitere}}"
+    },
+    "meeting_notes": {
+      "title": "Besprechungsnotizen",
+      "description": "Mündlich getroffene Entscheidungen gehören in ein Dokument, nicht in ein Feld.",
+      "open_pages": "Seiten öffnen"
     }
   }
 }

@@ -30,6 +30,7 @@ class WorkItemPropertySerializer(BaseSerializer):
             "kind",
             "is_required",
             "is_active",
+            "is_grouping_dimension",
             "sort_order",
             "default_value",
             "options",
@@ -57,6 +58,18 @@ class WorkItemPropertySerializer(BaseSerializer):
         if kind not in {WorkItemProperty.Kind.SELECT, WorkItemProperty.Kind.MULTI_SELECT} and options:
             raise serializers.ValidationError({"options": "Only select properties can define options."})
         return data
+
+    def validate_is_grouping_dimension(self, value):
+        """Only a select-like property can group anything.
+
+        Grouping by free text produces one bucket per typo, and grouping by a date or a
+        checkbox produces buckets nobody asked for. The options list is what makes the
+        panel's rows a fixed, meaningful set.
+        """
+        kind = self.initial_data.get("kind") or getattr(self.instance, "kind", None)
+        if value and kind not in {WorkItemProperty.Kind.SELECT, WorkItemProperty.Kind.MULTI_SELECT}:
+            raise serializers.ValidationError("Only a select or multi-select property can be the grouping dimension.")
+        return value
 
     def create(self, validated_data):
         options = validated_data.pop("options", [])

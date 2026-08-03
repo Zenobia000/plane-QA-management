@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {顯示 # 則較早的更新} other {顯示 # 則較早的更新}}",
-      "load_error": "無法載入此討論串的其餘部分。"
+      "load_error": "無法載入此討論串的其餘部分。",
+      "title": "公佈欄",
+      "subtitle_project": "團隊在這個專案上彼此告知的事。",
+      "subtitle_work_item": "這個工作項目目前的狀況。",
+      "edited": "已編輯",
+      "edit": "編輯",
+      "delete": "刪除",
+      "save": "儲存",
+      "cancel": "取消",
+      "post": "發布",
+      "posting": "發布中……",
+      "description_label": "更新內容",
+      "description_placeholder": "有什麼變動，以及它對時程的影響。",
+      "all_topics": "全部",
+      "clear_filter": "清除主題篩選",
+      "none_in_topic": "這個主題下還沒有任何內容。",
+      "empty": "尚無更新。",
+      "reply": "回覆",
+      "reply_label": "回覆這則更新",
+      "reply_count": "{count, plural, one {# 則回覆} other {# 則回覆}}",
+      "hide_replies": "隱藏回覆",
+      "no_replies": "尚無回覆。",
+      "send": "送出",
+      "not_posted": "無法發布這則更新。",
+      "not_saved_title": "更新未儲存",
+      "not_saved_message": "無法儲存這項變更。",
+      "not_removed_title": "更新未刪除",
+      "not_removed_message": "無法刪除這則更新。",
+      "status": {
+        "on_track": "進度正常",
+        "at_risk": "有風險",
+        "off_track": "已偏離"
+      }
     },
     "readiness": {
       "ready": "可以發布",
@@ -477,6 +509,36 @@
       "coverage": "已涵蓋的需求",
       "latest_run": "最近一次執行通過",
       "open_defects": "未關閉的缺陷"
+    },
+    "frontline": {
+      "unattributed": "尚未歸屬",
+      "open_intake": "開啟 Intake",
+      "summary": "待處理 {pending} · 已排入 {accepted} · 已婉拒 {declined}",
+      "pending_count": "{count, plural, one {待處理 #} other {待處理 #}}",
+      "all_scheduled": "全數已排入",
+      "accept": "排入開發",
+      "decline": "婉拒",
+      "more_in_group": "{count, plural, one {還有 # 筆} other {還有 # 筆}}",
+      "triage": {
+        "pending": "待處理",
+        "accepted": "已排入",
+        "declined": "已婉拒"
+      },
+      "not_triaged_title": "狀態未變更",
+      "not_triaged_message": "無法變更狀態。"
+    },
+    "attention": {
+      "title": "需要注意",
+      "summary": "逾期 {overdue} · 緊急 {urgent}",
+      "overdue_by": "{count, plural, one {逾期 # 天} other {逾期 # 天}}",
+      "urgent": "緊急",
+      "unassigned": "未指派",
+      "more": "{count, plural, one {還有 # 筆} other {還有 # 筆}}"
+    },
+    "meeting_notes": {
+      "title": "會議紀錄",
+      "description": "當面做成的決定該寫成文件，不是欄位。",
+      "open_pages": "開啟頁面"
     }
   }
 }

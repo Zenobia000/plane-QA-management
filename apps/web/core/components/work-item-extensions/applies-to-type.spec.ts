@@ -15,6 +15,7 @@ const property = (overrides: Partial<TWorkItemProperty>): TWorkItemProperty => (
   kind: "text",
   is_required: false,
   is_active: true,
+  is_grouping_dimension: false,
   sort_order: 10,
   default_value: null,
   options: [],

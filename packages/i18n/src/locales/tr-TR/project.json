@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {# önceki güncellemeyi göster} other {# önceki güncellemeyi göster}}",
-      "load_error": "Konuşmanın kalanı yüklenemedi."
+      "load_error": "Konuşmanın kalanı yüklenemedi.",
+      "title": "İlan panosu",
+      "subtitle_project": "Ekibin bu proje hakkında birbirine ilettikleri.",
+      "subtitle_work_item": "Bu iş öğesinin bulunduğu durum.",
+      "edited": "Düzenlendi",
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "post": "Yayımla",
+      "posting": "Yayımlanıyor…",
+      "description_label": "Güncelleme açıklaması",
+      "description_placeholder": "Neyin değiştiği ve bunun tarih açısından ne anlama geldiği.",
+      "all_topics": "Tümü",
+      "clear_filter": "Konu filtresini temizle",
+      "none_in_topic": "Bu konuda henüz bir şey yayımlanmadı.",
+      "empty": "Henüz güncelleme yok.",
+      "reply": "Yanıtla",
+      "reply_label": "Bu güncellemeyi yanıtla",
+      "reply_count": "{count, plural, one {# yanıt} other {# yanıt}}",
+      "hide_replies": "Yanıtları gizle",
+      "no_replies": "Henüz yanıt yok.",
+      "send": "Gönder",
+      "not_posted": "Güncelleme yayımlanamadı.",
+      "not_saved_title": "Güncelleme kaydedilmedi",
+      "not_saved_message": "Değişiklik kaydedilemedi.",
+      "not_removed_title": "Güncelleme kaldırılmadı",
+      "not_removed_message": "Güncelleme kaldırılamadı.",
+      "status": {
+        "on_track": "Planlandığı gibi",
+        "at_risk": "Risk altında",
+        "off_track": "Plan dışı"
+      }
     },
     "readiness": {
       "ready": "Yayına hazır",
@@ -477,6 +509,36 @@
       "coverage": "Kapsanan gereksinimler",
       "latest_run": "Son çalıştırmada geçen",
       "open_defects": "Açık hatalar"
+    },
+    "frontline": {
+      "unattributed": "Atanmamış",
+      "open_intake": "Intake’i aç",
+      "summary": "{pending} bekliyor · {accepted} planlandı · {declined} reddedildi",
+      "pending_count": "{count, plural, one {# bekliyor} other {# bekliyor}}",
+      "all_scheduled": "Tümü planlandı",
+      "accept": "Planla",
+      "decline": "Reddet",
+      "more_in_group": "{count, plural, one {# tane daha} other {# tane daha}}",
+      "triage": {
+        "pending": "Bekliyor",
+        "accepted": "Planlandı",
+        "declined": "Reddedildi"
+      },
+      "not_triaged_title": "Durum değiştirilmedi",
+      "not_triaged_message": "Durum değiştirilemedi."
+    },
+    "attention": {
+      "title": "Dikkat gerekiyor",
+      "summary": "{overdue} gecikmiş · {urgent} acil",
+      "overdue_by": "{count, plural, one {# gün gecikmiş} other {# gün gecikmiş}}",
+      "urgent": "Acil",
+      "unassigned": "Atanmamış",
+      "more": "{count, plural, one {# tane daha} other {# tane daha}}"
+    },
+    "meeting_notes": {
+      "title": "Toplantı notları",
+      "description": "Sözlü alınan bir karar bir alana değil, bir belgeye aittir.",
+      "open_pages": "Sayfalar’ı aç"
     }
   }
 }

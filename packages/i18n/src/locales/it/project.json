@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {Mostra # aggiornamento precedente} many {Mostra # aggiornamenti precedenti} other {Mostra # aggiornamenti precedenti}}",
-      "load_error": "Impossibile caricare il resto della discussione."
+      "load_error": "Impossibile caricare il resto della discussione.",
+      "title": "Bacheca",
+      "subtitle_project": "Ciò che il team si comunica su questo progetto.",
+      "subtitle_work_item": "A che punto è questo elemento di lavoro.",
+      "edited": "Modificato",
+      "edit": "Modifica",
+      "delete": "Elimina",
+      "save": "Salva",
+      "cancel": "Annulla",
+      "post": "Pubblica",
+      "posting": "Pubblicazione…",
+      "description_label": "Descrizione dell’aggiornamento",
+      "description_placeholder": "Che cosa è cambiato e che cosa comporta per la data.",
+      "all_topics": "Tutti",
+      "clear_filter": "Cancella il filtro per argomento",
+      "none_in_topic": "In questo argomento non è ancora stato pubblicato nulla.",
+      "empty": "Nessun aggiornamento.",
+      "reply": "Rispondi",
+      "reply_label": "Rispondi a questo aggiornamento",
+      "reply_count": "{count, plural, one {# risposta} many {# risposte} other {# risposte}}",
+      "hide_replies": "Nascondi le risposte",
+      "no_replies": "Nessuna risposta.",
+      "send": "Invia",
+      "not_posted": "Impossibile pubblicare l’aggiornamento.",
+      "not_saved_title": "Aggiornamento non salvato",
+      "not_saved_message": "Impossibile salvare la modifica.",
+      "not_removed_title": "Aggiornamento non rimosso",
+      "not_removed_message": "Impossibile rimuovere l’aggiornamento.",
+      "status": {
+        "on_track": "In linea",
+        "at_risk": "A rischio",
+        "off_track": "Fuori rotta"
+      }
     },
     "readiness": {
       "ready": "Pronto per il rilascio",
@@ -477,6 +509,36 @@
       "coverage": "Requisiti coperti",
       "latest_run": "Ultima esecuzione superata",
       "open_defects": "Difetti aperti"
+    },
+    "frontline": {
+      "unattributed": "Non attribuito",
+      "open_intake": "Apri Intake",
+      "summary": "{pending} in attesa · {accepted} pianificati · {declined} rifiutati",
+      "pending_count": "{count, plural, one {# in attesa} many {# in attesa} other {# in attesa}}",
+      "all_scheduled": "Tutto pianificato",
+      "accept": "Pianifica",
+      "decline": "Rifiuta",
+      "more_in_group": "{count, plural, one {# in più} many {# in più} other {# in più}}",
+      "triage": {
+        "pending": "In attesa",
+        "accepted": "Pianificato",
+        "declined": "Rifiutato"
+      },
+      "not_triaged_title": "Stato non modificato",
+      "not_triaged_message": "Impossibile modificare lo stato."
+    },
+    "attention": {
+      "title": "Richiede attenzione",
+      "summary": "{overdue} in ritardo · {urgent} urgenti",
+      "overdue_by": "{count, plural, one {# giorno di ritardo} many {# giorni di ritardo} other {# giorni di ritardo}}",
+      "urgent": "Urgente",
+      "unassigned": "Non assegnato",
+      "more": "{count, plural, one {# in più} many {# in più} other {# in più}}"
+    },
+    "meeting_notes": {
+      "title": "Verbali delle riunioni",
+      "description": "Una decisione presa a voce appartiene a un documento, non a un campo.",
+      "open_pages": "Apri Pagine"
     }
   }
 }

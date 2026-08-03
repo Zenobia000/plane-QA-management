@@ -20,6 +20,7 @@ const definition = (kind: TWorkItemPropertyKind): TWorkItemProperty => ({
   description: "",
   kind,
   is_required: false,
+  is_grouping_dimension: false,
   is_active: true,
   sort_order: 10,
   default_value: null,

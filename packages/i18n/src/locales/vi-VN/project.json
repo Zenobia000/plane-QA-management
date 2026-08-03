@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {Hiển thị # cập nhật trước đó} other {Hiển thị # cập nhật trước đó}}",
-      "load_error": "Không thể tải phần còn lại của chuỗi thảo luận."
+      "load_error": "Không thể tải phần còn lại của chuỗi thảo luận.",
+      "title": "Bảng thông báo",
+      "subtitle_project": "Những gì cả nhóm thông báo cho nhau về dự án này.",
+      "subtitle_work_item": "Hạng mục công việc này đang ở đâu.",
+      "edited": "Đã chỉnh sửa",
+      "edit": "Chỉnh sửa",
+      "delete": "Xóa",
+      "save": "Lưu",
+      "cancel": "Hủy",
+      "post": "Đăng",
+      "posting": "Đang đăng…",
+      "description_label": "Nội dung cập nhật",
+      "description_placeholder": "Điều gì đã thay đổi và điều đó có ý nghĩa gì với thời hạn.",
+      "all_topics": "Tất cả",
+      "clear_filter": "Xóa bộ lọc chủ đề",
+      "none_in_topic": "Chưa có nội dung nào trong chủ đề này.",
+      "empty": "Chưa có cập nhật nào.",
+      "reply": "Trả lời",
+      "reply_label": "Trả lời cập nhật này",
+      "reply_count": "{count, plural, one {# trả lời} other {# trả lời}}",
+      "hide_replies": "Ẩn các trả lời",
+      "no_replies": "Chưa có trả lời nào.",
+      "send": "Gửi",
+      "not_posted": "Không thể đăng cập nhật.",
+      "not_saved_title": "Chưa lưu được cập nhật",
+      "not_saved_message": "Không thể lưu thay đổi.",
+      "not_removed_title": "Chưa xóa được cập nhật",
+      "not_removed_message": "Không thể xóa cập nhật.",
+      "status": {
+        "on_track": "Đúng tiến độ",
+        "at_risk": "Có rủi ro",
+        "off_track": "Lệch tiến độ"
+      }
     },
     "readiness": {
       "ready": "Sẵn sàng phát hành",
@@ -477,6 +509,36 @@
       "coverage": "Yêu cầu đã được bao phủ",
       "latest_run": "Đã đạt ở lần chạy gần nhất",
       "open_defects": "Lỗi chưa đóng"
+    },
+    "frontline": {
+      "unattributed": "Chưa quy thuộc",
+      "open_intake": "Mở Intake",
+      "summary": "{pending} đang chờ · {accepted} đã lên lịch · {declined} đã từ chối",
+      "pending_count": "{count, plural, one {# đang chờ} other {# đang chờ}}",
+      "all_scheduled": "Đã lên lịch tất cả",
+      "accept": "Đưa vào lịch",
+      "decline": "Từ chối",
+      "more_in_group": "{count, plural, one {còn # nữa} other {còn # nữa}}",
+      "triage": {
+        "pending": "Đang chờ",
+        "accepted": "Đã lên lịch",
+        "declined": "Đã từ chối"
+      },
+      "not_triaged_title": "Chưa đổi được trạng thái",
+      "not_triaged_message": "Không thể thay đổi trạng thái."
+    },
+    "attention": {
+      "title": "Cần chú ý",
+      "summary": "{overdue} quá hạn · {urgent} khẩn cấp",
+      "overdue_by": "{count, plural, one {trễ # ngày} other {trễ # ngày}}",
+      "urgent": "Khẩn cấp",
+      "unassigned": "Chưa giao",
+      "more": "{count, plural, one {còn # nữa} other {còn # nữa}}"
+    },
+    "meeting_notes": {
+      "title": "Biên bản họp",
+      "description": "Quyết định đưa ra bằng lời thuộc về tài liệu, không phải một trường dữ liệu.",
+      "open_pages": "Mở Trang"
     }
   }
 }

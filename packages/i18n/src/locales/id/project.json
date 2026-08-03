@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {Tampilkan # pembaruan sebelumnya} other {Tampilkan # pembaruan sebelumnya}}",
-      "load_error": "Sisa utas tidak dapat dimuat."
+      "load_error": "Sisa utas tidak dapat dimuat.",
+      "title": "Papan pengumuman",
+      "subtitle_project": "Apa yang tim sampaikan satu sama lain tentang proyek ini.",
+      "subtitle_work_item": "Posisi item kerja ini saat ini.",
+      "edited": "Telah diedit",
+      "edit": "Edit",
+      "delete": "Hapus",
+      "save": "Simpan",
+      "cancel": "Batal",
+      "post": "Publikasikan",
+      "posting": "Memublikasikan…",
+      "description_label": "Deskripsi pembaruan",
+      "description_placeholder": "Apa yang berubah dan apa artinya bagi tenggat waktu.",
+      "all_topics": "Semua",
+      "clear_filter": "Hapus filter topik",
+      "none_in_topic": "Belum ada yang dipublikasikan di topik ini.",
+      "empty": "Belum ada pembaruan.",
+      "reply": "Balas",
+      "reply_label": "Balas pembaruan ini",
+      "reply_count": "{count, plural, one {# balasan} other {# balasan}}",
+      "hide_replies": "Sembunyikan balasan",
+      "no_replies": "Belum ada balasan.",
+      "send": "Kirim",
+      "not_posted": "Pembaruan tidak dapat dipublikasikan.",
+      "not_saved_title": "Pembaruan tidak tersimpan",
+      "not_saved_message": "Perubahan tidak dapat disimpan.",
+      "not_removed_title": "Pembaruan tidak dihapus",
+      "not_removed_message": "Pembaruan tidak dapat dihapus.",
+      "status": {
+        "on_track": "Sesuai rencana",
+        "at_risk": "Berisiko",
+        "off_track": "Menyimpang dari rencana"
+      }
     },
     "readiness": {
       "ready": "Siap dirilis",
@@ -477,6 +509,36 @@
       "coverage": "Kebutuhan yang tercakup",
       "latest_run": "Lulus pada eksekusi terakhir",
       "open_defects": "Defek terbuka"
+    },
+    "frontline": {
+      "unattributed": "Belum diatribusikan",
+      "open_intake": "Buka Intake",
+      "summary": "{pending} menunggu · {accepted} dijadwalkan · {declined} ditolak",
+      "pending_count": "{count, plural, one {# menunggu} other {# menunggu}}",
+      "all_scheduled": "Semua sudah dijadwalkan",
+      "accept": "Jadwalkan",
+      "decline": "Tolak",
+      "more_in_group": "{count, plural, one {# lainnya} other {# lainnya}}",
+      "triage": {
+        "pending": "Menunggu",
+        "accepted": "Dijadwalkan",
+        "declined": "Ditolak"
+      },
+      "not_triaged_title": "Status tidak diubah",
+      "not_triaged_message": "Status tidak dapat diubah."
+    },
+    "attention": {
+      "title": "Perlu perhatian",
+      "summary": "{overdue} lewat tenggat · {urgent} mendesak",
+      "overdue_by": "{count, plural, one {telat # hari} other {telat # hari}}",
+      "urgent": "Mendesak",
+      "unassigned": "Belum ditugaskan",
+      "more": "{count, plural, one {# lainnya} other {# lainnya}}"
+    },
+    "meeting_notes": {
+      "title": "Notulen rapat",
+      "description": "Keputusan yang diambil secara lisan tempatnya di dokumen, bukan di sebuah bidang.",
+      "open_pages": "Buka Halaman"
     }
   }
 }

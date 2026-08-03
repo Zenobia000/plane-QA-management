@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {Mostrar # actualización anterior} other {Mostrar # actualizaciones anteriores}}",
-      "load_error": "No se pudo cargar el resto del hilo."
+      "load_error": "No se pudo cargar el resto del hilo.",
+      "title": "Tablón de anuncios",
+      "subtitle_project": "Lo que el equipo se comunica sobre este proyecto.",
+      "subtitle_work_item": "En qué punto está este elemento de trabajo.",
+      "edited": "Editado",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "post": "Publicar",
+      "posting": "Publicando…",
+      "description_label": "Descripción de la actualización",
+      "description_placeholder": "Qué ha cambiado y qué implica para la fecha.",
+      "all_topics": "Todo",
+      "clear_filter": "Borrar el filtro de tema",
+      "none_in_topic": "Todavía no se ha publicado nada en este tema.",
+      "empty": "Aún no hay actualizaciones.",
+      "reply": "Responder",
+      "reply_label": "Responder a esta actualización",
+      "reply_count": "{count, plural, one {# respuesta} other {# respuestas}}",
+      "hide_replies": "Ocultar respuestas",
+      "no_replies": "Aún no hay respuestas.",
+      "send": "Enviar",
+      "not_posted": "No se pudo publicar la actualización.",
+      "not_saved_title": "Actualización no guardada",
+      "not_saved_message": "No se pudo guardar el cambio.",
+      "not_removed_title": "Actualización no eliminada",
+      "not_removed_message": "No se pudo eliminar la actualización.",
+      "status": {
+        "on_track": "Según lo previsto",
+        "at_risk": "En riesgo",
+        "off_track": "Fuera de plan"
+      }
     },
     "readiness": {
       "ready": "Listo para entregar",
@@ -477,6 +509,36 @@
       "coverage": "Requisitos cubiertos",
       "latest_run": "Última ejecución superada",
       "open_defects": "Defectos abiertos"
+    },
+    "frontline": {
+      "unattributed": "Sin atribuir",
+      "open_intake": "Abrir Intake",
+      "summary": "{pending} en espera · {accepted} planificados · {declined} rechazados",
+      "pending_count": "{count, plural, one {# en espera} other {# en espera}}",
+      "all_scheduled": "Todo planificado",
+      "accept": "Planificar",
+      "decline": "Rechazar",
+      "more_in_group": "{count, plural, one {# más} other {# más}}",
+      "triage": {
+        "pending": "En espera",
+        "accepted": "Planificado",
+        "declined": "Rechazado"
+      },
+      "not_triaged_title": "Estado no modificado",
+      "not_triaged_message": "No se pudo modificar el estado."
+    },
+    "attention": {
+      "title": "Requiere atención",
+      "summary": "{overdue} vencidos · {urgent} urgentes",
+      "overdue_by": "{count, plural, one {# día de retraso} other {# días de retraso}}",
+      "urgent": "Urgente",
+      "unassigned": "Sin asignar",
+      "more": "{count, plural, one {# más} other {# más}}"
+    },
+    "meeting_notes": {
+      "title": "Actas de reunión",
+      "description": "Una decisión tomada de viva voz pertenece a un documento, no a un campo.",
+      "open_pages": "Abrir Páginas"
     }
   }
 }

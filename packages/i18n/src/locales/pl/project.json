@@ -468,7 +468,39 @@
     },
     "updates": {
       "show_earlier": "{count, plural, one {Pokaż # wcześniejszą aktualizację} few {Pokaż # wcześniejsze aktualizacje} many {Pokaż # wcześniejszych aktualizacji} other {Pokaż # wcześniejszej aktualizacji}}",
-      "load_error": "Nie udało się załadować reszty wątku."
+      "load_error": "Nie udało się załadować reszty wątku.",
+      "title": "Tablica ogłoszeń",
+      "subtitle_project": "Co zespół przekazuje sobie na temat tego projektu.",
+      "subtitle_work_item": "Na jakim etapie jest ten element pracy.",
+      "edited": "Edytowano",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "save": "Zapisz",
+      "cancel": "Anuluj",
+      "post": "Opublikuj",
+      "posting": "Publikowanie…",
+      "description_label": "Opis aktualizacji",
+      "description_placeholder": "Co się zmieniło i co to oznacza dla terminu.",
+      "all_topics": "Wszystko",
+      "clear_filter": "Wyczyść filtr tematu",
+      "none_in_topic": "W tym temacie nie opublikowano jeszcze nic.",
+      "empty": "Brak aktualizacji.",
+      "reply": "Odpowiedz",
+      "reply_label": "Odpowiedz na tę aktualizację",
+      "reply_count": "{count, plural, one {# odpowiedź} few {# odpowiedzi} many {# odpowiedzi} other {# odpowiedzi}}",
+      "hide_replies": "Ukryj odpowiedzi",
+      "no_replies": "Brak odpowiedzi.",
+      "send": "Wyślij",
+      "not_posted": "Nie udało się opublikować aktualizacji.",
+      "not_saved_title": "Nie zapisano aktualizacji",
+      "not_saved_message": "Nie udało się zapisać zmiany.",
+      "not_removed_title": "Nie usunięto aktualizacji",
+      "not_removed_message": "Nie udało się usunąć aktualizacji.",
+      "status": {
+        "on_track": "Zgodnie z planem",
+        "at_risk": "Zagrożone",
+        "off_track": "Poza planem"
+      }
     },
     "readiness": {
       "ready": "Gotowe do wydania",
@@ -477,6 +509,36 @@
       "coverage": "Pokryte wymagania",
       "latest_run": "Ostatnie uruchomienie zaliczone",
       "open_defects": "Otwarte defekty"
+    },
+    "frontline": {
+      "unattributed": "Nieprzypisane",
+      "open_intake": "Otwórz Intake",
+      "summary": "Oczekujące: {pending} · zaplanowane: {accepted} · odrzucone: {declined}",
+      "pending_count": "{count, plural, one {# oczekujące} few {# oczekujące} many {# oczekujących} other {# oczekującego}}",
+      "all_scheduled": "Wszystko zaplanowane",
+      "accept": "Zaplanuj",
+      "decline": "Odrzuć",
+      "more_in_group": "{count, plural, one {jeszcze #} few {jeszcze #} many {jeszcze #} other {jeszcze #}}",
+      "triage": {
+        "pending": "Oczekuje",
+        "accepted": "Zaplanowane",
+        "declined": "Odrzucone"
+      },
+      "not_triaged_title": "Nie zmieniono statusu",
+      "not_triaged_message": "Nie udało się zmienić statusu."
+    },
+    "attention": {
+      "title": "Wymaga uwagi",
+      "summary": "Po terminie: {overdue} · pilne: {urgent}",
+      "overdue_by": "{count, plural, one {# dzień po terminie} few {# dni po terminie} many {# dni po terminie} other {# dnia po terminie}}",
+      "urgent": "Pilne",
+      "unassigned": "Nieprzypisane",
+      "more": "{count, plural, one {jeszcze #} few {jeszcze #} many {jeszcze #} other {jeszcze #}}"
+    },
+    "meeting_notes": {
+      "title": "Notatki ze spotkań",
+      "description": "Decyzja podjęta ustnie należy do dokumentu, nie do pola.",
+      "open_pages": "Otwórz Strony"
     }
   }
 }

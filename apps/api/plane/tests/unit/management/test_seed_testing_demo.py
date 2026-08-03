@@ -266,6 +266,19 @@ class TestSeededFrontline:
         assert posts.count() >= 3
         assert topics.values("label_id").distinct().count() >= 2
 
+    def test_field_reports_carry_a_work_item_type(self, seeded):
+        """The seed looks the type up by name, so a rename would silently untype them.
+
+        `IssueType.objects.filter(name="Bug").first()` returns None rather than raising, and
+        an untyped intake row still saves -- the seed would go on "working" while the reports
+        lost the one thing that marks them as defects.
+        """
+        reports = IntakeIssue.objects.filter(project=seeded).select_related("issue__type")
+
+        assert reports.exists()
+        assert {report.issue.type.name for report in reports if report.issue.type_id} == {"Bug"}
+        assert not reports.filter(issue__type__isnull=True).exists()
+
     def test_intake_is_reachable_from_the_sidebar(self, seeded):
         """The panel links to Intake; a project with the module off would 404 the reader."""
         assert seeded.intake_view is True

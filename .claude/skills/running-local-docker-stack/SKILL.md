@@ -82,6 +82,30 @@ curl -s http://localhost:8787/api/instances/ | head -c 120                 # JSO
 
 If external access uses a LAN IP, keep root `.env` and `apps/api/.env` aligned (`WEB_URL`, `APP_BASE_URL`, `CORS_ALLOWED_ORIGINS`). If the machine's IP changes, update those values and run `docker compose up -d` again. Frontends use relative URLs, so no image rebuild is needed for URL-only changes.
 
+### 4. Backend tests — a separate stack, never the running one
+
+`docker-compose-test.yml` brings up its own Postgres/Valkey/RabbitMQ/MinIO on tmpfs. Use a distinct project name so it cannot collide with the app stack:
+
+```bash
+M=$(git rev-parse --show-toplevel)
+docker compose -f $M/docker-compose-test.yml -p plane-merged-test --project-directory $M \
+  run --rm api-tests pytest -m "unit or contract" -q
+```
+
+Subsets: append a path (`pytest plane/tests/contract/app/test_noticeboard.py`), or `-m unit`. Add `--create-db` after a migration change — the test DB is reused between runs and a stale schema shows up as errors that look like code bugs. `ruff check .` runs in the same container and is **not** covered by the pre-commit hook, which only lints JS/TS — run it before pushing backend changes.
+
+### 5. Generating a migration
+
+`manage.py makemigrations` must run in a container, and the file it writes is owned by root on the host — git will see it as unreadable or refuse to stage it:
+
+```bash
+docker compose -f $M/docker-compose-test.yml -p plane-merged-test --project-directory $M \
+  run --rm api-tests python manage.py makemigrations db
+docker run --rm -v "$M/apps/api/plane/db/migrations:/m" alpine chown -R $(id -u):$(id -g) /m
+```
+
+Then check the graph has one leaf: `manage.py showmigrations db`. Two migrations sharing a number — which happens whenever a branch is cut before another one lands — makes Django refuse to run *any* migration, and the error names neither file helpfully. Renumber the newer branch's migration and repoint its `dependencies`.
+
 ## Quick Reference
 
 | What | Where |
@@ -91,7 +115,11 @@ If external access uses a LAN IP, keep root `.env` and `apps/api/.env` aligned (
 | Public spaces | http://localhost:8787/spaces |
 | API | http://localhost:8787/api |
 | Stop / start / logs | `docker compose stop` / `up -d` / `logs -f api` |
+| Backend tests | `docker-compose-test.yml` with `-p plane-merged-test` (step 4) |
+| Frontend checks | `pnpm --filter web run check:types` / `run test`; `pnpm --filter @plane/i18n run sync:check` |
 | First-time account | First signup becomes instance admin |
+
+Changing a `packages/*` type or service needs `pnpm --filter @plane/types run build` (and `@plane/services`) before `check:types` sees it — the web app imports the built `dist`, so a source-only edit typechecks against a stale copy.
 
 ## Common Mistakes
 
@@ -102,3 +130,7 @@ If external access uses a LAN IP, keep root `.env` and `apps/api/.env` aligned (
 | `port is already allocated` on 8000/5432 | Used `docker-compose-local.yml` → use full stack instead |
 | API 500s / signup mails point to localhost | `apps/api/.env` missing or has default URLs → step 1 |
 | Root `.env` lost 8787/LAN-IP settings | Someone ran `setup.sh` → restore the URL/proxy lines in step 1 |
+| `Conflicting migrations detected; multiple leaf nodes` | Two branches numbered a migration the same → renumber the later one and repoint `dependencies` (step 5) |
+| Migration file can't be staged / permission denied | Written as root inside the container → `chown` it back (step 5) |
+| `check:types` fails on a field you just added to `@plane/types` | Web imports the built `dist` → rebuild the package first |
+| Panels render blank with no error | A 5xx the UI swallows into an empty state → `docker compose logs api`, and check `test_endpoint_smoke.py` covers the route |

@@ -115,6 +115,42 @@ Create or update a Work Item with custom values using `properties`, keyed by pro
 
 Required active properties with no default must be present on Work Item creation. `select` accepts one option value; `multi_select` accepts a unique list of option values. Use `null` only for non-required properties.
 
+## Project Overview — app tree only, no API key reaches it
+
+The overview is this fork's product war room: release readiness, progress, milestones, a noticeboard, intake grouped by customer, and the overdue/urgent shortlist. **Every one of these routes exists only under `/api/workspaces/...` with session auth.** There is no `/api/v1` mirror and no MCP tool. An API key gets 404, which reads like a missing project rather than a missing tree — check here before debugging permissions.
+
+Relative to `/api/workspaces/{slug}/projects/{project_uuid}/`:
+
+| Method                    | Path                       | Purpose                                                                                                                                                                    |
+| ------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET                       | `overview/`                | Progress, links, newest 10 updates + `updates_total`, milestone summaries — one request                                                                                    |
+| GET                       | `progress/`                | Work-item counts by state group; `cancelled` is out of scope, not outstanding, so it leaves the denominator                                                                |
+| GET                       | `activity/`                | `IssueActivity` for the project, cursor-paginated 20 at a time                                                                                                             |
+| GET/POST · PATCH/DELETE   | `updates/` · `updates/{uuid}/` | The noticeboard. `?entity_name=work_item&entity_identifier=` targets an item; `?parent=` fetches replies; `?label=` filters by topic. PATCH/DELETE need author or ADMIN |
+| GET                       | `frontline/`               | Intake grouped by the project's chosen dimension. `dimension: null` when none is marked — the signal to render nothing                                                      |
+| GET                       | `attention/`               | Overdue before urgent, oldest miss first, ≤5, with `total_overdue`/`total_urgent` saying what the cap held back                                                             |
+| GET/POST · PATCH/DELETE   | `milestones/`, `links/`    | Also on `/api/v1` (milestones under `portfolio`, links per work item)                                                                                                      |
+
+### What an agent can still do
+
+Not reaching the panels does not mean not feeding them. Everything they read from is on `/api/v1`:
+
+| To make this appear                  | Write this over `/api/v1`                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| A row in the frontline panel         | `intake-issues/` for the report, then `work-items/{uuid}/properties/{property_uuid}/` to attribute it |
+| A new frontline grouping             | `work-item-properties/` with a `select`/`multi_select` — a human marks it as the dimension in settings |
+| An item in the attention panel       | a `work-items/` `target_date` in the past, or `priority: urgent`, in a live state                     |
+| A noticeboard topic                  | `labels/` — the panel renders whatever the project has                                                |
+| Movement in progress / release gate  | state transitions and test results, as usual                                                          |
+
+The one thing an agent cannot do is post to the noticeboard — `updates/` has no `/api/v1` route at all. Treat that as a property to preserve rather than a gap to close: an announcement is a person telling other people something, and a board that fills itself with generated status is the failure mode this surface was built to replace.
+
+### The grouping dimension
+
+`frontline/` groups by whichever `WorkItemProperty` carries `is_grouping_dimension` — at most one per project, `select` or `multi_select` only. No category name exists in the API: the panel's heading is the property's name, and its rows are the option labels, so one project groups by customer and the next by region without a code change. Read it from `work-item-properties/`; a multi-select value puts one report under several headings, and reports with no value are returned as a `value: null` group rather than dropped.
+
+Intake statuses fold into three answers: pending/snoozed → `pending`, accepted → `accepted`, rejected/duplicate → `declined`. Retriage is `PATCH intake-issues/{issue_uuid}/` with `{"status": 1}`, on either tree — **keyed by the work item's id, not the intake row's**, and ADMIN only. Passing the intake row id returns a 404 that reads like a permissions problem. Status values: `-2` pending, `0` snoozed, `1` accepted, `-1` rejected, `2` duplicate.
+
 ## Automation ingestion
 
 ```

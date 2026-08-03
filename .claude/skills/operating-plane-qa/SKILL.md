@@ -1,21 +1,24 @@
 ---
 name: operating-plane-qa
-description: Use when interacting with this repo's Plane QA test-management platform — acting for a PM (sprint/cycle/module planning, scheduling and assigning work items, backlog, release decisions) or QA (designing test folders/cases, traceability links, test runs, results, defects, retests, quality/release-gate reports, CI result ingestion) via REST, @plane/qa-sdk, the plane-qa CLI, or the plane-qa-mcp server — and when modifying the testing backend, SDK, CLI, MCP server, or web Testing UI.
+description: Use when interacting with this repo's Plane QA platform — acting for a PM (sprint/cycle/module planning, scheduling and assigning work items, backlog, release decisions), QA (test folders/cases, traceability, runs, results, defects, retests, quality/release-gate reports, CI ingestion), or product management (the Project Overview war room, noticeboard, customer frontline, intake triage) via REST, @plane/qa-sdk, the plane-qa CLI, or the plane-qa-mcp server — and when modifying the testing or delivery backend, SDK, CLI, MCP server, or web UI.
 ---
 
 # Operating Plane QA
 
 ## Overview
 
-This repo is a Plane (project management) fork with a native QA test-management domain. One REST API is authoritative; three typed clients wrap it, all sharing `@plane/qa-sdk`:
+This repo is a Plane (project management) fork with a native QA test-management domain and a fork-owned delivery layer (work-item types and properties, milestones, initiatives, intake, automations, templates, and the Project Overview). One REST API is authoritative; three typed clients wrap it, all sharing `@plane/qa-sdk`:
 
 ```
 Humans/CI ──► plane-qa CLI ──┐
 Agents ─────► plane-qa-mcp ──┼──► @plane/qa-sdk ──► REST /api/v1 (X-API-Key)
-Browser ────► Web Testing UI ────────────────────► REST /api    (session)
+Browser ────► Web UI ────────────────────────────► REST /api    (session)
+                 └─ Project Overview war room ───► /api only — no v1, no MCP tool
 ```
 
-Both URL trees serve the same handler classes — this is by design, not a bug. Agents and CI use `/api/v1`.
+For testing, both URL trees serve the same handler classes — by design, not a bug. Agents and CI use `/api/v1`.
+
+**The Project Overview is the exception.** `overview/`, `progress/`, `activity/`, `updates/`, `frontline/`, `attention/` are session-auth only; an API key gets 404, which reads like a missing project rather than a missing tree. You can still feed those panels — intake, properties, labels, dates and priorities are all on `/api/v1` — see the app-tree section of api-reference.md.
 
 ## Route by role first
 
@@ -30,10 +33,11 @@ The playbooks encode the PM↔QA handshakes (requirement needs linked acceptance
 
 | You are                                 | Use                                                          |
 | --------------------------------------- | ------------------------------------------------------------ |
-| An interactive agent with MCP available | `plane-qa-mcp` tools (35 tools; see `.mcp.json`)             |
+| An interactive agent with MCP available | `plane-qa-mcp` tools (50 tools; see `.mcp.json`)             |
 | Writing shell automation / CI steps     | `plane-qa` CLI (`node apps/plane-qa-cli/dist/cli.mjs`)       |
 | Writing TypeScript code                 | `PlaneQAClient` from `@plane/qa-sdk`                         |
 | Anything else (curl, Python)            | REST `/api/v1/workspaces/{slug}/projects/{uuid}/testing/...` |
+| Reading the Overview / noticeboard      | A browser. No key-authenticated route exists                 |
 | Modifying the platform itself           | [codebase-map.md](../../../.agents/skills/plane-qa/references/codebase-map.md)                |
 
 ## Setup
@@ -55,6 +59,8 @@ Token travels only as `X-API-Key`. Never print, paste, or commit `PLANE_API_KEY`
 - **Automation uploads are idempotent by `Idempotency-Key`**: new → 201, identical replay → 200 `replayed:true`, same key + changed payload → 409. A 409 means payload mismatch — never mint a second key to "fix" it.
 - Result/ingestion statuses: `passed | failed | blocked | skipped` (run-case `latest_status` may also be `open`).
 - Folder delete requires an empty folder (else 409); folder moves reject parent cycles (400).
+- **No category name is compiled into the product.** Noticeboard topics are the project's `Label`s; the frontline panel groups by whichever property carries `is_grouping_dimension` (one per project, `select`/`multi_select` only). Resolve the project's own vocabulary; never invent a "Customer" property because you expected one.
+- **Derived panels are not editable in place.** Progress, milestones, attention and readiness are computed — change the source, not the display. An editable field beside a computed number makes two truths with no owner.
 
 ## Working rules
 

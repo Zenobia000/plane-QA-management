@@ -17,6 +17,7 @@ from io import StringIO
 
 import pytest
 from django.core.management import call_command
+from django.utils import timezone
 
 from plane.db.models import (
     Cycle,
@@ -160,6 +161,98 @@ class TestSeededBurndown:
 
         assert burnup[0] < burnup[-1]
         assert burnup[-1] == total
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+class TestSeededEpicLayer:
+    """What the Epics page needs from the seed, stated as assertions.
+
+    The page is the work-item list scoped to `type__is_epic`, plus a per-epic progress bar
+    computed from descendants. Everything it can show therefore depends on the epics
+    differing from each other, and on at least one of them having work beneath it in every
+    state group. The seed carried two epics that were identical on every axis the page
+    groups by, so the list looked like a feature nobody had finished.
+    """
+
+    @staticmethod
+    def _epics(project):
+        return Issue.issue_objects.filter(project=project, type__is_epic=True).select_related("state")
+
+    @staticmethod
+    def _descendant_groups(epic):
+        """State groups beneath one epic, walked the way `EpicAnalyticsEndpoint` walks it.
+
+        To the bottom of the subtree, excluding the epic itself: an epic's children are
+        features, and a feature's state says nothing about the stories under it.
+        """
+        groups = []
+        frontier = [epic.id]
+        while frontier:
+            children = Issue.issue_objects.filter(parent_id__in=frontier).select_related("state")
+            frontier = [child.id for child in children]
+            groups.extend(child.state.group for child in children)
+        return groups
+
+    def test_the_epics_list_has_something_to_group(self, seeded):
+        epics = self._epics(seeded)
+
+        assert epics.count() >= 5
+        assert len({epic.state.group for epic in epics}) >= 4
+        assert len({epic.priority for epic in epics}) >= 4
+
+    def test_every_epic_but_the_unplanned_one_carries_a_window(self, seeded):
+        """Gantt and calendar place a row by its dates, and an epic joins no sprint.
+
+        Most items take their window from the cycle they sit in. An epic spans sprints and
+        belongs to none, so a dateless epic is simply absent from two of the five layouts.
+        The backlog epic is the deliberate exception -- nothing has been committed for it.
+        """
+        dated = [epic for epic in self._epics(seeded) if epic.start_date and epic.target_date]
+
+        assert len(dated) >= 4
+        for epic in dated:
+            assert epic.start_date <= epic.target_date, f"{epic.name} ends before it starts"
+
+    def test_one_epic_reports_every_state_group_beneath_it(self, seeded):
+        """A bar showing two of five segments cannot say whether the rest are unsupported."""
+        spreads = [set(self._descendant_groups(epic)) for epic in self._epics(seeded)]
+
+        assert any(len(spread) == 5 for spread in spreads), (
+            f"no epic covers all five state groups; widest was {max(spreads, key=len)}"
+        )
+
+    def test_a_cancelled_epic_keeps_cancelled_work_in_its_denominator(self, seeded):
+        """`EpicProgressSection` counts cancelled work rather than hiding it.
+
+        Dropping it from the denominator would make a mostly-cancelled epic read as nearly
+        complete. Nothing proved that until the seed had a cancelled epic to read.
+        """
+        cancelled = [epic for epic in self._epics(seeded) if epic.state.group == "cancelled"]
+
+        assert cancelled, "no cancelled epic to read"
+        groups = self._descendant_groups(cancelled[0])
+        assert groups and set(groups) == {"cancelled"}
+
+    def test_an_epic_with_no_descendants_exists(self, seeded):
+        """`total === 0` hides the progress section, rather than drawing a zeroed bar."""
+        childless = [epic for epic in self._epics(seeded) if not self._descendant_groups(epic)]
+
+        assert childless, "every epic has work beneath it, so the empty case is never rendered"
+
+    def test_exactly_the_open_overdue_work_is_countable(self, seeded):
+        """Overdue means open and past target; finished-late is neither missed nor red."""
+        today = timezone.now().date()
+        overdue = Issue.issue_objects.filter(
+            project=seeded, target_date__lt=today, state__group__in=("backlog", "unstarted", "started")
+        )
+
+        assert overdue.exists(), "no descendant is overdue, so the count never renders"
+
+    def test_the_project_exposes_the_axes_it_uses(self, seeded):
+        """Every item here is typed and the sidebar entry is what the epics live behind."""
+        assert seeded.is_issue_type_enabled is True
+        assert seeded.is_epic_enabled is True
 
 
 @pytest.fixture

@@ -125,6 +125,49 @@ Report per-requirement coverage status, failures, and open defects — never "al
 
 Pre-link CI tests to library cases by uploading once with `test_case_id` per result, or rely on stable `external_id`s (JUnit: `classname::name`) — after the first upload the mapping persists; unmapped results auto-create cases tagged `automated` (review these and file them into folders + link requirements, or they stay orphaned). Idempotency-key recipe and retry semantics: see workflows.md §3.
 
+## Product playbook — the field-to-engineering path
+
+Goal: a complaint that arrives from a customer reaches the backlog attributed, triaged, and visible to whoever decides what ships.
+
+The Project Overview assembles this as a war room — release readiness, progress, the noticeboard, intake grouped by customer, the overdue/urgent shortlist. **You cannot read it.** It is session-auth only (see api-reference.md). What you can do is supply everything it reads, over `/api/v1`.
+
+### 1. Learn this project's vocabulary before writing
+
+```bash
+curl -sS -H "X-API-Key: $PLANE_API_KEY" \
+  "$PLANE_URL/api/v1/workspaces/$PLANE_WORKSPACE/projects/<project_uuid>/work-item-properties/"
+```
+
+Find the property with `is_grouping_dimension: true` — that is what the frontline panel groups by, and its `name` is whatever this team calls the axis (customer, tenant, region, pilot cohort). If none is marked the panel is off, and marking one is a human decision in settings, not yours to flip so your output renders.
+
+### 2. File what the field reported
+
+```bash
+curl -sS -H "X-API-Key: $PLANE_API_KEY" -H "Content-Type: application/json" \
+  -X POST "$PLANE_URL/api/v1/workspaces/$PLANE_WORKSPACE/projects/<project_uuid>/intake-issues/" \
+  -d '{"issue":{"name":"Export times out past 5,000 rows","description_html":"<p>Blocks month-end close.</p>"}}'
+```
+
+Intake is the right home for anything originating outside the team; it lands as `pending` and stays out of the sprint until a human accepts it. Do not create it as an ordinary work item to "save a step" — that skips the triage decision the panel exists to surface.
+
+### 3. Attribute it, or it lands in the untagged pile
+
+```bash
+curl -sS -H "X-API-Key: $PLANE_API_KEY" -H "Content-Type: application/json" \
+  -X PUT "$PLANE_URL/api/v1/workspaces/$PLANE_WORKSPACE/projects/<project_uuid>/work-items/<issue_uuid>/properties/<dimension_uuid>/" \
+  -d '{"value":["acme"]}'
+```
+
+`value` is a list for a multi-select, and a report affecting two accounts should carry both — the panel shows it under each, which is the honest rendering. Unattributed intake is not dropped; it is grouped last as the measure of what nobody has claimed. Leaving your own writes there makes that number lie.
+
+### 4. Leave triage to a human
+
+Retriage is `PATCH intake-issues/{issue_uuid}/` with `{"status": 1}` (accepted) or `-1` (rejected), **ADMIN only, keyed by the work item's id**. Accepting means "this is going into the plan" — a scheduling commitment. Propose it; do not perform it unless the user asked for exactly that.
+
+### 5. What you cannot do
+
+Post to the noticeboard. `updates/` has no API-key route. If the user wants an announcement made, write the text and tell them where to paste it.
+
 ## Role decision guide
 
 | The user asks for…                                  | Playbook         | Key commands                                  |
@@ -136,5 +179,7 @@ Pre-link CI tests to library cases by uploading once with `test_case_id` per res
 | "Run the tests for this sprint/build"               | QA §3–5          | `run create --body cycle_id`, `record-result` |
 | "CI should report results here"                     | QA §6            | `automation upload-*`                         |
 | Bug triage from test failures                       | QA §4 then PM §5 | `create-defect`, `issue transition`           |
+| "A customer reported X" / field escalation          | Product §2–3     | `intake-issues/` + property `PUT`             |
+| "Which customers are blocked?"                      | Product §1       | read properties + `intake-issues/`; the assembled view is browser-only |
 
-One agent may play both roles in a session — but keep the handshakes explicit: DoR check before scheduling implementation, defect → resolve → retest before closing a run, release gate before claiming shippable.
+One agent may play several roles in a session — but keep the handshakes explicit: DoR check before scheduling implementation, defect → resolve → retest before closing a run, release gate before claiming shippable, and attribution before a field report counts as triaged.

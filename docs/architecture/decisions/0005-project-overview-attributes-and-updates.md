@@ -4,7 +4,15 @@
 - Date: 2026-07-31
 - Owners: platform
 - Related work items/test cases: `docs/planning/enterprise-parity-wbs.md` Phase B (B.1–B.8)
-- Supersedes/superseded by: —
+- Supersedes/superseded by: presentation half superseded in part by `docs/planning/project-overview-noticeboard.md` (2026-08-03)
+
+> **Partially superseded.** The schema decisions here stand: `Project.priority`, `start_date` and
+> `target_date` remain on the model, and `EntityUpdate` plus the single-table activity feed are
+> unchanged and now carry the noticeboard. What no longer holds is the presentation: the Properties
+> panel this ADR specified was removed, because putting an editable field beside a computed number
+> creates two truths with no owner. The Overview is now a product war room whose derived panels are
+> read-only by rule — see the noticeboard spec for the three data classes and the interaction rule
+> each implies.
 
 ## Context
 

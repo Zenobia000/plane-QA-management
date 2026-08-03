@@ -88,6 +88,32 @@ plane-qa issue create --name "Validate checkout" \
 
 For MCP, use `create_work_item_type`, `create_work_item_property`, `create_milestone`, and `create_initiative`. To set a value after issue creation, use `set_work_item_property_value`. Never pass a type, property, milestone, or project UUID across project/workspace boundaries; the API rejects it.
 
+## 7. Field report → attributed backlog item
+
+The path a customer complaint takes to engineering. It has no CLI or MCP coverage; use raw REST under `/api/v1/workspaces/{slug}/projects/{project_uuid}/`.
+
+```bash
+# 1. Which axis does this project group by? Never assume it is called "Customer".
+curl -sS -H "X-API-Key: $PLANE_API_KEY" "$BASE/work-item-properties/" \
+  | jq '.[] | select(.is_grouping_dimension) | {id, name, kind, options}'
+
+# 2. File it into intake, not into the sprint.
+curl -sS -H "X-API-Key: $PLANE_API_KEY" -H "Content-Type: application/json" -X POST \
+  "$BASE/intake-issues/" \
+  -d '{"issue":{"name":"Export times out past 5,000 rows","description_html":"<p>Blocks month-end close.</p>"}}'
+
+# 3. Attribute it, or it lands in the untagged pile.
+curl -sS -H "X-API-Key: $PLANE_API_KEY" -H "Content-Type: application/json" -X PUT \
+  "$BASE/work-items/<issue_uuid>/properties/<dimension_uuid>/" -d '{"value":["acme"]}'
+```
+
+Rules that matter here:
+
+- **Intake, not a work item.** Anything originating outside the team lands `pending` and stays out of the plan until a human accepts it. Creating it directly as a work item skips the triage decision.
+- **A multi-select value is a list**, and a report two accounts hit should carry both — the panel shows it under each heading, which is the honest rendering.
+- **Accepting is a scheduling commitment.** `PATCH intake-issues/{issue_uuid}/ {"status": 1}` is ADMIN-only and keyed by the *work item's* id, not the intake row's. Propose it; perform it only when asked.
+- **The assembled view is browser-only.** You are writing what the Project Overview reads; you cannot read it back over `/api/v1`. Report what you wrote, not what the panel now shows.
+
 ## Failure handling
 
 | Symptom          | Meaning                                                                                            | Action                                                                             |

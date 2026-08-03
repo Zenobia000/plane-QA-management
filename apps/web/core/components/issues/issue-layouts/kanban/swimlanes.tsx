@@ -27,7 +27,7 @@ import { useWorkFlowFDragNDrop } from "@/plane-web/components/workflow";
 // local imports
 import type { TRenderQuickActions } from "../list/list-view-types";
 import type { GroupDropLocation } from "../utils";
-import { getGroupByColumns, isWorkspaceLevel } from "../utils";
+import { getGroupByColumns, getIsWorkspaceLevel } from "../utils";
 import { KanBan } from "./default";
 import { HeaderGroupByCard } from "./headers/group-by-card";
 import { HeaderSubGroupByCard } from "./headers/sub-group-by-card";
@@ -293,13 +293,13 @@ export const KanBanSwimLanes = observer(function KanBanSwimLanes(props: IKanBanS
   const groupByList = getGroupByColumns({
     groupBy: group_by as GroupByColumnTypes,
     includeNone: true,
-    isWorkspaceLevel: isWorkspaceLevel(storeType),
+    isWorkspaceLevel: getIsWorkspaceLevel(storeType),
     isEpic: isEpic,
   });
   const subGroupByList = getGroupByColumns({
     groupBy: sub_group_by as GroupByColumnTypes,
     includeNone: true,
-    isWorkspaceLevel: isWorkspaceLevel(storeType),
+    isWorkspaceLevel: getIsWorkspaceLevel(storeType),
     isEpic: isEpic,
   });
 

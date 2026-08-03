@@ -31,7 +31,7 @@ import { useIssueStoreType } from "@/hooks/use-issue-layout-store";
 import { useWorkFlowFDragNDrop } from "@/plane-web/components/workflow";
 import type { TRenderQuickActions } from "../list/list-view-types";
 import type { GroupDropLocation } from "../utils";
-import { getGroupByColumns, isWorkspaceLevel, getApproximateCardHeight } from "../utils";
+import { getGroupByColumns, getIsWorkspaceLevel, getApproximateCardHeight } from "../utils";
 // components
 import { HeaderGroupByCard } from "./headers/group-by-card";
 import { KanbanGroup } from "./kanban-group";
@@ -109,7 +109,7 @@ export const KanBan = observer(function KanBan(props: IKanBan) {
   const list = getGroupByColumns({
     groupBy: group_by as GroupByColumnTypes,
     includeNone: true,
-    isWorkspaceLevel: isWorkspaceLevel(storeType),
+    isWorkspaceLevel: getIsWorkspaceLevel(storeType),
     isEpic: isEpic,
   });
 

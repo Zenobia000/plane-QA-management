@@ -32,7 +32,7 @@ import { IssueBulkOperationsRoot } from "@/plane-web/components/issues/bulk-oper
 import { useBulkOperationStatus } from "@/hooks/use-bulk-operation-status";
 // utils
 import type { GroupDropLocation } from "../utils";
-import { getGroupByColumns, isWorkspaceLevel, isSubGrouped } from "../utils";
+import { getGroupByColumns, getIsWorkspaceLevel, isSubGrouped } from "../utils";
 import { ListGroup } from "./list-group";
 import type { TRenderQuickActions } from "./list-view-types";
 
@@ -90,7 +90,7 @@ export const List = observer(function List(props: IList) {
   const groups = getGroupByColumns({
     groupBy: group_by as GroupByColumnTypes,
     includeNone: true,
-    isWorkspaceLevel: isWorkspaceLevel(storeType),
+    isWorkspaceLevel: getIsWorkspaceLevel(storeType),
     isEpic: isEpic,
   });
 
@@ -111,7 +111,7 @@ export const List = observer(function List(props: IList) {
 
   const getGroupIndex = (groupId: string | undefined) => groups.findIndex(({ id }) => id === groupId);
 
-  const is_list = group_by === null ? true : false;
+  const is_list = group_by === null;
 
   // create groupIds array and entities object for bulk ops
   const groupIds = groups.map((g) => g.id);

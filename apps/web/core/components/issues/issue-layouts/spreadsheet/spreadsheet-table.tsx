@@ -29,6 +29,11 @@ import { SpreadsheetIssueRow } from "./issue-row";
 import { SpreadsheetGroup } from "./spreadsheet-group";
 import { SpreadsheetHeader } from "./spreadsheet-header";
 
+// Fixed identities for the three placeholder rows. They are positional by nature, but an
+// array index as key is the pattern that silently breaks reorderable lists, so it is not one
+// worth keeping around for a reader to copy.
+const SKELETON_ROW_KEYS = ["skeleton-a", "skeleton-b", "skeleton-c"];
+
 type Props = {
   displayProperties: IIssueDisplayProperties;
   displayFilters: IIssueDisplayFilterOptions;
@@ -184,8 +189,8 @@ export const SpreadsheetTable = observer(function SpreadsheetTable(props: Props)
       )}
       {!groups && canLoadMoreIssues && (
         <tfoot ref={setIntersectionElement}>
-          {Array.from({ length: 3 }).map((_, index) => (
-            <SpreadsheetIssueRowLoader key={index} columnCount={displayPropertiesCount} />
+          {SKELETON_ROW_KEYS.map((key) => (
+            <SpreadsheetIssueRowLoader key={key} columnCount={displayPropertiesCount} />
           ))}
         </tfoot>
       )}

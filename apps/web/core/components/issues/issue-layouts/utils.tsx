@@ -63,7 +63,7 @@ export type IssueUpdates = {
   };
 };
 
-export const isWorkspaceLevel = (type: EIssuesStoreType) =>
+export const getIsWorkspaceLevel = (type: EIssuesStoreType) =>
   [
     EIssuesStoreType.PROFILE,
     EIssuesStoreType.GLOBAL,
@@ -71,9 +71,7 @@ export const isWorkspaceLevel = (type: EIssuesStoreType) =>
     EIssuesStoreType.TEAM_VIEW,
     EIssuesStoreType.TEAM_PROJECT_WORK_ITEMS,
     EIssuesStoreType.WORKSPACE_DRAFT,
-  ].includes(type)
-    ? true
-    : false;
+  ].includes(type);
 
 type TGetGroupByColumns = {
   groupBy: GroupByColumnTypes | null;
@@ -483,8 +481,8 @@ const handleSortOrder = (
 
   if (destinationIssues && destinationIssues.length > 0) {
     if (destinationIndex === 0) {
-      const destinationIssueId = destinationIssues[0];
-      const destinationIssue = getIssueById(destinationIssueId);
+      const neighbourIssueId = destinationIssues[0];
+      const destinationIssue = getIssueById(neighbourIssueId);
       if (!destinationIssue) return currentIssueState;
 
       currentIssueState = {
@@ -492,8 +490,8 @@ const handleSortOrder = (
         sort_order: destinationIssue.sort_order - sortOrderDefaultValue,
       };
     } else if (destinationIndex === destinationIssues.length) {
-      const destinationIssueId = destinationIssues[destinationIssues.length - 1];
-      const destinationIssue = getIssueById(destinationIssueId);
+      const neighbourIssueId = destinationIssues[destinationIssues.length - 1];
+      const destinationIssue = getIssueById(neighbourIssueId);
       if (!destinationIssue) return currentIssueState;
 
       currentIssueState = {
@@ -762,7 +760,7 @@ export const isDisplayFiltersApplied = (filters: Partial<IIssueFilters>): boolea
     (key) => !filters.displayProperties?.[key as keyof IIssueDisplayProperties]
   );
 
-  const isDisplayFiltersApplied = Object.keys(filters.displayFilters ?? {}).some((key) => {
+  const hasNonDefaultDisplayFilter = Object.keys(filters.displayFilters ?? {}).some((key) => {
     const value = filters.displayFilters?.[key as keyof IIssueDisplayFilterOptions];
     if (!value) return false;
     // -create_at is the default order
@@ -772,7 +770,7 @@ export const isDisplayFiltersApplied = (filters: Partial<IIssueFilters>): boolea
     return true;
   });
 
-  return isDisplayPropertiesApplied || isDisplayFiltersApplied;
+  return isDisplayPropertiesApplied || hasNonDefaultDisplayFilter;
 };
 
 /**

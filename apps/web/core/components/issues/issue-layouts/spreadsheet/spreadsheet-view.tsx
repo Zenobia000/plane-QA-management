@@ -28,7 +28,7 @@ import { IssueBulkOperationsRoot } from "@/plane-web/components/issues/bulk-oper
 // local imports
 import type { TRenderQuickActions } from "../list/list-view-types";
 import { QuickAddIssueRoot, SpreadsheetAddIssueButton } from "../quick-add";
-import { getGroupByColumns, isWorkspaceLevel as getIsWorkspaceLevel } from "../utils";
+import { getGroupByColumns, getIsWorkspaceLevel } from "../utils";
 import { SpreadsheetTable } from "./spreadsheet-table";
 
 type Props = {

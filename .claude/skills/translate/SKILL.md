@@ -66,16 +66,18 @@ These are common nouns. **Translate them into the target language** using the ca
 
 Use the table verbatim — never coin new variants; never leave the Latin form in the locale value.
 
-| Source      | zh-CN | zh-TW | ja         | ko     | ru       | ua       | de     | fr      | es      | it     | pt-BR   | pl     | cs      | sk      | ro      | tr-TR    | vi-VN  | id      |
-| ----------- | ----- | ----- | ---------- | ------ | -------- | -------- | ------ | ------- | ------- | ------ | ------- | ------ | ------- | ------- | ------- | -------- | ------ | ------- |
-| **Cycle**   | 周期  | 週期  | サイクル   | 사이클 | Цикл     | Цикл     | Zyklus | Cycle   | Ciclo   | Ciclo  | Ciclo   | Cykl   | Cyklus  | Cyklus  | Ciclu   | Döngü    | Chu kỳ | Siklus  |
-| **Cycles**  | 周期  | 週期  | サイクル   | 사이클 | Циклы    | Цикли    | Zyklen | Cycles  | Ciclos  | Cicli  | Ciclos  | Cykle  | Cykly   | Cykly   | Cicluri | Döngüler | Chu kỳ | Siklus  |
-| **Module**  | 模块  | 模組  | モジュール | 모듈   | Модуль   | Модуль   | Modul  | Module  | Módulo  | Modulo | Módulo  | Moduł  | Modul   | Modul   | Modul   | Modül    | Mô-đun | Modul   |
-| **Modules** | 模块  | 模組  | モジュール | 모듈   | Модули   | Модулі   | Module | Modules | Módulos | Moduli | Módulos | Moduły | Moduly  | Moduly  | Module  | Modüller | Mô-đun | Modul   |
-| **Epic**    | 史诗  | 史詩  | エピック   | 에픽   | Эпик     | Епік     | Epic   | Epic    | Epic    | Epic   | Epic    | Epik   | Epik    | Epik    | Epic    | Epik     | Epic   | Epik    |
-| **Epics**   | 史诗  | 史詩  | エピック   | 에픽   | Эпики    | Епіки    | Epics  | Epics   | Epics   | Epics  | Epics   | Epiki  | Epiky   | Epiky   | Epice   | Epikler  | Epic   | Epik    |
-| **Page**    | 页面  | 頁面  | ページ     | 페이지 | Страница | Сторінка | Seite  | Page    | Página  | Pagina | Página  | Strona | Stránka | Stránka | Pagină  | Sayfa    | Trang  | Halaman |
-| **Pages**   | 页面  | 頁面  | ページ     | 페이지 | Страницы | Сторінки | Seiten | Pages   | Páginas | Pagine | Páginas | Strony | Stránky | Stránky | Pagini  | Sayfalar | Trang  | Halaman |
+| Source      | zh-CN | zh-TW | ja         | ko     | ru       | ua       | de     | fr      | es        | it     | pt-BR     | pl       | cs      | sk      | ro      | tr-TR     | vi-VN      | id      |
+| ----------- | ----- | ----- | ---------- | ------ | -------- | -------- | ------ | ------- | --------- | ------ | --------- | -------- | ------- | ------- | ------- | --------- | ---------- | ------- |
+| **Cycle**   | 周期  | 週期  | サイクル   | 사이클 | Цикл     | Цикл     | Zyklus | Cycle   | Ciclo     | Ciclo  | Ciclo     | Cykl     | Cyklus  | Cyklus  | Ciclu   | Döngü     | Chu kỳ     | Siklus  |
+| **Cycles**  | 周期  | 週期  | サイクル   | 사이클 | Циклы    | Цикли    | Zyklen | Cycles  | Ciclos    | Cicli  | Ciclos    | Cykle    | Cykly   | Cykly   | Cicluri | Döngüler  | Chu kỳ     | Siklus  |
+| **Module**  | 模块  | 模組  | モジュール | 모듈   | Модуль   | Модуль   | Modul  | Module  | Módulo    | Modulo | Módulo    | Moduł    | Modul   | Modul   | Modul   | Modül     | Mô-đun     | Modul   |
+| **Modules** | 模块  | 模組  | モジュール | 모듈   | Модули   | Модулі   | Module | Modules | Módulos   | Moduli | Módulos   | Moduły   | Moduly  | Moduly  | Module  | Modüller  | Mô-đun     | Modul   |
+| **Epic**    | 史诗  | 史詩  | エピック   | 에픽   | Эпик     | Епік     | Epic   | Epic    | Epic      | Epic   | Epic      | Epik     | Epik    | Epik    | Epic    | Epik      | Epic       | Epik    |
+| **Epics**   | 史诗  | 史詩  | エピック   | 에픽   | Эпики    | Епіки    | Epics  | Epics   | Epics     | Epics  | Epics     | Epiki    | Epiky   | Epiky   | Epice   | Epikler   | Epic       | Epik    |
+| **Page**    | 页面  | 頁面  | ページ     | 페이지 | Страница | Сторінка | Seite  | Page    | Página    | Pagina | Página    | Strona   | Stránka | Stránka | Pagină  | Sayfa     | Trang      | Halaman |
+| **Pages**   | 页面  | 頁面  | ページ     | 페이지 | Страницы | Сторінки | Seiten | Pages   | Páginas   | Pagine | Páginas   | Strony   | Stránky | Stránky | Pagini  | Sayfalar  | Trang      | Halaman |
+| **Story**   | 故事  | 故事  | ストーリー | 스토리 | История  | Історія  | Story  | Story   | Historia  | Storia | História  | Historia | Příběh  | Príbeh  | Poveste | Hikâye    | Câu chuyện | Cerita  |
+| **Stories** | 故事  | 故事  | ストーリー | 스토리 | Истории  | Історії  | Storys | Stories | Historias | Storie | Histórias | Historie | Příběhy | Príbehy | Povești | Hikâyeler | Câu chuyện | Cerita  |
 
 Notes:
 
@@ -83,6 +85,7 @@ Notes:
 - Slavic locales (ru, ua, pl, cs, sk) show **nominative singular** and **nominative plural**. Inside ICU `{count, plural, ...}` blocks, use the case-correct form per CLDR keyword (see the Slavic case-form table further down).
 - Some Latin locales (fr, vi-VN, id) have forms identical to English (`Cycle`, `Module`, `Page`) — that's the natural cognate, not a Latin-preservation rule.
 - **Epic / Epics**: stays Latin in most Latin locales because there's no clean cognate (Spanish `épico` is for poetry/film; same for it/pt-BR/de/fr). Slavic locales use phonetic transliteration that's standard in their software industry (Эпик, Епік, Epik). CJK locales use the literal/transliterated form (史诗, エピック, 에픽).
+- **Story / Stories**: the agile work-item type, one level below Feature. Unlike Epic it has an established term in most languages, because "user story" was translated early and stuck (`historia de usuario`, `storia utente`, `用户故事`, `ユーザーストーリー`) — so translate it. **de and fr keep the Latin `Story`**, matching how those two locales already keep `Epic`: German and French software teams say "User Story", and `Geschichte` / `récit` read as prose rather than as a backlog item. Japanese takes the long-vowel `ー` per the katakana rule below.
 - **Generic uses translate normally and don't follow this glossary:** `next page` (paginator), `the page` (browser refresh), `status page`, `web page`, `life cycle`, `release cycle`, `rate-limit cycle`, `cycle of releases` — these are not the Plane Cycle/Page feature; translate them as ordinary words in the surrounding prose.
 - When editing an existing file, migrate occurrences you are already touching. Do not bulk-rewrite unrelated strings in the same PR — land a separate sweep PR with the `chore(i18n):` prefix.
 
@@ -500,25 +503,25 @@ pnpm --filter @plane/i18n run check:sync
 
 ## Quick Reference
 
-| Question                                            | Answer                                                                                                                                                                 |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Translate "Plane" / "Plane AI" / "Power K" / "PQL"? | Never. Latin, every locale.                                                                                                                                            |
-| Translate "Sticky" / "Stickies" / "Intake"?         | Never. Plane brand marks. Latin, every locale.                                                                                                                         |
-| Translate "Active Cycles"?                          | Never as a unit (it's a feature page name). Lowercase generic "active cycles" in prose translates normally per the glossary.                                           |
-| Translate "Pro" / "Business" / "Enterprise"?        | Never. Plan tier names. Latin, every locale.                                                                                                                           |
-| Translate "Cycle" / "Module" / "Epic" / "Page"?     | **Yes** — use the per-locale form from the translation glossary (zh-CN 周期/模块/史诗/页面, ja サイクル/モジュール/エピック/ページ, de Zyklus/Modul/Epic/Seite, etc.). |
-| Translate "GitHub" / "Slack" / third-party brands?  | Never. Latin, every locale.                                                                                                                                            |
-| Translate a variable name `{name}`?                 | Never. Preserve exactly.                                                                                                                                               |
-| Translate `<0>…</0>`?                               | Translate only the inside text. Never renumber.                                                                                                                        |
-| Russian plural forms?                               | `one / few / many / other` — four forms mandatory; case-correct per CLDR.                                                                                              |
-| German plural forms?                                | `one / other` — never `few`.                                                                                                                                           |
-| French plural forms?                                | `one / many / other` — `many` covers 1M+.                                                                                                                              |
-| CJK plural forms?                                   | `one / other` (single-form) — still emit both.                                                                                                                         |
-| Informal "you" in de/fr/ru/ja?                      | Never in product UI.                                                                                                                                                   |
-| Chinese + embedded "GitHub"?                        | `使用 GitHub 登录` — half-width space around Latin **brand** tokens. Feature nouns translate (`创建周期`, no space because no Latin).                                  |
-| Japanese "user"?                                    | ユーザー with long-vowel ー, not ユーザ.                                                                                                                               |
-| Hard-code date formats?                             | Never. Use ICU `{d, date, medium}`.                                                                                                                                    |
-| Copy English into non-English locale?               | Never. Worse than leaving the key missing.                                                                                                                             |
+| Question                                                  | Answer                                                                                                                                                                                       |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Translate "Plane" / "Plane AI" / "Power K" / "PQL"?       | Never. Latin, every locale.                                                                                                                                                                  |
+| Translate "Sticky" / "Stickies" / "Intake"?               | Never. Plane brand marks. Latin, every locale.                                                                                                                                               |
+| Translate "Active Cycles"?                                | Never as a unit (it's a feature page name). Lowercase generic "active cycles" in prose translates normally per the glossary.                                                                 |
+| Translate "Pro" / "Business" / "Enterprise"?              | Never. Plan tier names. Latin, every locale.                                                                                                                                                 |
+| Translate "Cycle" / "Module" / "Epic" / "Page" / "Story"? | **Yes** — use the per-locale form from the translation glossary (zh-CN 周期/模块/史诗/页面/故事, ja サイクル/モジュール/エピック/ページ/ストーリー, de Zyklus/Modul/Epic/Seite/Story, etc.). |
+| Translate "GitHub" / "Slack" / third-party brands?        | Never. Latin, every locale.                                                                                                                                                                  |
+| Translate a variable name `{name}`?                       | Never. Preserve exactly.                                                                                                                                                                     |
+| Translate `<0>…</0>`?                                     | Translate only the inside text. Never renumber.                                                                                                                                              |
+| Russian plural forms?                                     | `one / few / many / other` — four forms mandatory; case-correct per CLDR.                                                                                                                    |
+| German plural forms?                                      | `one / other` — never `few`.                                                                                                                                                                 |
+| French plural forms?                                      | `one / many / other` — `many` covers 1M+.                                                                                                                                                    |
+| CJK plural forms?                                         | `one / other` (single-form) — still emit both.                                                                                                                                               |
+| Informal "you" in de/fr/ru/ja?                            | Never in product UI.                                                                                                                                                                         |
+| Chinese + embedded "GitHub"?                              | `使用 GitHub 登录` — half-width space around Latin **brand** tokens. Feature nouns translate (`创建周期`, no space because no Latin).                                                        |
+| Japanese "user"?                                          | ユーザー with long-vowel ー, not ユーザ.                                                                                                                                                     |
+| Hard-code date formats?                                   | Never. Use ICU `{d, date, medium}`.                                                                                                                                                          |
+| Copy English into non-English locale?                     | Never. Worse than leaving the key missing.                                                                                                                                                   |
 
 ## Common Mistakes (revert on sight)
 

@@ -23,6 +23,7 @@ export type TIssueGroupByOptions =
   | "module"
   | "target_date"
   | "team_project"
+  | "parent"
   | null;
 
 export type TIssueOrderByOptions =
@@ -75,6 +76,10 @@ export type TIssueParams =
   | "target_date"
   | "project"
   | "team_project"
+  // Sent when a parent-grouped page loads more of one group: `group_by` is swapped for the
+  // filter that narrows to that group. The API has taken `parent` since before this grouping
+  // existed, "None" included.
+  | "parent"
   | "group_by"
   | "sub_group_by"
   | "order_by"

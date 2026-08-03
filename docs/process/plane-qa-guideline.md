@@ -255,19 +255,34 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 
 這解釋了 #14 為什麼曾被評為阻擋級:roll-up 一旦算錯,不是某一格數字錯,而是**中上層全部是假的**——DEMO 上那個底下有 8 個契約的 Epic 顯示 UNCOVERED,而 Epic 正是管理層唯一會看的那一層。roll-up 的三條規則見 B5。
 
+### 在 Work Items 直接讀拆解軸
+
+Work Items 的 list 與 spreadsheet 都能 **group by Story**(顯示篩選的「Story」選項),把 task 依所屬 Story 分堆,每組標題帶該組筆數。等同 sprint 執行板;與 `leaf_only` 併用就只剩可執行的工作。
+
+| 行為               | 實際規則                                                                            |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| 哪些項目成為分組欄 | `type__level == 2`,不是「所有有子項的項目」                                         |
+| 為什麼限定 level 2 | 分頁器每個分組值開一個 window partition,「任意 parent」的數量隨 backlog 無上限成長  |
+| Bug 也會出現       | Bug 與 Story 同為 level 2。用名字排除會在 workspace 改名時失效;空欄由顯示空群組控制 |
+| 掛錯層的 task      | parent 是 Feature 的 task 落進 **None** 組——階層跳級了,這裡刻意不掩蓋               |
+| 每組筆數來源       | grouped response 既有的 `total_results`,不是前端另外算的                            |
+| 拖拉換組           | **停用**。拖到另一個標題等於改寫 `parent_id`,那是在拆解樹裡搬家,需要循環引用檢查    |
+
+分組欄的名稱由 `work-item-group-options/parent/` 提供,與分頁器共用 `story_grouping_queryset` 一份定義——兩份定義會漂移成「有標題沒群組」或「有群組沒標題」。
+
 ### 與 SAFe 詞彙對照
 
-| SAFe / 企業敏捷                  | 本系統                  | 承載方式                                |
-| -------------------------------- | ----------------------- | --------------------------------------- |
-| Strategic Theme / Portfolio Epic | **Initiative**          | workspace 層,`InitiativeProject` 跨專案 |
-| Program Epic / Capability        | **Epic**                | `IssueType` level 0 + `is_epic`         |
-| Feature                          | **Feature**             | level 1                                 |
-| Story                            | **Story**               | level 2 ← 契約掛這裡                    |
-| Enabler / NFR                    | **Story + `requirement_kind=quality`** | 不是獨立型別,見 B2                 |
-| PI / Release                     | **Milestone**           | project 層檢查點,`Issue.milestone`      |
-| Iteration / Sprint               | **Cycle**               | `start_date` / `end_date`               |
-| Value Stream / ART               | **Module**              | 依產品能力切                            |
-| Team                             | **Project**             | 無獨立層                                |
+| SAFe / 企業敏捷                  | 本系統                                 | 承載方式                                |
+| -------------------------------- | -------------------------------------- | --------------------------------------- |
+| Strategic Theme / Portfolio Epic | **Initiative**                         | workspace 層,`InitiativeProject` 跨專案 |
+| Program Epic / Capability        | **Epic**                               | `IssueType` level 0 + `is_epic`         |
+| Feature                          | **Feature**                            | level 1                                 |
+| Story                            | **Story**                              | level 2 ← 契約掛這裡                    |
+| Enabler / NFR                    | **Story + `requirement_kind=quality`** | 不是獨立型別,見 B2                      |
+| PI / Release                     | **Milestone**                          | project 層檢查點,`Issue.milestone`      |
+| Iteration / Sprint               | **Cycle**                              | `start_date` / `end_date`               |
+| Value Stream / ART               | **Module**                             | 依產品能力切                            |
+| Team                             | **Project**                            | 無獨立層                                |
 
 ### 五個刻意的取捨
 
@@ -287,26 +302,26 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 
 可執行的參考實作是 `python manage.py seed_testing_demo --workspace <slug>`——它建立完整的 Epic → Feature → Story → Task 階層、契約、一輪驗證與一個缺陷迴圈,全程走服務層。**要看「正確設定長什麼樣」,先 seed 一個 DEMO 來讀。**
 
-| 步驟 | 做什麼                                   | 指令                                                              |
-| ---- | ---------------------------------------- | ----------------------------------------------------------------- |
-| 0    | 連線設定                                 | env:`PLANE_URL` `PLANE_API_KEY` `PLANE_WORKSPACE` `PLANE_PROJECT` |
-| 1    | 建立 work item type 階層(四層 + Bug)     | `plane-qa type create`                                            |
-| 2    | (選用)加專案自訂欄位                     | `plane-qa property create` / `property set`                       |
-| 3    | 建立 Module(能力分組)與 Cycle(時間箱)    | REST `modules/` `cycles/`                                         |
-| 4    | 建立需求階層                             | `plane-qa issue create --parent ...`                              |
-| 5    | 建立測試資料夾                           | `plane-qa folder create`                                          |
-| 6    | 每個 Story 連結契約(DoR)                 | `plane-qa case create` + `case link-issue`                        |
-| 7    | 建立 run 並綁 cycle                      | `plane-qa run create`                                             |
+| 步驟 | 做什麼                                | 指令                                                              |
+| ---- | ------------------------------------- | ----------------------------------------------------------------- |
+| 0    | 連線設定                              | env:`PLANE_URL` `PLANE_API_KEY` `PLANE_WORKSPACE` `PLANE_PROJECT` |
+| 1    | 建立 work item type 階層(四層 + Bug)  | `plane-qa type create`                                            |
+| 2    | (選用)加專案自訂欄位                  | `plane-qa property create` / `property set`                       |
+| 3    | 建立 Module(能力分組)與 Cycle(時間箱) | REST `modules/` `cycles/`                                         |
+| 4    | 建立需求階層                          | `plane-qa issue create --parent ...`                              |
+| 5    | 建立測試資料夾                        | `plane-qa folder create`                                          |
+| 6    | 每個 Story 連結契約(DoR)              | `plane-qa case create` + `case link-issue`                        |
+| 7    | 建立 run 並綁 cycle                   | `plane-qa run create`                                             |
 
 第 1 步的階層由 `IssueType.level` 與 `is_epic` 表達。DEMO 的定義:
 
-| 名稱    | level | is_epic | 意義                                 |
-| ------- | ----- | ------- | ------------------------------------ |
-| Epic    | 0     | ✅      | 跨數個 feature 的商業能力            |
-| Feature | 1     | —       | 一組連貫的系統能力                   |
-| Story   | 2     | —       | 一次迭代交付的使用者價值,契約掛這裡  |
-| Bug     | 2     | —       | 缺陷,走一般交付流程                  |
-| Task    | 3     | —       | story 底下的實作或維運工作           |
+| 名稱    | level | is_epic | 意義                                |
+| ------- | ----- | ------- | ----------------------------------- |
+| Epic    | 0     | ✅      | 跨數個 feature 的商業能力           |
+| Feature | 1     | —       | 一組連貫的系統能力                  |
+| Story   | 2     | —       | 一次迭代交付的使用者價值,契約掛這裡 |
+| Bug     | 2     | —       | 缺陷,走一般交付流程                 |
+| Task    | 3     | —       | story 底下的實作或維運工作          |
 
 **只有這四層加 Bug,不要再開型別。** 需求性質(FR / NFR)由 `Issue.requirement_kind` 承載——多開一個「Quality requirement」型別會讓 type 數量變成 `層數 × 性質數`,理由見 B2。
 

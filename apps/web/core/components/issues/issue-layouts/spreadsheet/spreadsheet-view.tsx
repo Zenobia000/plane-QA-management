@@ -9,11 +9,18 @@ import { observer } from "mobx-react";
 // plane constants
 import { SPREADSHEET_SELECT_GROUP, SPREADSHEET_PROPERTY_LIST } from "@plane/constants";
 // types
-import type { TIssue, IIssueDisplayFilterOptions, IIssueDisplayProperties } from "@plane/types";
+import type {
+  TIssue,
+  IIssueDisplayFilterOptions,
+  IIssueDisplayProperties,
+  GroupByColumnTypes,
+  TGroupedIssues,
+} from "@plane/types";
 import { EIssueLayoutTypes } from "@plane/types";
 // components
 import { MultipleSelectGroup } from "@/components/core/multiple-select";
 // hooks
+import { useIssueStoreType } from "@/hooks/use-issue-layout-store";
 import { useProject } from "@/hooks/store/use-project";
 import { useBulkOperationStatus } from "@/hooks/use-bulk-operation-status";
 // plane web components
@@ -21,6 +28,7 @@ import { IssueBulkOperationsRoot } from "@/plane-web/components/issues/bulk-oper
 // local imports
 import type { TRenderQuickActions } from "../list/list-view-types";
 import { QuickAddIssueRoot, SpreadsheetAddIssueButton } from "../quick-add";
+import { getGroupByColumns, isWorkspaceLevel as getIsWorkspaceLevel } from "../utils";
 import { SpreadsheetTable } from "./spreadsheet-table";
 
 type Props = {
@@ -28,13 +36,15 @@ type Props = {
   displayFilters: IIssueDisplayFilterOptions;
   handleDisplayFilterUpdate: (data: Partial<IIssueDisplayFilterOptions>) => void;
   issueIds: string[] | undefined;
+  groupBy?: GroupByColumnTypes | null;
+  groupedIssueIds?: TGroupedIssues;
   quickActions: TRenderQuickActions;
   updateIssue: ((projectId: string | null, issueId: string, data: Partial<TIssue>) => Promise<void>) | undefined;
   openIssuesListModal?: (() => void) | null;
   quickAddCallback?: (projectId: string | null | undefined, data: TIssue) => Promise<TIssue | undefined>;
   canEditProperties: (projectId: string | undefined) => boolean;
   canLoadMoreIssues: boolean;
-  loadMoreIssues: () => void;
+  loadMoreIssues: (groupId?: string) => void;
   enableQuickCreateIssue?: boolean;
   disableIssueCreation?: boolean;
   isWorkspaceLevel?: boolean;
@@ -47,6 +57,8 @@ export const SpreadsheetView = observer(function SpreadsheetView(props: Props) {
     displayFilters,
     handleDisplayFilterUpdate,
     issueIds,
+    groupBy,
+    groupedIssueIds,
     quickActions,
     updateIssue,
     quickAddCallback,
@@ -63,8 +75,24 @@ export const SpreadsheetView = observer(function SpreadsheetView(props: Props) {
   const portalRef = useRef<HTMLDivElement | null>(null);
   // store hooks
   const { currentProjectDetails } = useProject();
+  const storeType = useIssueStoreType();
   // plane web hooks
   const isBulkOperationsEnabled = useBulkOperationStatus();
+
+  const groups = groupBy
+    ? getGroupByColumns({
+        groupBy,
+        includeNone: true,
+        isWorkspaceLevel: getIsWorkspaceLevel(storeType),
+        isEpic,
+      })
+    : undefined;
+
+  // Bulk selection is per group so a "select all" inside one story does not reach across the
+  // table. Ungrouped keeps its single bucket.
+  const selectionEntities: Record<string, string[]> = groupBy
+    ? Object.fromEntries((groups ?? []).map((group) => [group.id, groupedIssueIds?.[group.id] ?? []]))
+    : { [SPREADSHEET_SELECT_GROUP]: issueIds ?? [] };
 
   const isEstimateEnabled: boolean = currentProjectDetails?.estimate !== null;
 
@@ -76,15 +104,15 @@ export const SpreadsheetView = observer(function SpreadsheetView(props: Props) {
         return true;
       });
 
-  if (!issueIds || issueIds.length === 0) return <></>;
+  // Grouped waits on its columns instead of its rows: the headings arrive from their own
+  // request, and a project can legitimately show empty groups.
+  if (groupBy ? !groups : !issueIds || issueIds.length === 0) return <></>;
   return (
     <div className="relative flex h-full w-full flex-col overflow-x-hidden bg-layer-1 whitespace-nowrap text-secondary">
       <div ref={portalRef} className="spreadsheet-menu-portal" />
       <MultipleSelectGroup
         containerRef={containerRef}
-        entities={{
-          [SPREADSHEET_SELECT_GROUP]: issueIds,
-        }}
+        entities={selectionEntities}
         disabled={!isBulkOperationsEnabled || isEpic}
       >
         {(helpers) => (
@@ -94,7 +122,10 @@ export const SpreadsheetView = observer(function SpreadsheetView(props: Props) {
                 displayProperties={displayProperties}
                 displayFilters={displayFilters}
                 handleDisplayFilterUpdate={handleDisplayFilterUpdate}
-                issueIds={issueIds}
+                issueIds={issueIds ?? []}
+                groups={groups}
+                groupedIssueIds={groupedIssueIds}
+                showEmptyGroups={displayFilters.show_empty_groups ?? false}
                 isEstimateEnabled={isEstimateEnabled}
                 portalElement={portalRef}
                 quickActions={quickActions}

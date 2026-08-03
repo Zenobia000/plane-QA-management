@@ -17,6 +17,7 @@ import { EIssueLayoutTypes } from "@plane/types";
 // hooks
 import { useIssues } from "@/hooks/store/use-issues";
 import { useUserPermissions } from "@/hooks/store/user";
+import { useParentGroupOptions } from "@/hooks/store/use-work-item-group-options";
 // hooks
 import { useGroupIssuesDragNDrop } from "@/hooks/use-group-dragndrop";
 import { useIssueStoreType } from "@/hooks/use-issue-layout-store";
@@ -82,6 +83,7 @@ export const BaseListRoot = observer(function BaseListRoot(props: IBaseListRoot)
   const showEmptyGroup = displayFilters?.show_empty_groups ?? false;
 
   const { workspaceSlug, projectId } = useParams();
+  useParentGroupOptions(workspaceSlug?.toString(), projectId?.toString(), group_by);
   const { updateFilters } = useIssuesActions(storeType);
   const collapsedGroups =
     issuesFilter?.issueFilters?.kanbanFilters || ({ group_by: [], sub_group_by: [] } as TIssueKanbanFilters);

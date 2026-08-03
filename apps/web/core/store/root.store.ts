@@ -69,6 +69,8 @@ import type { ITestingStore } from "./testing.store";
 import { TestingStore } from "./testing.store";
 import type { IUserStore } from "./user";
 import { UserStore } from "./user";
+import type { IWorkItemGroupOptionsStore } from "./work-item-group-options.store";
+import { WorkItemGroupOptionsStore } from "./work-item-group-options.store";
 import type { IWorkspaceRootStore } from "./workspace";
 
 enableStaticRendering(typeof window === "undefined");
@@ -102,6 +104,7 @@ export class CoreRootStore {
   stickyStore: IStickyStore;
   editorAssetStore: IEditorAssetStore;
   workItemFilters: IWorkItemFilterStore;
+  workItemGroupOptions: IWorkItemGroupOptionsStore;
   powerK: IPowerKStore;
   testing: ITestingStore;
 
@@ -122,6 +125,7 @@ export class CoreRootStore {
     this.globalView = new GlobalViewStore(this);
     this.issue = new IssueRootStore(this as unknown as RootStore);
     this.state = new StateStore(this as unknown as RootStore);
+    this.workItemGroupOptions = new WorkItemGroupOptionsStore();
     this.label = new LabelStore(this);
     this.dashboard = new DashboardStore(this);
     this.multipleSelect = new MultipleSelectStore();
@@ -157,6 +161,7 @@ export class CoreRootStore {
     this.globalView = new GlobalViewStore(this);
     this.issue = new IssueRootStore(this as unknown as RootStore);
     this.state = new StateStore(this as unknown as RootStore);
+    this.workItemGroupOptions = new WorkItemGroupOptionsStore();
     this.label = new LabelStore(this);
     this.dashboard = new DashboardStore(this);
     this.projectInbox = new ProjectInboxStore(this);

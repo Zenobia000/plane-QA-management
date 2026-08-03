@@ -142,6 +142,19 @@ def issue_on_results(
     return list(issues.values(*required_fields))
 
 
+def story_grouping_queryset(slug: str, project_id: Optional[str] = None) -> QuerySet[Issue]:
+    """The work items offered as columns when grouping by parent.
+
+    Shared with the endpoint that names those columns. Two definitions would drift, and the
+    drift is visible either way: a column the list can never fill, or a group of work items
+    with no column to sit in.
+    """
+    queryset = Issue.issue_objects.filter(workspace__slug=slug, type__level=2)
+    if project_id:
+        queryset = queryset.filter(project_id=project_id)
+    return queryset
+
+
 def issue_group_values(
     field: str,
     slug: str,
@@ -183,6 +196,21 @@ def issue_group_values(
         if project_id:
             return list(queryset.filter(project_id=project_id)) + ["None"]
         return list(queryset) + ["None"]
+
+    if field == "parent_id":
+        # Stories only, not every work item that happens to have a child.
+        #
+        # The paginator builds one entry per value returned here and opens one window
+        # partition per value, so the count has to be bounded the way every other field on
+        # this list is: states and cycles and modules are all sets a human created and can
+        # enumerate. "Anything with a child" is not -- it grows with the project, and a
+        # backlog of a few hundred work items would put a hundred columns on the page.
+        #
+        # Level 2 is where the breakdown axis puts the thing a task belongs to, so grouping
+        # by it answers the question that was asked. A task parented to a Feature lands in
+        # "None", which is the honest answer: the hierarchy skipped a level, and nothing
+        # here should hide that.
+        return list(story_grouping_queryset(slug, project_id).values_list("id", flat=True)) + ["None"]
 
     if field == "project_id":
         queryset = Project.objects.filter(workspace__slug=slug).values_list("id", flat=True)

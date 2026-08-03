@@ -7,6 +7,7 @@
 import type { CSSProperties } from "react";
 import { extractInstruction } from "@atlaskit/pragmatic-drag-and-drop-hitbox/tree-item";
 import { clone, isNil, pull, uniq, concat } from "lodash-es";
+import { Layers } from "lucide-react";
 import scrollIntoView from "smooth-scroll-into-view-if-needed";
 // plane types
 import { EIconSize, ISSUE_PRIORITIES, STATE_GROUPS } from "@plane/constants";
@@ -122,6 +123,7 @@ export const getGroupByColumns = ({
     assignees: getAssigneeColumns,
     created_by: getCreatedByColumns,
     team_project: getTeamProjectColumns,
+    parent: getParentColumns,
   };
 
   // Get and return the columns for the specified group by option
@@ -206,6 +208,35 @@ const getModuleColumns = (): IGroupByColumn[] | undefined => {
     payload: {},
   });
   return modules;
+};
+
+const getParentColumns = (): IGroupByColumn[] | undefined => {
+  const { currentProjectDetails } = store.projectRoot.project;
+  if (!currentProjectDetails?.id) return;
+  const stories = store.workItemGroupOptions.getParentOptions(currentProjectDetails.id);
+  // Undefined until `useParentGroupOptions` lands the fetch. Returning it unchanged makes
+  // `getGroupByColumns` return undefined too, which every layout already reads as "not ready"
+  // -- an empty array would instead say "this project has no stories" and render the page.
+  if (!stories) return;
+
+  const columns: IGroupByColumn[] = stories.map((story) => ({
+    id: story.id,
+    name: story.name,
+    icon: <Layers className="h-3.5 w-3.5" />,
+    payload: { parent_id: story.id },
+    // Dropping onto a heading would have to rewrite `parent_id`, which moves a work item in
+    // the breakdown tree rather than retagging it. Left disabled until that carries the cycle
+    // check the write paths do.
+    isDropDisabled: true,
+  }));
+  columns.push({
+    id: "None",
+    name: "None",
+    icon: <Layers className="h-3.5 w-3.5" />,
+    payload: {},
+    isDropDisabled: true,
+  });
+  return columns;
 };
 
 const getStateColumns = ({ projectId }: TGetColumns): IGroupByColumn[] | undefined => {

@@ -27,7 +27,7 @@ above it -- every work item in it is one unit of its scope.
 from collections import defaultdict
 
 # Django imports
-from django.db.models import Count, Q
+from django.db.models import Case, Count, F, IntegerField, Q, Value, When
 from django.utils import timezone
 
 # Third party imports
@@ -568,16 +568,33 @@ class ProjectAttentionEndpoint(BaseAPIView):
 
     LIMIT = 5
 
+    #: `priority` is a CharField, so ordering by the column sorts alphabetically -- which
+    #: puts "urgent" below "none" and reads as arbitrary. Ranked explicitly instead.
+    PRIORITY_RANK = Case(
+        When(priority="urgent", then=Value(0)),
+        When(priority="high", then=Value(1)),
+        When(priority="medium", then=Value(2)),
+        When(priority="low", then=Value(3)),
+        default=Value(4),
+        output_field=IntegerField(),
+    )
+
     def get(self, request, slug, project_id):
         today = timezone.now().date()
         live = Issue.issue_objects.filter(project_id=project_id, workspace__slug=slug).exclude(
             state__group__in=["completed", "cancelled"]
         )
 
-        overdue = live.filter(target_date__lt=today).order_by("target_date", "-priority")
+        ranked = live.annotate(priority_rank=self.PRIORITY_RANK)
+        # Oldest miss first; among misses of the same age, the more urgent one.
+        overdue = ranked.filter(target_date__lt=today).order_by("target_date", "priority_rank", "created_at")
         # Urgent items already counted as overdue are not repeated -- the same row twice
-        # reads as two problems.
-        urgent = live.filter(priority="urgent").exclude(target_date__lt=today).order_by("target_date", "created_at")
+        # reads as two problems. Ones with a date left lead, since a date is a commitment.
+        urgent = (
+            ranked.filter(priority="urgent")
+            .exclude(target_date__lt=today)
+            .order_by(F("target_date").asc(nulls_last=True), "created_at")
+        )
 
         total_overdue = overdue.count()
         total_urgent = urgent.count()

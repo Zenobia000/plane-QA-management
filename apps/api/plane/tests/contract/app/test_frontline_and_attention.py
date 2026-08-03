@@ -246,6 +246,27 @@ class TestAttention:
 
         assert [item["name"] for item in items] == ["Ten days", "Two days"]
 
+    def test_misses_of_the_same_age_are_broken_by_priority(self, session_client, workspace, project, states):
+        """`priority` is a CharField, so ordering by the column would put urgent below none."""
+        same_day = timezone.now().date() - timezone.timedelta(days=2)
+        self._issue(workspace, project, "Low", states["started"], priority="low", target_date=same_day)
+        self._issue(workspace, project, "Urgent", states["started"], priority="urgent", target_date=same_day)
+        self._issue(workspace, project, "Medium", states["started"], priority="medium", target_date=same_day)
+
+        items = session_client.get(attention_url(workspace, project)).json()["items"]
+
+        assert [item["name"] for item in items] == ["Urgent", "Medium", "Low"]
+
+    def test_an_urgent_item_with_a_date_leads_one_without(self, session_client, workspace, project, states):
+        """A date is a commitment; no date is only an opinion about ordering."""
+        soon = timezone.now().date() + timezone.timedelta(days=2)
+        self._issue(workspace, project, "No date", states["started"], priority="urgent")
+        self._issue(workspace, project, "Due soon", states["started"], priority="urgent", target_date=soon)
+
+        items = session_client.get(attention_url(workspace, project)).json()["items"]
+
+        assert [item["name"] for item in items] == ["Due soon", "No date"]
+
     def test_who_is_on_it_comes_with_the_row(self, session_client, workspace, project, states, create_user):
         today = timezone.now().date()
         issue = self._issue(

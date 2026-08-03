@@ -15,7 +15,6 @@ endpoint is never told what the words mean.
 
 import pytest
 from django.utils import timezone
-from rest_framework import status
 
 from plane.db.models import (
     Intake,

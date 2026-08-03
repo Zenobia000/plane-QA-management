@@ -16,7 +16,6 @@ from plane.app.serializers.user import UserLiteSerializer, UserAdminLiteSerializ
 from plane.db.models import (
     EntityUpdate,
     Issue,
-    EntityUpdateLabel,
     Label,
     Milestone,
     Project,

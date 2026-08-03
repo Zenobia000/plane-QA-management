@@ -627,7 +627,9 @@ class ProjectAttentionEndpoint(BaseAPIView):
                         "sequence_id": row.sequence_id,
                         "priority": row.priority,
                         "target_date": row.target_date,
-                        "days_overdue": (today - row.target_date).days if row.target_date and row.target_date < today else 0,
+                        "days_overdue": (today - row.target_date).days
+                        if row.target_date and row.target_date < today
+                        else 0,
                         "state_group": row.state.group if row.state_id else None,
                         "assignees": assignees.get(row.id, []),
                     }

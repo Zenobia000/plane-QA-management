@@ -105,7 +105,7 @@ export function AutomationSettings({ workspaceSlug, projectId }: { workspaceSlug
         </select>
         <button
           type="button"
-          className="bg-accent-solid h-8 rounded px-3 text-12 font-medium text-inverse disabled:opacity-50"
+          className="h-8 rounded bg-accent-primary px-3 text-12 font-medium text-inverse disabled:opacity-50"
           disabled={!name.trim()}
           onClick={async () => {
             await service.createAutomation(workspaceSlug, projectId, {

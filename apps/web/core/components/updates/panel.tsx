@@ -243,7 +243,7 @@ export function UpdatesPanel({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="bg-accent-solid h-8 rounded px-3 text-12 font-medium text-inverse disabled:opacity-50"
+              className="h-8 rounded bg-accent-primary px-3 text-12 font-medium text-inverse disabled:opacity-50"
               disabled={posting}
               onClick={() => void submit()}
             >

@@ -29,7 +29,7 @@ function WidgetBody({ data }: { data: TDashboardWidgetData }) {
             <span className="shrink-0 text-tertiary">{row.count}</span>
           </div>
           <div className="mt-0.5 h-1.5 overflow-hidden rounded bg-surface-2">
-            <div className="bg-accent-solid h-full" style={{ width: `${(row.count / data.total) * 100}%` }} />
+            <div className="h-full bg-accent-primary" style={{ width: `${(row.count / data.total) * 100}%` }} />
           </div>
         </li>
       ))}
@@ -157,7 +157,7 @@ export function DashboardView({ workspaceSlug }: { workspaceSlug: string }) {
             </select>
             <button
               type="button"
-              className="bg-accent-solid h-8 rounded px-3 text-12 font-medium text-inverse disabled:opacity-50"
+              className="h-8 rounded bg-accent-primary px-3 text-12 font-medium text-inverse disabled:opacity-50"
               disabled={!widgetName.trim()}
               onClick={async () => {
                 await service.createWidget(workspaceSlug, activeId, {

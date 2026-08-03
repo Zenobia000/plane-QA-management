@@ -68,7 +68,7 @@ export const InitiativeList = observer(function InitiativeList({ workspaceSlug }
         />
         <button
           type="button"
-          className="bg-accent-solid h-8 rounded px-3 text-12 font-medium text-inverse disabled:opacity-50"
+          className="h-8 rounded bg-accent-primary px-3 text-12 font-medium text-inverse disabled:opacity-50"
           disabled={!name.trim()}
           onClick={async () => {
             await service.createInitiative(workspaceSlug, { name: name.trim() });
@@ -93,7 +93,7 @@ export const InitiativeList = observer(function InitiativeList({ workspaceSlug }
               </div>
               {stats && (
                 <div className="mt-1.5 h-1.5 overflow-hidden rounded bg-surface-2">
-                  <div className="bg-success-solid h-full" style={{ width: `${stats.completion_percentage}%` }} />
+                  <div className="h-full bg-success-primary" style={{ width: `${stats.completion_percentage}%` }} />
                 </div>
               )}
               <div className="mt-2 flex flex-wrap gap-1.5">

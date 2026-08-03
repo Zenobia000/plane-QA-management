@@ -4,14 +4,26 @@
  * See the LICENSE file for details.
  */
 
+import { STATE_GROUPS } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import type { TProjectProgress } from "@plane/types";
 
+/**
+ * Coloured from STATE_GROUPS rather than from Tailwind classes.
+ *
+ * The first version named `bg-success-solid`, `bg-warning-solid`, `bg-neutral-solid` and
+ * `bg-surface-3`. None of those tokens exists -- the design system defines
+ * `bg-success-primary`, `bg-warning-primary` and surfaces 1 and 2 -- so every segment
+ * rendered transparent and the bar read as empty at 32% complete. Taking the colours from
+ * the constant the rest of the app already uses for state groups means the bar cannot
+ * drift from a board or a chart showing the same thing, and there is no class name to
+ * invent.
+ */
 const GROUPS = [
-  { key: "completed", label: "Completed", className: "bg-success-solid" },
-  { key: "started", label: "Started", className: "bg-warning-solid" },
-  { key: "unstarted", label: "Unstarted", className: "bg-neutral-solid" },
-  { key: "backlog", label: "Backlog", className: "bg-surface-3" },
+  { key: "completed", label: STATE_GROUPS.completed.label, color: STATE_GROUPS.completed.color },
+  { key: "started", label: STATE_GROUPS.started.label, color: STATE_GROUPS.started.color },
+  { key: "unstarted", label: STATE_GROUPS.unstarted.label, color: STATE_GROUPS.unstarted.color },
+  { key: "backlog", label: STATE_GROUPS.backlog.label, color: STATE_GROUPS.backlog.color },
 ] as const;
 
 /**
@@ -43,8 +55,7 @@ export function ProgressBar({ progress }: { progress: TProjectProgress }) {
             return (
               <div
                 key={group.key}
-                className={group.className}
-                style={{ width: `${(count / inScope) * 100}%` }}
+                style={{ width: `${(count / inScope) * 100}%`, backgroundColor: group.color }}
                 title={`${group.label}: ${count}`}
               />
             );
@@ -54,7 +65,7 @@ export function ProgressBar({ progress }: { progress: TProjectProgress }) {
       <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
         {GROUPS.map((group) => (
           <li key={group.key} className="flex items-center gap-1.5 text-11 text-tertiary">
-            <span className={`size-2 rounded-sm ${group.className}`} />
+            <span className="size-2 rounded-sm" style={{ backgroundColor: group.color }} />
             {group.label} {distribution[group.key]}
           </li>
         ))}

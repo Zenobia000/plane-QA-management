@@ -318,7 +318,7 @@ export function MilestonesPanel({
             )}
             <div className="mt-1 h-1 overflow-hidden rounded bg-surface-2">
               <div
-                className="bg-accent-solid h-full"
+                className="h-full bg-accent-primary"
                 style={{
                   width: milestone.total ? `${(milestone.completed / milestone.total) * 100}%` : "0%",
                 }}

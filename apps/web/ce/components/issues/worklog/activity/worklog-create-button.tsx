@@ -82,7 +82,7 @@ export function IssueActivityWorklogCreateButton({
           />
           <button
             type="button"
-            className="bg-accent-solid h-7 rounded px-2 text-11 font-medium text-inverse disabled:opacity-50"
+            className="h-7 rounded bg-accent-primary px-2 text-11 font-medium text-inverse disabled:opacity-50"
             disabled={busy || !total}
             onClick={() => void submit()}
           >

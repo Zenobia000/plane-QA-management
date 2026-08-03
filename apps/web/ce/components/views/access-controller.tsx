@@ -44,7 +44,7 @@ export function AccessController({ control }: Props) {
                 aria-pressed={selected}
                 onClick={() => onChange(option.value)}
                 className={`flex h-7 items-center gap-1.5 rounded px-2 text-12 ${
-                  selected ? "bg-surface-3 text-primary" : "text-tertiary hover:text-secondary"
+                  selected ? "bg-surface-2 text-primary" : "text-tertiary hover:text-secondary"
                 }`}
               >
                 <Icon className="size-3.5" />

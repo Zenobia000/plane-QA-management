@@ -168,6 +168,24 @@ class Issue(ChangeTrackerMixin, ProjectBaseModel):
         null=True,
         blank=True,
     )
+    # Whether this states a behaviour or a quality the system must hold to. Kept off
+    # `type`, which already carries breadth via `level`: putting both on one field makes
+    # the number of types the product of the two axes, and a workspace here had already
+    # grown a second level-0 type and a second level-2 type that way.
+    #
+    # `none` rather than null for work items that state no requirement at all -- an Epic
+    # groups requirements, a Task implements one, and neither *is* one. Null would read as
+    # "not yet classified", which is a different and less useful thing to say.
+    class RequirementKind(models.TextChoices):
+        NONE = "none", "Not a requirement"
+        FUNCTIONAL = "functional", "Functional"
+        QUALITY = "quality", "Quality"
+
+    requirement_kind = models.CharField(
+        max_length=20,
+        choices=RequirementKind.choices,
+        default=RequirementKind.NONE,
+    )
     milestone = models.ForeignKey(
         "db.Milestone",
         on_delete=models.SET_NULL,

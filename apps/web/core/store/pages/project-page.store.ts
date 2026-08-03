@@ -34,6 +34,13 @@ export const ROLE_PERMISSIONS_TO_CREATE_PAGE = [
   EUserProjectRoles.MEMBER,
 ];
 
+export type TPageTree = {
+  /** Ids shown at the top level, in display order. */
+  rootIds: string[];
+  /** Parent page id => its child ids, in display order. */
+  childIdsByParent: Record<string, string[]>;
+};
+
 export interface IProjectPageStore {
   // observables
   loader: TLoader;
@@ -43,10 +50,15 @@ export interface IProjectPageStore {
   // computed
   isAnyPageAvailable: boolean;
   canCurrentUserCreatePage: boolean;
+  isSearchActive: boolean;
   // helper actions
   getCurrentProjectPageIdsByTab: (pageType: TPageNavigationTabs) => string[] | undefined;
   getCurrentProjectPageIds: (projectId: string) => string[];
   getCurrentProjectFilteredPageIdsByTab: (pageType: TPageNavigationTabs) => string[] | undefined;
+  getPageTreeByTab: (pageType: TPageNavigationTabs) => TPageTree;
+  getSubPageIds: (pageType: TPageNavigationTabs, pageId: string) => string[];
+  getPageAncestorIds: (pageId: string) => string[];
+  getPageDescendantIds: (pageId: string) => string[];
   getPageById: (pageId: string) => TProjectPage | undefined;
   updateFilters: <T extends keyof TPageFilters>(filterKey: T, filterValue: TPageFilters[T]) => void;
   clearAllFilters: () => void;
@@ -65,6 +77,7 @@ export interface IProjectPageStore {
   createPage: (pageData: Partial<TPage>) => Promise<TPage | undefined>;
   removePage: (params: { pageId: string; shouldSync?: boolean }) => Promise<void>;
   movePage: (workspaceSlug: string, projectId: string, pageId: string, newProjectId: string) => Promise<void>;
+  movePageToParent: (pageId: string, parentId: string | null) => Promise<void>;
 }
 
 export class ProjectPageStore implements IProjectPageStore {
@@ -91,6 +104,7 @@ export class ProjectPageStore implements IProjectPageStore {
       // computed
       isAnyPageAvailable: computed,
       canCurrentUserCreatePage: computed,
+      isSearchActive: computed,
       // helper actions
       updateFilters: action,
       clearAllFilters: action,
@@ -100,6 +114,7 @@ export class ProjectPageStore implements IProjectPageStore {
       createPage: action,
       removePage: action,
       movePage: action,
+      movePageToParent: action,
     });
     this.rootStore = store;
     // service
@@ -181,6 +196,81 @@ export class ProjectPageStore implements IProjectPageStore {
     const pages = (filteredPages.map((page) => page.id) as string[]) || undefined;
 
     return pages ?? undefined;
+  });
+
+  /**
+   * @description true while the user is searching, when results are shown flat rather than nested
+   */
+  get isSearchActive() {
+    return this.filters.searchQuery.trim().length > 0;
+  }
+
+  /**
+   * @description the pages of a tab grouped by parent, ready to render as a tree
+   *
+   * A page whose parent is not itself visible in this tab -- a private child of a public page,
+   * an unarchived page under an archived one -- is listed at the top level rather than dropped.
+   * That one rule is what keeps every page reachable without a special case per tab.
+   */
+  getPageTreeByTab = computedFn((pageType: TPageNavigationTabs): TPageTree => {
+    const { projectId } = this.store.router;
+    if (!projectId) return { rootIds: [], childIdsByParent: {} };
+
+    const visiblePages = filterPagesByPageType(pageType, Object.values(this.data ?? {})).filter(
+      (page) => page.project_ids?.includes(projectId) && shouldFilterPage(page, this.filters.filters)
+    );
+    const visibleIds = new Set(visiblePages.map((page) => page.id));
+
+    const rootIds: string[] = [];
+    const childIdsByParent: Record<string, string[]> = {};
+    for (const page of orderPages(visiblePages, this.filters.sortKey, this.filters.sortBy)) {
+      if (!page.id) continue;
+      const parentId = page.parent && visibleIds.has(page.parent) ? page.parent : null;
+      if (parentId) {
+        childIdsByParent[parentId] = [...(childIdsByParent[parentId] ?? []), page.id];
+      } else {
+        rootIds.push(page.id);
+      }
+    }
+    return { rootIds, childIdsByParent };
+  });
+
+  /**
+   * @description the direct children of a page within a tab, in display order
+   */
+  getSubPageIds = computedFn(
+    (pageType: TPageNavigationTabs, pageId: string) => this.getPageTreeByTab(pageType).childIdsByParent[pageId] ?? []
+  );
+
+  /**
+   * @description the chain from the top level down to, but not including, the page itself
+   */
+  getPageAncestorIds = computedFn((pageId: string) => {
+    const ancestors: string[] = [];
+    const seen = new Set<string>([pageId]);
+    let current = this.data?.[pageId]?.parent;
+    while (current && !seen.has(current) && this.data?.[current]) {
+      ancestors.unshift(current);
+      seen.add(current);
+      current = this.data[current].parent;
+    }
+    return ancestors;
+  });
+
+  /**
+   * @description every page beneath this one, at any depth
+   */
+  getPageDescendantIds = computedFn((pageId: string) => {
+    const found: string[] = [];
+    let frontier = [pageId];
+    while (frontier.length > 0) {
+      const children = Object.values(this.data ?? {})
+        .filter((page) => page.parent && frontier.includes(page.parent) && page.id && !found.includes(page.id))
+        .map((page) => page.id as string);
+      found.push(...children);
+      frontier = children;
+    }
+    return found;
   });
 
   /**
@@ -357,6 +447,37 @@ export class ProjectPageStore implements IProjectPageStore {
    * @param {string} pageId
    * @param {string} newProjectId
    */
+  /**
+   * @description file a page under another page, or back at the top level with a null parent
+   *
+   * Applied to the store first so the row lands where it was dropped, and put back if the
+   * server disagrees. The descendant check mirrors the one in the API: filing a page inside
+   * its own sub-tree would close the tree into a ring.
+   */
+  movePageToParent = async (pageId: string, parentId: string | null) => {
+    const { workspaceSlug, projectId } = this.store.router;
+    const page = this.getPageById(pageId);
+    if (!workspaceSlug || !projectId || !page) return;
+    if (parentId === pageId) throw new Error("A page cannot be its own parent.");
+    if (parentId && this.getPageDescendantIds(pageId).includes(parentId)) {
+      throw new Error("A page cannot be filed inside one of its own sub-pages.");
+    }
+    if ((page.parent ?? null) === parentId) return;
+
+    const previousParent = page.parent ?? null;
+    runInAction(() => {
+      page.mutateProperties({ parent: parentId }, false);
+    });
+    try {
+      await this.service.update(workspaceSlug, projectId, pageId, { parent: parentId });
+    } catch (error) {
+      runInAction(() => {
+        page.mutateProperties({ parent: previousParent }, false);
+      });
+      throw error;
+    }
+  };
+
   movePage = async (workspaceSlug: string, projectId: string, pageId: string, newProjectId: string) => {
     try {
       await this.service.move(workspaceSlug, projectId, pageId, newProjectId);

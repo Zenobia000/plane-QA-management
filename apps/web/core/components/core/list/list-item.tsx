@@ -18,6 +18,11 @@ interface IListItemProps {
   title: string;
   itemLink: string;
   onItemClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  /**
+   * Rendered before the link rather than inside it, for controls of its own -- a tree
+   * disclosure arrow, say. Anything interactive has to sit outside the anchor.
+   */
+  leadingElement?: React.ReactNode;
   prependTitleElement?: React.ReactNode;
   appendTitleElement?: React.ReactNode;
   actionableItems?: React.ReactNode;
@@ -38,6 +43,7 @@ export function ListItem(props: IListItemProps) {
   const {
     id,
     title,
+    leadingElement,
     prependTitleElement,
     appendTitleElement,
     actionableItems,
@@ -75,6 +81,7 @@ export function ListItem(props: IListItemProps) {
         )}
       >
         <div className={cn("relative flex w-full items-center justify-between gap-3 truncate", itemClassName)}>
+          {leadingElement}
           <ControlLink
             id={id}
             className="relative flex w-full items-center gap-3 overflow-hidden"
@@ -94,7 +101,7 @@ export function ListItem(props: IListItemProps) {
               <span className={cn("flex flex-shrink-0 items-center", rightElementClassName)}>{appendTitleElement}</span>
             )}
           </ControlLink>
-          {quickActionElement && quickActionElement}
+          {quickActionElement}
         </div>
         {actionableItems && (
           <div

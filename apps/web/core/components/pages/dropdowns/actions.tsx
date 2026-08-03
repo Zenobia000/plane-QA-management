@@ -4,14 +4,15 @@
  * See the LICENSE file for details.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { observer } from "mobx-react";
-import { useParams } from "next/navigation";
-import { ArchiveRestoreIcon, FileOutput, LockKeyhole, LockKeyholeOpen } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { ArchiveRestoreIcon, FileOutput, LockKeyhole, LockKeyholeOpen, Plus } from "lucide-react";
 // constants
 import { EPageAccess } from "@plane/constants";
 // plane editor
 import { LinkIcon, CopyIcon, LockIcon, NewTabIcon, ArchiveIcon, TrashIcon, GlobeIcon } from "@plane/propel/icons";
+import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 // plane ui
 import type { TContextMenuItem } from "@plane/ui";
 import { ContextMenu, CustomMenu } from "@plane/ui";
@@ -24,6 +25,7 @@ import { usePageOperations } from "@/hooks/use-page-operations";
 import { MovePageModal } from "@/plane-web/components/pages";
 // plane web hooks
 import type { EPageStoreType } from "@/hooks/store";
+import { usePageStore } from "@/hooks/store";
 import { usePageFlag } from "@/hooks/use-page-flag";
 // store types
 import type { TPageInstance } from "@/store/pages/base-page";
@@ -41,7 +43,8 @@ export type TPageActions =
   | "delete"
   | "version-history"
   | "export"
-  | "move";
+  | "move"
+  | "add-sub-page";
 
 type Props = {
   extraOptions?: (TContextMenuItem & { key: TPageActions })[];
@@ -56,8 +59,12 @@ export const PageActions = observer(function PageActions(props: Props) {
   // states
   const [deletePageModal, setDeletePageModal] = useState(false);
   const [movePageModal, setMovePageModal] = useState(false);
+  // router
+  const router = useRouter();
   // params
-  const { workspaceSlug } = useParams();
+  const { workspaceSlug, projectId } = useParams();
+  // store hooks
+  const { createPage } = usePageStore(storeType);
   // page flag
   const { isMovePageEnabled } = usePageFlag({
     workspaceSlug: workspaceSlug?.toString() ?? "",
@@ -77,7 +84,21 @@ export const PageActions = observer(function PageActions(props: Props) {
     canCurrentUserDuplicatePage,
     canCurrentUserLockPage,
     canCurrentUserMovePage,
+    isContentEditable,
   } = page;
+
+  const handleAddSubPage = useCallback(async () => {
+    try {
+      const subPage = await createPage({ access, parent: page.id });
+      if (subPage?.id) router.push(`/${workspaceSlug}/projects/${projectId}/pages/${subPage.id}`);
+    } catch (error: any) {
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: "Error!",
+        message: error?.error ?? "The sub-page could not be created. Please try again.",
+      });
+    }
+  }, [access, createPage, page.id, projectId, router, workspaceSlug]);
   // menu items
   const MENU_ITEMS = useMemo(
     function MENU_ITEMS() {
@@ -148,6 +169,15 @@ export const PageActions = observer(function PageActions(props: Props) {
           icon: FileOutput,
           shouldRender: canCurrentUserMovePage && isMovePageEnabled,
         },
+        {
+          key: "add-sub-page",
+          action: () => {
+            handleAddSubPage();
+          },
+          title: "Add a sub-page",
+          icon: Plus,
+          shouldRender: isContentEditable,
+        },
       ];
       if (extraOptions) {
         menuItems.push(...extraOptions);
@@ -166,6 +196,8 @@ export const PageActions = observer(function PageActions(props: Props) {
       canCurrentUserDeletePage,
       canCurrentUserMovePage,
       isMovePageEnabled,
+      isContentEditable,
+      handleAddSubPage,
       pageOperations,
     ]
   );

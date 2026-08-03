@@ -22,6 +22,8 @@ export type TPage = {
   label_ids: string[] | undefined;
   name: string | undefined;
   owned_by: string | undefined;
+  /** The page this one is filed under. `null` puts it at the top level. */
+  parent: string | null | undefined;
   project_ids?: string[] | undefined;
   updated_at: Date | undefined;
   updated_by: string | undefined;

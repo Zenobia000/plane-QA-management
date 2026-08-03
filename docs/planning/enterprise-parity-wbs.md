@@ -278,6 +278,8 @@ implementer: S ≈ days, M ≈ 1–2 weeks, L ≈ 3–4 weeks, XL ≈ 6+ weeks.
   presence, work-item embeds, AI assist.
 - **Backend gap.** Small. `Page.parent`, `Page.is_locked`, `Page.moved_to_page`, `Page.moved_to_project`
   and `PageVersion` all already exist (`db/models/page.py:40-56`). Sharing needs an ACL; the rest is UI.
+  Nesting shipped: the list queryset no longer hides children, and a folder is a page that has some —
+  see ADR 0006.
 - **Frontend gap.** 13 stubs across `ce/components/pages/` — `header/{lock,move,share}-control.tsx`,
   `header/collaborators-list.tsx`, `modals/move-page-modal.tsx`, `navigation-pane/*`,
   `editor/ai/*`, `editor/embed/*`, `extra-actions.tsx`.
@@ -440,22 +442,30 @@ Three findings from the rest of the phase, each of which changed what got built:
   item. Moved to Phase D.
 - **C.3 was mostly already built.** `core/components/pages/navigation-pane/` ships the pane with its
   outline, info and assets tabs; the two `ce/` stubs are hooks for _additional_ tabs an EE build would
-  add, so there is nothing to fill without inventing a tab. What is genuinely missing is nesting in
-  the page sidebar over `Page.parent`, which is store and list work rather than a stub.
+  add, so there is nothing to fill without inventing a tab. What was genuinely missing is nesting over
+  `Page.parent`, which is store and list work rather than a stub — since shipped, see below.
+- **Nesting was hidden, not absent.** `PageViewSet.get_queryset` ended in
+  `.filter(parent__isnull=True)`, so `list` returned only roots and `retrieve`, which shares the
+  queryset, returned 404 for any sub-page. A page could be filed under another through the API and
+  then be reachable from nothing. Removing that one clause turned the archive CTE, the move walk and
+  the delete re-homing — all already written against `Page.parent` — into working features. The only
+  new backend rule is the one nothing needed while `parent` was unwritable: a page filed inside its
+  own sub-tree closes the tree into a ring, and both traversals follow it forever. ADR 0006 records
+  why a folder stayed a page rather than becoming a second kind of object.
 - **C.5 ships rendering, not authoring.** Drawing `blocked_by` edges needed only geometry, since
   `IssueRelation` has modelled the edge since before the timeline existed and the relation store
   already loads it. Drag-to-create needs the draggable handles and a write path, and is not here.
   Only `blocked_by` is drawn: `blocking` is the same edge read from the other end, so rendering both
   would double every line.
 
-| WBS | Work package                       | Depends on | Deliverable / acceptance                                                                                                                                                                                       | Tests                               | Status                                                                                   |
-| --- | ---------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
-| C.1 | Views access control and publish   | —          | `IssueView.access` made writable and surfaced; `ProjectViewPublishEndpoint` over the existing `DeployBoard` `"view"` type. No migration                                                                        | Contract tests, 5 cases             | DONE                                                                                     |
-| C.2 | Pages: move between projects       | —          | `PageViewSet.move` swaps the `ProjectPage` membership; descendants follow. The client method predated the endpoint and now reaches it                                                                          | Contract tests, 4 cases             | PARTIAL — lock already shipped, move done, share needs an ACL and is deferred to Phase D |
-| C.3 | Pages: nesting and navigation pane | C.2        | The navigation pane already ships in `core` with outline/info/assets tabs; the `ce/` stubs are extension points for _additional_ tabs, with nothing to extend. Sidebar page nesting over `Page.parent` remains | —                                   | PARTIAL — see note                                                                       |
-| C.4 | Bulk operations                    | —          | `IssueBulkUpdateEndpoint` applies one value to a selection; labels and assignees add rather than replace                                                                                                       | Contract tests, 6 cases             | DONE                                                                                     |
-| C.5 | Gantt dependencies                 | —          | `blocked_by` relations drawn between bars over the existing `IssueRelation`. No migration                                                                                                                      | `tsc`, lint                         | PARTIAL — rendering ships, drag-to-create does not                                       |
-| C.6 | Estimates: time input              | —          | `EstimateType.TIME`, stored as whole minutes; hours/minutes input                                                                                                                                              | Migration `0132_estimate_time_type` | DONE                                                                                     |
+| WBS | Work package                       | Depends on | Deliverable / acceptance                                                                                                                                                                                                                                                                                        | Tests                                          | Status                                                                                   |
+| --- | ---------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| C.1 | Views access control and publish   | —          | `IssueView.access` made writable and surfaced; `ProjectViewPublishEndpoint` over the existing `DeployBoard` `"view"` type. No migration                                                                                                                                                                         | Contract tests, 5 cases                        | DONE                                                                                     |
+| C.2 | Pages: move between projects       | —          | `PageViewSet.move` swaps the `ProjectPage` membership; descendants follow. The client method predated the endpoint and now reaches it                                                                                                                                                                           | Contract tests, 4 cases                        | PARTIAL — lock already shipped, move done, share needs an ACL and is deferred to Phase D |
+| C.3 | Pages: nesting and navigation pane | C.2        | The navigation pane already ships in `core` with outline/info/assets tabs; the `ce/` stubs are extension points for _additional_ tabs, with nothing to extend. Nesting now ships: the list is a tree over `Page.parent`, with drag-to-file, sub-page creation and ancestor breadcrumbs. No migration — ADR 0006 | Contract tests, 10 cases; store spec, 10 cases | DONE — nesting shipped; the `ce/` tab stubs stay empty by design                         |
+| C.4 | Bulk operations                    | —          | `IssueBulkUpdateEndpoint` applies one value to a selection; labels and assignees add rather than replace                                                                                                                                                                                                        | Contract tests, 6 cases                        | DONE                                                                                     |
+| C.5 | Gantt dependencies                 | —          | `blocked_by` relations drawn between bars over the existing `IssueRelation`. No migration                                                                                                                                                                                                                       | `tsc`, lint                                    | PARTIAL — rendering ships, drag-to-create does not                                       |
+| C.6 | Estimates: time input              | —          | `EstimateType.TIME`, stored as whole minutes; hours/minutes input                                                                                                                                                                                                                                               | Migration `0132_estimate_time_type`            | DONE                                                                                     |
 
 ### Phase D — the hard families
 

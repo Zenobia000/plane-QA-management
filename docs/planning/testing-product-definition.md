@@ -414,19 +414,31 @@ Test Case          用具體資料與操作實際執行
 
 ### 系統的對應能力
 
-| 層級                    | 系統對應                                             | 狀態                              |
-| ----------------------- | ---------------------------------------------------- | --------------------------------- |
-| Business Goal           | Initiative(workspace 層)                             | ✅                                |
-| Epic                    | Work item type(`IssueType.is_epic` / `level`)        | ✅                                |
-| Feature                 | Work item type,`Issue.parent` 指向 Epic              | ✅ 資料層可任意深度               |
-| Story                   | Work item type,`parent` 指向 Feature                 | ✅                                |
-| FR / NFR 分類           | Work item type(DEMO 用「Quality requirement」)       | ✅ 見下方說明                     |
-| Acceptance Criteria     | **Test case 本身**                                   | ✅ 系統設計即如此                 |
-| BDD Given / When / Then | `preconditions` + `steps[{action, expected_result}]` | ✅ 對應乾淨                       |
-| Test Case 具體資料      | 自由文字 JSON                                        | ⚠️ 無 Scenario Outline / Examples |
-| 結果回流                | run → result(append-only)→ defect → 重驗             | ✅ **最完整**                     |
+| 層級                    | 系統對應                                              | 狀態                              |
+| ----------------------- | ----------------------------------------------------- | --------------------------------- |
+| Business Goal           | Initiative(workspace 層)                              | ✅                                |
+| Epic                    | Work item type(`IssueType.is_epic` / `level`)         | ✅                                |
+| Feature                 | Work item type,`Issue.parent` 指向 Epic               | ✅ 資料層可任意深度               |
+| Story                   | Work item type,`parent` 指向 Feature                  | ✅                                |
+| FR / NFR 分類           | `Issue.requirement_kind`(functional / quality / none) | ✅ 見下方說明                     |
+| Acceptance Criteria     | **Test case 本身**                                    | ✅ 系統設計即如此                 |
+| BDD Given / When / Then | `preconditions` + `steps[{action, expected_result}]`  | ✅ 對應乾淨                       |
+| Test Case 具體資料      | 自由文字 JSON                                         | ⚠️ 無 Scenario Outline / Examples |
+| 結果回流                | run → result(append-only)→ defect → 重驗              | ✅ **最完整**                     |
 
-**FR / NFR 分類用 type 而非 property**:本文先前寫的是 work item property(select),但實際落地的 DEMO 用的是 work item type ——「Quality requirement」,`level` 與 Story 同階(`seed_testing_demo.py:149-154`)。改用 type 的理由是它讓兩個維度在建立物件時就分開:工作拆解層級由 `level` 承載,需求性質由 type 的身分承載,一條功能需求因此仍可自由掛上效能門檻,不會被迫在單一欄位裡二選一。property 仍然可用,適合在 type 之下再細分(例如安全 / 效能 / 可用性),但不該拿來承載主要分類。
+**FR / NFR 分類落在 `Issue.requirement_kind`,既不是 type 也不是 property。** 這一條前後換過三次落點,值得完整記下來,因為前兩次都是被「跟現況一致」推著走的:
+
+| 時期    | 落點                                                  | 為什麼被換掉                                                                                                                  |
+| ------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| 最初    | work item property(select)                            | property 是**專案層級**定義:每開一個新專案都要先建它問題才問得出來,跨專案報表則根本問不出來                                   |
+| 2026-07 | work item type(「Quality requirement」,與 Story 同階) | type 已經用 `level` 承載「多寬」,再讓它承載「什麼性質」會讓 type 數量變成 `層數 × 性質數` —— 一個 workspace 因此長到九個 type |
+| 現行    | `Issue.requirement_kind` 欄位                         | —                                                                                                                             |
+
+第二次改動的理由當時寫的是「跟 DEMO 一致」。文件與程式確實一致了,但一致的對象是一個會讓 type 數量相乘的設計 —— **一致不等於正確**。第 5 節警告的「把性質軸折進拆解軸」講的就是這個塌陷,而它正是靠這次改動被引進來的。
+
+改成欄位之後兩個軸才真的分開:拆解層級由 `IssueType.level` 承載,需求性質由 `requirement_kind` 承載,任何層級都能自由組合。property 仍然可用,適合在性質之下再細分(例如安全 / 效能 / 可用性),但不該拿來承載主要分類。
+
+`none` 的語意是**「不是需求」**,不是「還沒分類」(那是 null,而這個欄位不允許 null):Task 是需求的實作、Bug 是缺陷,兩者都帶 `none`;Epic 與 Feature 是需求,只是比 Story 寬。完整論證見 `docs/process/plane-qa-guideline.md` B2。
 
 **刻意的結構壓縮**:本模型把 FR / AC / BDD / Test Case 四層壓縮成 **test case 一個物件**。這與 role-playbooks 的立場一致(「Acceptance contract = Test case linked to the requirement」)。若追蹤重心放在 Feature → Story 的價值交付,這個壓縮是划算的;若需要 `FR-XXX-001` 這種可獨立追蹤的識別碼,FR 就得各自成為 work item,數量會顯著膨脹。**這是取捨,不是缺陷。**
 
@@ -539,27 +551,28 @@ Then      P95  <  2,000 ms          ← 結構化欄位,非自由文字
 
 ### 三個軸交叉,而非巢套
 
-| 軸           | 承載方式                        | 值                                        |
-| ------------ | ------------------------------- | ----------------------------------------- |
-| **工作拆解** | work item type + `Issue.parent` | Epic → Feature → Story                    |
-| **需求性質** | work item property(select)      | Functional / Non-functional               |
-| **時間箱**   | Cycle                           | Sprint 2026-07B(已交付)/ 2026-08A(進行中) |
+| 軸           | 承載方式                           | 值                                        |
+| ------------ | ---------------------------------- | ----------------------------------------- |
+| **工作拆解** | `IssueType.level` + `Issue.parent` | Epic → Feature → Story                    |
+| **需求性質** | `Issue.requirement_kind`           | functional / quality / none               |
+| **時間箱**   | Cycle                              | Sprint 2026-07B(已交付)/ 2026-08A(進行中) |
 
-三者互不決定彼此,實測輸出可見:
+三者互不決定彼此,seed 後的實際資料可見(節錄,`#` 為 `sequence_id`):
 
 ```
-#    LEVEL    KIND            SPRINT            STATE
-1    Epic     functional      —                 started
-2    Epic     non_functional  —                 started     ← Epic 也可以是 NFR
-5    Feature  non_functional  —                 started     ← Feature 層的品質約束
-8    Story    non_functional  Sprint 2026-07B   completed
-12   Story    functional      Sprint 2026-08A   unstarted   ← 零契約,擋住門檻
-16   —        —               —                 completed   ← 缺陷,三軸皆空
+#    LEVEL    KIND        SPRINT            STATE
+2    Epic     quality     —                 started     ← Epic 也可以整條是品質要求
+4    Epic     functional  —                 cancelled   ← 性質與狀態無關,取消的仍是需求
+8    Feature  quality     —                 started     ← Feature 層的品質約束
+12   Story    quality     Sprint 2026-07B   completed
+18   Story    functional  Sprint 2026-08A   unstarted   ← 零契約,擋住門檻
+22   Story    quality     —                 backlog     ← 有性質、有層級,但不屬於任何 sprint
+27   Bug      none        —                 completed   ← 缺陷不是需求,性質軸為 none
 ```
 
-**先前版本把「品質需求」做成與 Story 同層的 work item type**,等於把性質軸折進拆解軸 —— 正是第 5 節警告的那種塌陷。改用 property 之後,一個 Epic、一個 Feature、一個 Story 都能各自是 FR 或 NFR。
+**性質橫跨每一個層級,這正是它必須是欄位而不是 type 的理由。** 若把性質折進 type,`通知服務可靠性`(#2,整條 epic 都是品質要求)與 `通知送達即時性`(#8,feature 層的品質約束)就各自需要一個新 type,type 數量會變成 `層數 × 性質數`。先前版本確實走過這條路——把「品質需求」做成與 Story 同層的 work item type,正是第 5 節警告的那種塌陷。
 
-缺陷三個欄位皆空是刻意的:它不是需求,不屬於任何一軸,而覆蓋率報表必須自己排除它。
+`none` 的意思是**「不是需求」**,不是「還沒填」。#27 那一列不是資料缺漏:缺陷是需求**失效的證據**,不是需求本身,所以覆蓋率報表必須自己排除它。同理 Task 是需求的實作,也帶 `none`。
 
 ### Epic 層:五個,而不是同一列的五種寫法
 

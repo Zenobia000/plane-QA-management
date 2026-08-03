@@ -345,7 +345,11 @@ Bug           level 2        ── 缺陷是一般 work item,同樣有 type
 
 - **不能用 type**,因為 type 已經透過 `level` 承載「多寬」。再讓它承載「什麼性質」,type 的數量就變成 `層數 × 性質數`——一個 workspace 因此長到九個 type(level 0 兩個、level 2 四個),而「Feature 層的效能要求」還會再逼出第三個。
 - **不能用 property**,因為 property 是**專案層級**的定義。每開一個新專案都要先建它,問題才問得出來;跨專案的報表則根本問不出來。
-- **`none` 不是 null**。Epic 是需求的集合、Task 是需求的實作,兩者都不是需求本身。null 會被讀成「還沒分類」,那是另一件事。
+- **`none` 不是 null**。Task 是需求的實作、Bug 是缺陷,兩者都不是需求本身,所以帶 `none`。Epic 與 Feature 則是需求,只是比 Story 寬——「通知服務可靠性」整條就是品質要求。null 會被讀成「還沒分類」,那是另一件事。
+
+> **這個 bullet 曾經寫成「Epic 是需求的集合…帶 `none`」,與同一節上方那張圖直接衝突**(圖寫的是「每一層都可以帶 requirement_kind」),兩句話相隔八行。收斂成上面這版的理由:`none` 的意思是「不是需求」,而不是「是容器」。若照容器邏輯,Feature 同樣是容器卻沒人主張它該是 `none`——那個不對稱就是判斷寫錯了的證據。承載欄位之所以在 `Issue` 而不在 `IssueType`,前提正是性質橫跨每一個層級;把 level 0 排除掉會把這個前提削掉一角。
+>
+> 順帶澄清一個容易被誤引的證據:`converge_work_item_types.py` 把 `Work Group` / `Scenario` 併進 Epic 時蓋上的是 `none`,那**不是**「Epic 必須是 none」的規則,而是遷移不去**猜**一個沒有記錄過的性質。同理 `KIND_ONLY` 只列 Story,因為未分類的 Story 絕大多數是功能需求、有個站得住的預設值;Epic 沒有這種預設,所以不碰。
 
 > **一致不等於正確。** 2026-07 那次把文件從 property 改成 type,理由是「跟 DEMO 一致」——文件與程式確實一致了,但一致的是一個會讓 type 數量相乘的設計。A5 那張漂移表的第三筆講的就是這件事。
 

@@ -1,7 +1,8 @@
 # Project Overview:從功能對齊改成產品戰情室
 
-> 狀態:規格草稿 · 2026-08-03
+> 狀態:**四個階段皆已實作** · 2026-08-03
 > 前身:ADR 0005(Overview 的後端)、`testing-product-definition.md`(價值鏈與 persona)
+> 實作:`46a96c1508`(階段一)、`81e8d808ab`(階段二至四)
 
 ## 為什麼要改
 
@@ -69,19 +70,32 @@
 
 ## 逐區塊:讀哪來、誰寫、寫去哪
 
-| 區塊          | 類  | 讀                                              | 寫                             | 缺                    |
-| ------------- | --- | ----------------------------------------------- | ------------------------------ | --------------------- |
-| 出貨判定      | A   | `testing/overview` 的 `release_gate`            | 無                             | 已完成                |
-| 進度 / 里程碑 | A   | `overview`                                      | 無                             | 已完成                |
-| 需要注意      | A   | `Issue.priority` + `target_date`                | 無(點進工作項改)               | 端點 + 畫面           |
-| 客戶前線      | B   | `IntakeIssue`(`source`/`source_email`/`status`) | `PATCH intake-issues/<id>/` ✅ | 畫面 + 客戶屬性       |
-| 客戶標記      | B   | `WorkItemPropertyValue`                         | `work-item-property-values` ✅ | 屬性要先建            |
-| 公佈欄        | C   | `EntityUpdate`                                  | POST ✅ PATCH ✅ DELETE ✅     | **UI 只有發布與回覆** |
-| 會議紀錄      | C   | Pages                                           | Pages 全套 ✅                  | 一個連結              |
+| 區塊          | 類  | 讀                                   | 寫                                | 狀態 |
+| ------------- | --- | ------------------------------------ | --------------------------------- | ---- |
+| 出貨判定      | A   | `testing/overview` 的 `release_gate` | 無                                | ✅   |
+| 進度 / 里程碑 | A   | `overview`                           | 無                                | ✅   |
+| 需要注意      | A   | `attention/`                         | 無(點進工作項改)                  | ✅   |
+| 客戶前線      | B   | `frontline/`                         | `PATCH intake-issues/<issue_id>/` | ✅   |
+| 客戶標記      | B   | `WorkItemPropertyValue`              | `work-item-property-values`       | ✅   |
+| 公佈欄        | C   | `EntityUpdate`                       | POST / PATCH / DELETE             | ✅   |
+| 會議紀錄      | C   | Pages                                | Pages 全套                        | ✅   |
 
-**API 的寫入路徑幾乎都在**,缺的是 UI 與一個欄位。
+**API 的寫入路徑幾乎都在**,缺的是 UI 與兩個欄位(見下)。
 
-## 需要的 schema 變更:只有一項
+一個實作時才確認的細節:`PATCH intake-issues/<id>/` 的 `<id>` 是**工作項的 id**,
+不是 intake 列的 id —— 端點自己是用 `issue_id` 反查的。傳錯會拿到 404,
+讀起來像權限問題。所以 `frontline/` 兩個 id 都回。
+
+## 需要的 schema 變更
+
+規劃時預期只有一項。實作到階段二才發現第二項:**面板要能找到「客戶」這個屬性**。
+屬性由使用者自己建立,名字可能叫客戶、租戶、地區或試點批次 —— 程式不能猜。
+所以需要一個地方記下「使用者選了哪一個」,否則「做成活的」只做了一半:
+欄位是活的,但沒有人告訴畫面要讀哪一欄。
+
+解法是 `WorkItemProperty.is_grouping_dimension`,每專案至多一個,只允許 select 類型
+(用自由文字分組會每個錯字生一組)。**選擇本身是資料,存在專案層**,不是每個閱讀者
+各自的偏好 —— 大家看的應該是同一塊板子。
 
 ### 公佈欄分類 → 掛 Label,不要新 enum
 
@@ -117,30 +131,42 @@ EntityUpdateLabel(entity_update, label, project, workspace)
 
 ## 分階段
 
-每一階段都可獨立出貨、獨立 revert。
+每一階段都可獨立出貨、獨立 revert。四個階段皆已完成。
 
-**階段一 · 公佈欄成形**(核心訴求)
+**階段一 · 公佈欄成形**(核心訴求)✅
 
-1. 公佈欄移到顯眼位置,支援編輯與刪除(API 已具備,`deleteUpdate` 目前是死程式碼)
-2. 編輯過的公告顯示「已編輯」—— 公告被默默改掉比不能改更糟
-3. 權限:作者本人與 ADMIN
-4. `EntityUpdateLabel` + 分類篩選列
+1. ✅ 公佈欄移到 ProgressBar 之上,支援編輯與刪除(`deleteUpdate` 原本是死程式碼)
+2. ✅ 編輯過的公告顯示「已編輯」——`EntityUpdate.edited_at`,只在改文字時蓋章;
+   掛標籤是歸檔不是改稿,不蓋章
+3. ✅ 權限:作者本人與 ADMIN,在 `partial_update` / `destroy` 強制
+4. ✅ `EntityUpdateLabel` + 分類篩選列
 
-**階段二 · 客戶前線**
+**階段二 · 客戶前線** ✅
 
-1. 建三個客戶屬性(設定頁操作,不寫程式)
-2. 新端點:依客戶分組的 Intake 摘要(待處理 / 已排入 / 已婉拒)
-3. 面板 + 一鍵分流(`PATCH` 狀態,不開表單)
+1. ✅ 改為 `is_grouping_dimension`:使用者建屬性、在設定頁指定哪一個是分組維度
+2. ✅ `GET frontline/`:依該維度分組,每組 待處理 / 已排入 / 已婉拒 + 前 5 筆
+3. ✅ 面板 + 一鍵分流(`PATCH intake-issues/<issue_id>/`,ADMIN 才顯示按鈕)
 
-**階段三 · 需要注意**
+**階段三 · 需要注意** ✅
 
-1. 新端點:逾期與緊急工作項,最多 5 筆
-2. 面板,每筆可點進工作項
+1. ✅ `GET attention/`:逾期優先於緊急,逾期內最舊者優先,最多 5 筆;
+   已完成/已取消排除;`total_overdue` / `total_urgent` 說明被截掉多少
+2. ✅ 面板,每筆可點進工作項
 
-**階段四 · 收尾**
+**階段四 · 收尾** ✅
 
-1. 會議紀錄連到 Pages
-2. Activity 收合到底部
+1. ✅ 會議紀錄連到 Pages(連結而非嵌入清單 —— 嵌入等於在 Overview 放第二個更差的
+   Pages 索引)
+2. ✅ Activity 收合到底部,預設收起
+
+## 實作時偏離規格之處
+
+- **`show all` 之後的分類篩選在前端做**。板子只有十則,為了隱藏兩則多跑一次
+  round trip 比點擊本身還慢。端點仍支援 `?label=`,給未來的分頁用。
+- **客戶屬性沒有預先建立**。規格寫「建三個屬性(設定頁操作)」,實作改成
+  什麼都不預設 —— 預先建立等於替使用者決定他的客戶叫什麼,正是這份規格要避免的。
+- **前線面板沒有渲染其他屬性(導入階段、承諾日)的 chip**。列表已有五個欄位,
+  再加兩個 chip 會讓一行讀不完。點進工作項就看得到。
 
 ## 不做什麼
 
@@ -155,3 +181,19 @@ EntityUpdateLabel(entity_update, label, project, workspace)
 - 客戶前線:標了客戶的 Intake 會分組;一鍵把待處理改成已排入,列表即時反映
 - 需要注意:逾期與緊急各自出現,點擊進入該工作項
 - 沒有測試資料的專案不顯示出貨判定;沒有 Intake 的專案不顯示客戶前線
+
+自動化的部分在 `apps/api/plane/tests/contract/app/` 兩個檔案共 24 個測試:
+`test_noticeboard.py`(發布 / 改稿 / 歸檔 / 撤下 / 跨專案標籤拒絕 / 權限邊界)、
+`test_frontline_and_attention.py`(分組 / 多值同時歸屬多組 / 未歸屬不隱藏 /
+五種狀態收斂成三種 / 上限與其回報 / 選項被改名仍渲染 / 逾期優先 / 已完成排除 /
+同一筆不重複 / 最舊優先 / 指派人)。
+
+## 怎麼開始用
+
+1. 專案設定 → 自訂屬性,建一個 select 或 multi-select,名字自己取(客戶、租戶、地區)
+2. 同一列點「Group overview by this」
+3. 在 Intake 的工作項上填那個屬性
+4. Overview 出現該面板,標題就是你取的名字
+
+公佈欄的分類同理:專案設定 → 標籤,建幾個自己的分類,發公告時勾選。
+兩者都沒有預設值 —— 預設值等於替你決定你的客戶叫什麼。

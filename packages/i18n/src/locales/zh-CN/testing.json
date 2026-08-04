@@ -44,10 +44,6 @@
       "suite_label": "测试套件",
       "unfiled": "未归档",
       "priority_label": "优先級",
-      "given_label": "Given",
-      "given_hint": "情境执行前必須成立的前置条件",
-      "steps_label": "When / Then",
-      "steps_hint": "每行一步:操作 | 预期結果",
       "save_version": "保存為新版本",
       "traceability": "需求追溯",
       "linked_count": "已关联 {count} 個需求",
@@ -81,7 +77,10 @@
       "measured": "最新测量",
       "headroom": "余裕 {percent}%",
       "no_measurement": "尚未测量",
-      "threshold_hint": "以 metric、operator、threshold、unit 结构化,才能画趋势与自动判定。"
+      "threshold_hint": "以 metric、operator、threshold、unit 结构化,才能画趋势与自动判定。",
+      "scenario_label": "场景",
+      "scenario_hint": "Given / When / Then，一行一句",
+      "scenario_placeholder": "Given 用户已登录\nWhen 导出订单\nThen 出现下载链接"
     },
     "runs": {
       "heading": "测试执行",

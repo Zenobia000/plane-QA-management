@@ -44,10 +44,6 @@
       "suite_label": "Test suite",
       "unfiled": "Unfiled",
       "priority_label": "Priority",
-      "given_label": "Given",
-      "given_hint": "Preconditions that must hold before the scenario runs",
-      "steps_label": "When / Then",
-      "steps_hint": "one per line: action | expected result",
       "save_version": "Save new version",
       "traceability": "Traceability",
       "linked_count": "{count} linked requirement(s)",
@@ -81,7 +77,10 @@
       "measured": "Latest measurement",
       "headroom": "{percent}% headroom",
       "no_measurement": "Not measured yet",
-      "threshold_hint": "Structured as metric, operator, threshold and unit so it can be charted and judged."
+      "threshold_hint": "Structured as metric, operator, threshold and unit so it can be charted and judged.",
+      "scenario_label": "Scenár",
+      "scenario_hint": "Given / When / Then, jeden na riadok",
+      "scenario_placeholder": "Given používateľ je prihlásený\nWhen exportuje objednávky\nThen sa zobrazí odkaz na stiahnutie"
     },
     "runs": {
       "heading": "Test runs",

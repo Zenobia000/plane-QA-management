@@ -235,7 +235,7 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 | **A** `TestCaseWorkItemLink`          | 拆解 ↔ 驗證 | 契約掛在**哪一層**決定覆蓋率怎麼算。掛 Story 是刻意的                 |
 | **B** `TestRunCase.test_case_version` | 驗證 ↔ 證據 | 釘住版本。契約之後改版不影響已完成的驗證,「當時測的是哪一版」永遠可答 |
 | **C** `TestResultIssueLink`           | 證據 ↔ 拆解 | 缺陷是**真的 work item**,不是測試系統的內部物件,回到拆解軸走一般流程  |
-| **D** `TestRun.cycle` / `.module`     | 排程 ↔ 證據 | 「這個 sprint 驗了什麼」。**資料層有,UI 沒接** —— 缺口 #10            |
+| **D** `TestRun.cycle` / `.module`     | 排程 ↔ 證據 | 「這個 sprint 驗了什麼」。run builder 兩個下拉都送出(`run-builder.tsx:94`) |
 
 接合點 C 是整套架構的價值所在:**證據軸的產出回流成拆解軸的輸入**,迴圈閉合。這也是為什麼缺陷必須從 failed / blocked 結果原子建立——那筆交易同時創造了迴流的起點與它的來源憑證。
 
@@ -292,11 +292,16 @@ Work Items 的 list 與 spreadsheet 都能 **group by Story**(顯示篩選的「
 4. **排程軸刻意不是階層** —— 保留一個 work item 同時屬於多個切面的能力
 5. **量測只在 Story 層發生** —— 上層一律 roll-up,不允許獨立填報,避免各層數字互相矛盾
 
-### 這個架構目前缺的一塊
+### 四個接合點現在都通了
 
-- **接合點 D 只有一半** —— `TestRun.cycle` 資料層支援,run builder 不送出(#10)。「這個 sprint 驗了什麼」現在答不了
+四個軸之間不再有斷點。backlog 19 個缺口中 18 個完成,#17 仍是 PARTIAL(見下):
 
-~~**④ 證據軸只收得下可執行的驗證**(#15)~~ —— **已完成。** `ReleaseEvidence`(`kind` = slo / scan / review / other)承接測試產不出來的證據,出貨閘門會讀它:`failing` 與 `pending` 都是 blocker。所以審查簽核與持續 SLO 現在**攔得到**,不再需要靠人工在出貨會議上逐條念。B3 的四形態表因此全部有歸屬。
+- **接合點 D** —— run builder 送出 `cycle_id` 與 `module_id`(`run-builder.tsx:94`),兩個下拉都接上了。「這個 sprint 驗了什麼」答得出來(#10)
+- **④ 證據軸收得下測試產不出來的證據** —— `ReleaseEvidence`(`kind` = slo / scan / review / other),出貨閘門把 `failing` 與 `pending` 都列為 blocker。審查簽核與持續 SLO **攔得到**,不再需要靠人工在出貨會議上逐條念(#15)。B3 的四形態表因此全部有歸屬
+
+**仍然缺的一塊:結構化門檻(#17 的後半)。** `TestCaseVersion.case_type` 已經可以區分驗證方式,但 `{metric, operator, threshold, unit}` 在模型與 UI 都不存在,所以形態 1 的 NFR 只能把門檻寫進自由文字,自動判定與趨勢圖都做不到。backlog 一度把 #17 整條標成已完成,2026-08-04 查核後降回 PARTIAL。
+
+> 前兩條都曾經以「缺口」的身分寫在這裡,而且都在程式修好之後才被發現文件沒跟上;#17 則相反,是程式沒做完而文件先標了完成。兩個方向的漂移都出現過,A5 的三處回寫規則存在的理由就是這個。
 
 ## B1 · 開一個新專案的順序
 

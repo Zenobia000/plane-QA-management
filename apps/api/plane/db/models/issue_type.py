@@ -19,6 +19,20 @@ class IssueType(BaseModel):
     is_epic = models.BooleanField(default=False)
     is_default = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    # Whether work items of this type are things the product promises, and so need an
+    # acceptance test before anyone can call them done.
+    #
+    # The requirement-coverage report counts only these. Without the distinction it counted
+    # implementation tasks and hand-filed bugs as untested requirements -- eight "uncovered"
+    # rows on this instance of which one was a real gap, which is the kind of number people
+    # stop reading.
+    #
+    # Not derived from the type's name. Types are workspace-owned and users rename and add
+    # them; a query matching "Story" would report full coverage the day somebody translated
+    # it, and report it silently. Defaults to true for the same reason -- a type nobody has
+    # classified yet shows up as needing tests, which is noise, rather than vanishing from
+    # the report, which is a hidden gap.
+    needs_acceptance = models.BooleanField(default=True)
     level = models.FloatField(default=0)
     external_source = models.CharField(max_length=255, null=True, blank=True)
     external_id = models.CharField(max_length=255, blank=True, null=True)

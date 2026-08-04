@@ -13,6 +13,16 @@ export type TWorkItemType = {
   is_epic: boolean;
   is_default: boolean;
   is_active: boolean;
+  /**
+   * Whether work items of this type are promises the product makes, and so owe an
+   * acceptance test. The requirement-coverage report counts only these.
+   *
+   * Set per type rather than derived from its name: types are workspace-owned and get
+   * renamed, and a check against "Story" would report perfect coverage the day someone
+   * translated it. Defaults true, so an unclassified type shows up as noise rather than
+   * disappearing from the report.
+   */
+  needs_acceptance: boolean;
   level: number;
   created_at: string;
   updated_at: string;

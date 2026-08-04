@@ -82,6 +82,7 @@ export const BlockItemAction = observer(function BlockItemAction(props: Props) {
           // which meant the sole entry point from the list was a "+" that stays at
           // opacity-0 until the row is hovered -- a feature nobody could find.
           "add-sub-page",
+          "add-sub-folder",
           "open-in-new-tab",
           "copy-link",
           "make-a-copy",

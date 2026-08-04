@@ -49,6 +49,18 @@ class Page(BaseModel):
     view_props = models.JSONField(default=get_view_props)
     logo_props = models.JSONField(default=dict)
     is_global = models.BooleanField(default=False)
+    # Whether this row is a container rather than a document.
+    #
+    # Until now a "folder" was inferred: any page that happened to have children was drawn
+    # with a folder icon. That made a document change type because somebody else nested
+    # something under it, and clicking the folder still opened a text editor -- the icon
+    # promised a container and the click delivered a page. The distinction is now declared
+    # at creation instead of derived from the tree's shape.
+    #
+    # A folder keeps its `description_html` column. Nothing reads or writes it while
+    # `is_folder` is true, but the rows that became folders in the 2026-08 migration had
+    # bodies, and dropping user prose to satisfy a schema change is the worse surprise.
+    is_folder = models.BooleanField(default=False)
     projects = models.ManyToManyField("db.Project", related_name="pages", through="db.ProjectPage")
     moved_to_page = models.UUIDField(null=True, blank=True)
     moved_to_project = models.UUIDField(null=True, blank=True)

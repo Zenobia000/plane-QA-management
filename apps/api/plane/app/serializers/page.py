@@ -43,6 +43,7 @@ class PageSerializer(BaseSerializer):
             "color",
             "labels",
             "parent",
+            "is_folder",
             "is_favorite",
             "is_locked",
             "archived_at",

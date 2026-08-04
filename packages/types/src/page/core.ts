@@ -24,6 +24,15 @@ export type TPage = {
   owned_by: string | undefined;
   /** The page this one is filed under. `null` puts it at the top level. */
   parent: string | null | undefined;
+  /**
+   * Whether this row is a container rather than a document.
+   *
+   * Declared when the row is created, not inferred from whether it happens to have
+   * children -- that inference is what made a document change type because somebody
+   * nested something under it. A folder opens by expanding; only a document opens an
+   * editor.
+   */
+  is_folder?: boolean;
   project_ids?: string[] | undefined;
   updated_at: Date | undefined;
   updated_by: string | undefined;

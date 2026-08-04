@@ -97,6 +97,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
   archived_at: string | null | undefined;
   workspace: string | undefined;
   parent: string | null | undefined;
+  is_folder: boolean | undefined;
   project_ids?: string[] | undefined;
   created_by: string | undefined;
   updated_by: string | undefined;
@@ -135,6 +136,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
     this.archived_at = page?.archived_at || undefined;
     this.workspace = page?.workspace || undefined;
     this.parent = page?.parent ?? null;
+    this.is_folder = page?.is_folder ?? false;
     this.project_ids = page?.project_ids || undefined;
     this.created_by = page?.created_by || undefined;
     this.updated_by = page?.updated_by || undefined;
@@ -161,6 +163,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       archived_at: observable.ref,
       workspace: observable.ref,
       parent: observable.ref,
+      is_folder: observable.ref,
       project_ids: observable,
       created_by: observable.ref,
       updated_by: observable.ref,
@@ -238,6 +241,7 @@ export class BasePage extends ExtendedBasePage implements TBasePage {
       archived_at: this.archived_at,
       workspace: this.workspace,
       parent: this.parent,
+      is_folder: this.is_folder,
       project_ids: this.project_ids,
       created_by: this.created_by,
       updated_by: this.updated_by,

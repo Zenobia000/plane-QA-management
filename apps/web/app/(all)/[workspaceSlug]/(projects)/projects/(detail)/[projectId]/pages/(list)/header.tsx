@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { observer } from "mobx-react";
+import { FolderPlus } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 // constants
 import { EPageAccess } from "@plane/constants";
@@ -36,26 +37,30 @@ export const PagesListHeader = observer(function PagesListHeader() {
   const { currentProjectDetails, loader } = useProject();
   const { canCurrentUserCreatePage, createPage } = usePageStore(EPageStoreType.PROJECT);
   // handle page create
-  const handleCreatePage = async () => {
+  const handleCreatePage = async (isFolder = false) => {
     setIsCreatingPage(true);
 
     const payload: Partial<TPage> = {
       access: pageType === "private" ? EPageAccess.PRIVATE : EPageAccess.PUBLIC,
+      is_folder: isFolder,
     };
 
-    await createPage(payload)
-      .then((res) => {
-        const pageId = `/${workspaceSlug}/projects/${currentProjectDetails?.id}/pages/${res?.id}`;
-        router.push(pageId);
-      })
-      .catch((err) => {
-        setToast({
-          type: TOAST_TYPE.ERROR,
-          title: "Error!",
-          message: err?.data?.error || "Page could not be created. Please try again.",
-        });
-      })
-      .finally(() => setIsCreatingPage(false));
+    try {
+      const created = await createPage(payload);
+      // A folder has nothing to open, so creating one leaves you on the list, where you can
+      // see it appear and start filing into it.
+      if (!isFolder && created?.id) {
+        router.push(`/${workspaceSlug}/projects/${currentProjectDetails?.id}/pages/${created.id}`);
+      }
+    } catch (error: any) {
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: "Error!",
+        message: error?.data?.error || error?.error || "Page could not be created. Please try again.",
+      });
+    } finally {
+      setIsCreatingPage(false);
+    }
   };
 
   return (
@@ -78,9 +83,22 @@ export const PagesListHeader = observer(function PagesListHeader() {
       </Header.LeftItem>
       {canCurrentUserCreatePage && (
         <Header.RightItem>
-          <Button variant="primary" size="lg" onClick={handleCreatePage} loading={isCreatingPage}>
-            {isCreatingPage ? "Adding" : "Add page"}
-          </Button>
+          {/* Two acts, named up front. Deriving "folder" from whether a page later gained
+              children is what made the type feel like it changed by itself. */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => handleCreatePage(true)}
+              disabled={isCreatingPage}
+              prependIcon={<FolderPlus className="size-4" />}
+            >
+              Add folder
+            </Button>
+            <Button variant="primary" size="lg" onClick={() => handleCreatePage()} loading={isCreatingPage}>
+              {isCreatingPage ? "Adding" : "Add page"}
+            </Button>
+          </div>
         </Header.RightItem>
       )}
     </Header>

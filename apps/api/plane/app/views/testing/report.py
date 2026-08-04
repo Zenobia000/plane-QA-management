@@ -72,6 +72,17 @@ def requirement_coverage(project_id):
     typed `Bug` and `Bug` is not a requirement type. The two rules catch different things:
     the type says what a row is *for*, the link says where it *came from*, and a defect
     filed under some other type is still evidence rather than a promise.
+
+    A row that summarises other counted rows does not count toward the totals -- see
+    `counts_toward_coverage`. Acceptance is agreed at the level where the work is specified;
+    an epic is covered exactly when its stories are, so counting it again adds a second vote
+    for the same decision. On this instance six epics and features held no contract of their
+    own and contributed six to the numerator, turning 90% coverage into 94%. They keep their
+    rows, because seeing which epic contains the gap is the reason the roll-up exists.
+
+    A summary is derived from the tree rather than declared, so it needs no configuration and
+    self-corrects: an epic with nothing beneath it summarises nothing, counts for itself, and
+    is reported uncovered -- which is right, since it is a promise with no acceptance anywhere.
     """
     active_links = (
         TestCaseWorkItemLink.objects.filter(
@@ -112,12 +123,27 @@ def requirement_coverage(project_id):
             collected.extend(inherited(child_id, seen))
         return collected
 
+    def counted(issue):
+        # Untyped is not a statement that this is not a requirement, so it stays.
+        return issue.id not in defect_ids and (not issue.type_id or issue.type.needs_acceptance)
+
+    counted_ids = {issue.id for issue in issues if counted(issue)}
+    parent_of = {issue.id: issue.parent_id for issue in issues}
+    # Anything with a counted row beneath it is a summary of that row, at any depth -- a
+    # story under a task under an epic still makes the epic a summary.
+    summary_ids = set()
+    for issue_id in counted_ids:
+        walked = {issue_id}
+        ancestor = parent_of.get(issue_id)
+        while ancestor and ancestor not in walked:
+            walked.add(ancestor)
+            if ancestor in counted_ids:
+                summary_ids.add(ancestor)
+            ancestor = parent_of.get(ancestor)
+
     rows = []
     for issue in issues:
-        if issue.id in defect_ids:
-            continue
-        # Untyped is not a statement that this is not a requirement, so it stays.
-        if issue.type_id and not issue.type.needs_acceptance:
+        if not counted(issue):
             continue
         own = own_cases.get(issue.id, [])
         effective = {case.id: case for case in inherited(issue.id, set())}.values()
@@ -132,6 +158,10 @@ def requirement_coverage(project_id):
                 "parent_id": str(issue.parent_id) if issue.parent_id else None,
                 "covered": bool(effective),
                 "covered_directly": bool(own),
+                # False for a row that only summarises others. Kept in the list so the tree
+                # still shows where a gap sits; kept out of the totals so it is not a second
+                # vote on the same acceptance decision.
+                "counts_toward_coverage": issue.id not in summary_ids,
                 "requires_contract": state_group not in UNSCHEDULED_STATE_GROUPS,
                 "own_test_case_ids": [str(case.id) for case in own],
                 "test_case_ids": [str(case.id) for case in effective],
@@ -141,8 +171,17 @@ def requirement_coverage(project_id):
     return rows
 
 
+def _counting(rows):
+    """The rows the totals are entitled to use: leaves of the counted tree.
+
+    A summary row is real and stays in the list, but it holds no acceptance decision of its
+    own, so adding it to the numerator and the denominator states the same fact twice.
+    """
+    return [row for row in rows if row["counts_toward_coverage"]]
+
+
 def _uncovered_in_scope(rows):
-    return [row for row in rows if row["requires_contract"] and not row["covered"]]
+    return [row for row in _counting(rows) if row["requires_contract"] and not row["covered"]]
 
 
 class TestingOverviewEndpoint(BaseAPIView):
@@ -173,7 +212,7 @@ class TestingOverviewEndpoint(BaseAPIView):
         )
 
         rows = requirement_coverage(project_id)
-        in_scope = [row for row in rows if row["requires_contract"]]
+        in_scope = [row for row in _counting(rows) if row["requires_contract"]]
         covered_requirements = sum(1 for row in in_scope if row["covered"])
         uncovered = _uncovered_in_scope(rows)
 
@@ -246,12 +285,13 @@ class TestingRequirementCoverageEndpoint(BaseAPIView):
 
     def get(self, request, slug, project_id):
         rows = requirement_coverage(project_id)
-        in_scope = [row for row in rows if row["requires_contract"]]
+        counting = _counting(rows)
+        in_scope = [row for row in counting if row["requires_contract"]]
         return Response(
             {
-                "total": len(rows),
-                "covered": sum(1 for row in rows if row["covered"]),
-                "uncovered": sum(1 for row in rows if not row["covered"]),
+                "total": len(counting),
+                "covered": sum(1 for row in counting if row["covered"]),
+                "uncovered": sum(1 for row in counting if not row["covered"]),
                 "in_scope": len(in_scope),
                 "uncovered_in_scope": len(_uncovered_in_scope(rows)),
                 "work_items": rows,

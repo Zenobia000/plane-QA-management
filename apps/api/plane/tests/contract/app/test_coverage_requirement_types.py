@@ -127,3 +127,69 @@ def test_the_flag_reaches_the_client(session_client, workspace, project, create_
     payload = response.json()
     rows = payload["results"] if isinstance(payload, dict) else payload
     assert {r["name"]: r["needs_acceptance"] for r in rows} == {"Story": True, "Task": False}
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+class TestSummariesDoNotVoteTwice:
+    """An epic is covered exactly when its stories are, so counting it again is one fact
+    stated twice. On the authors' instance six epics and features held no contract of their
+    own and still added six to the numerator, reporting 94% where the truth was 90%."""
+
+    def test_an_epic_over_covered_stories_is_not_counted_again(
+        self, session_client, workspace, project, create_user
+    ):
+        epic = a_type(workspace, project, "Epic", level=0)
+        story = a_type(workspace, project, "Story")
+        parent = an_item(workspace, project, create_user, "Checkout", epic)
+        for name in ("Pay by card", "Pay by transfer"):
+            child = an_item(workspace, project, create_user, name, story)
+            child.parent = parent
+            child.save()
+
+        body = coverage(session_client, workspace, project)
+        rows = {r["name"]: r for r in body["work_items"]}
+
+        # The epic is still listed -- seeing which epic holds the gap is the point of roll-up.
+        assert set(rows) == {"Checkout", "Pay by card", "Pay by transfer"}
+        assert rows["Checkout"]["counts_toward_coverage"] is False
+        assert rows["Pay by card"]["counts_toward_coverage"] is True
+        # Two stories, not three rows.
+        assert body["total"] == 2
+        assert body["uncovered"] == 2
+
+    def test_an_epic_with_nothing_beneath_it_counts_for_itself(
+        self, session_client, workspace, project, create_user
+    ):
+        """It summarises nothing, so it is a promise with no acceptance anywhere -- which is
+        a real gap and must not disappear just because of its type."""
+        epic = a_type(workspace, project, "Epic", level=0)
+        an_item(workspace, project, create_user, "Empty epic", epic)
+
+        body = coverage(session_client, workspace, project)
+
+        assert body["total"] == 1
+        assert body["uncovered"] == 1
+        assert body["work_items"][0]["counts_toward_coverage"] is True
+
+    def test_a_story_under_an_uncounted_task_still_makes_its_epic_a_summary(
+        self, session_client, workspace, project, create_user
+    ):
+        """The walk is by ancestor, not by direct child -- a task in between is invisible
+        to the totals but must not break the chain."""
+        epic = a_type(workspace, project, "Epic", level=0)
+        task = a_type(workspace, project, "Task", needs_acceptance=False, level=3)
+        story = a_type(workspace, project, "Story")
+        top = an_item(workspace, project, create_user, "Epic", epic)
+        middle = an_item(workspace, project, create_user, "Task", task)
+        middle.parent = top
+        middle.save()
+        leaf = an_item(workspace, project, create_user, "Story", story)
+        leaf.parent = middle
+        leaf.save()
+
+        body = coverage(session_client, workspace, project)
+        rows = {r["name"]: r for r in body["work_items"]}
+
+        assert rows["Epic"]["counts_toward_coverage"] is False
+        assert body["total"] == 1

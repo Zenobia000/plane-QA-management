@@ -14,7 +14,7 @@ It returns identity, not state. A column heading needs a name and an identifier 
 clickable, and nothing else; the counts already arrive with the grouped page, and the parent's
 own progress is a roll-up the list has no business recomputing per heading.
 
-The queryset is `story_grouping_queryset`, the same one that decides which groups the
+The queryset is `parent_grouping_queryset`, the same one that decides which groups the
 paginator opens. Sharing it is the point -- a heading with no group behind it, or a group with
 no heading, are both states a second definition would eventually produce.
 """
@@ -26,7 +26,7 @@ from rest_framework.response import Response
 # Module imports
 from plane.app.permissions import ProjectEntityPermission
 from plane.app.views.base import BaseAPIView
-from plane.utils.grouper import story_grouping_queryset
+from plane.utils.grouper import parent_grouping_queryset
 
 
 class WorkItemParentGroupOptionsEndpoint(BaseAPIView):
@@ -36,7 +36,7 @@ class WorkItemParentGroupOptionsEndpoint(BaseAPIView):
 
     def get(self, request, slug, project_id):
         stories = (
-            story_grouping_queryset(slug, project_id)
+            parent_grouping_queryset(slug, project_id)
             .order_by("sequence_id")
             .values("id", "name", "sequence_id", "type_id")
         )

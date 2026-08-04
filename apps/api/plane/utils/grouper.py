@@ -142,14 +142,26 @@ def issue_on_results(
     return list(issues.values(*required_fields))
 
 
-def story_grouping_queryset(slug: str, project_id: Optional[str] = None) -> QuerySet[Issue]:
-    """The work items offered as columns when grouping by parent.
+def parent_grouping_queryset(slug: str, project_id: Optional[str] = None) -> QuerySet[Issue]:
+    """The work items offered as columns when grouping by parent: the ones that are parents.
 
     Shared with the endpoint that names those columns. Two definitions would drift, and the
     drift is visible either way: a column the list can never fill, or a group of work items
-    with no column to sit in.
+    with no column to sit in -- and the second is not a cosmetic problem. The paginator
+    builds its buckets from these values and discards rows whose group is not among them, so
+    a work item whose parent has no column does not fall back anywhere. It disappears.
+
+    This previously selected `type__level=2`, which fails twice over. It assumes a project
+    parents things to that level, and a project that runs Epic -> Feature -> Story parents
+    every story to a Feature at level 1: on this instance that hid 12 of 14 rows behind a
+    screen of empty headings. And levels are not types -- Bug sits at level 2 beside Story,
+    so closed defects were offered as columns to file work under.
+
+    Being a parent is the property that actually matters, it needs no guess about how a team
+    nests things, and it is bounded by the tree rather than by the backlog: on this instance
+    it is 5 columns where the level rule produced 15.
     """
-    queryset = Issue.issue_objects.filter(workspace__slug=slug, type__level=2)
+    queryset = Issue.issue_objects.filter(workspace__slug=slug, parent_issue__isnull=False).distinct()
     if project_id:
         queryset = queryset.filter(project_id=project_id)
     return queryset
@@ -198,19 +210,14 @@ def issue_group_values(
         return list(queryset) + ["None"]
 
     if field == "parent_id":
-        # Stories only, not every work item that happens to have a child.
+        # Every work item that is a parent, and nothing else.
         #
-        # The paginator builds one entry per value returned here and opens one window
-        # partition per value, so the count has to be bounded the way every other field on
-        # this list is: states and cycles and modules are all sets a human created and can
-        # enumerate. "Anything with a child" is not -- it grows with the project, and a
-        # backlog of a few hundred work items would put a hundred columns on the page.
-        #
-        # Level 2 is where the breakdown axis puts the thing a task belongs to, so grouping
-        # by it answers the question that was asked. A task parented to a Feature lands in
-        # "None", which is the honest answer: the hierarchy skipped a level, and nothing
-        # here should hide that.
-        return list(story_grouping_queryset(slug, project_id).values_list("id", flat=True)) + ["None"]
+        # The paginator opens one partition per value returned here and drops rows whose
+        # group is missing from the set, so this must cover every parent a row can name.
+        # It is still bounded: a parent is a node with children, which in any real tree is a
+        # small fraction of the backlog -- fewer columns here than the old level rule
+        # produced, not more.
+        return list(parent_grouping_queryset(slug, project_id).values_list("id", flat=True)) + ["None"]
 
     if field == "project_id":
         queryset = Project.objects.filter(workspace__slug=slug).values_list("id", flat=True)

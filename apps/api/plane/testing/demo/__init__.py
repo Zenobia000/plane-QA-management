@@ -20,12 +20,13 @@ See `docs/process/plane-qa-guideline.md` B0 for the diagram this project instant
 from django.db import transaction
 
 # Module imports
-from plane.db.models import Initiative, IssueView, Project, State
+from plane.db.models import Initiative, IssueView, Page, Project, State
 from plane.testing.demo import (
     contracts,
     evidence,
     execution,
     frontline,
+    pages,
     planning,
     saved_views,
     scaffolding,
@@ -65,6 +66,19 @@ def purge(workspace, identifier):
         if count:
             removed.append(f"{count} saved view(s) from earlier {identifier} projects")
             stale_views.delete()
+
+        # Pages are workspace-owned and reach a project only through `ProjectPage`, so the
+        # project's cascade sweeps the join row and leaves the page itself behind -- the
+        # same shape of orphan saved views used to leave. Deleted parent-first so the
+        # self-referencing cascade takes the children with it.
+        stale_pages = Page.objects.filter(project_pages__project_id__in=project_ids).distinct()
+        count = stale_pages.count()
+        if count:
+            removed.append(f"{count} page(s) from earlier {identifier} projects")
+            for page in stale_pages.filter(parent__isnull=True):
+                page.delete()
+            for page in Page.objects.filter(project_pages__project_id__in=project_ids).distinct():
+                page.delete()
 
     projects = Project.objects.filter(workspace=workspace, identifier=identifier)
     if projects.exists():
@@ -139,6 +153,7 @@ def seed(workspace, owner, identifier):
     # the project, the field reports become work items, and both are only interesting once
     # there is a project for them to be about.
     field = frontline.create_frontline(workspace, project, owner, labels)
+    folders = pages.create_pages(workspace, project, owner)
 
     views = saved_views.create_views(workspace, project, owner, context)
 
@@ -155,4 +170,5 @@ def seed(workspace, owner, identifier):
         "defect": defect,
         "views": views,
         "frontline": field,
+        "pages": folders,
     }

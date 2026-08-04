@@ -124,6 +124,7 @@ class Command(BaseCommand):
         write(f"    grouped by   {field['dimension'].name} ({len(field['dimension'].options.all())} accounts)")
         write(f"    intake       {len(field['reports'])} reports, waiting / scheduled / declined all represented")
         write(f"    noticeboard  {len(field['announcements'])} posts, filed under project labels")
+        write(f"    pages        {len(result['pages'])} folders with children, nested via Page.parent")
         write("")
         write(f"  Saved views    {len(result['views'])} ({len(result['views']) - 1} project, 1 workspace)")
         write("")

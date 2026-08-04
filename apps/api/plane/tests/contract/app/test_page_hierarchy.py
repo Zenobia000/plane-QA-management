@@ -26,8 +26,10 @@ def project(db, workspace, create_user):
     return made
 
 
-def make_page(workspace, project, owner, name, parent=None):
-    page = Page.objects.create(workspace=workspace, name=name, owned_by=owner, parent=parent)
+def make_page(workspace, project, owner, name, parent=None, is_folder=False):
+    page = Page.objects.create(
+        workspace=workspace, name=name, owned_by=owner, parent=parent, is_folder=is_folder
+    )
     ProjectPage.objects.create(workspace=workspace, project=project, page=page)
     return page
 
@@ -66,7 +68,7 @@ class TestPageHierarchy:
         assert response.json()["parent"] == str(root.id)
 
     def test_a_page_can_be_filed_under_another(self, session_client, workspace, project, create_user):
-        root = make_page(workspace, project, create_user, "Test plan")
+        root = make_page(workspace, project, create_user, "Test plan", is_folder=True)
         loose = make_page(workspace, project, create_user, "Defect weekly")
 
         response = session_client.patch(
@@ -147,7 +149,7 @@ class TestPageHierarchy:
     def test_a_sub_page_can_be_created_directly_under_its_parent(
         self, session_client, workspace, project, create_user
     ):
-        root = make_page(workspace, project, create_user, "Test plan")
+        root = make_page(workspace, project, create_user, "Test plan", is_folder=True)
 
         response = session_client.post(
             list_url(workspace, project),

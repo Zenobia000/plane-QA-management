@@ -21,7 +21,10 @@ this shortcut to update a page that already exists.
 
 from plane.db.models import Page, ProjectPage
 
-# (folder, its blurb, [(child title, child body), ...])
+# (folder, what it is for, [(child title, child body), ...])
+#
+# The middle field is documentation for whoever reads this file. It is deliberately not
+# written to the folder: a folder renders no body, so storing prose there would hide it.
 #
 # Deliberately tied to the rest of the seed -- the same sprints, the same Acme escalation
 # the frontline panel carries -- so the demo reads as one project rather than six unrelated
@@ -93,19 +96,22 @@ def create_pages(workspace, project, owner):
     """
     folders = []
     order = 0
-    for folder_name, blurb, children in TREE:
+    for folder_name, _purpose, children in TREE:
         order += 1
-        folder = _page(workspace, project, owner, folder_name, f"<p>{blurb}</p>", order * 1000)
+        # The blurb is dropped rather than stored: a folder never renders a body, so
+        # writing one would put prose somewhere nobody can read it.
+        folder = _page(workspace, project, owner, folder_name, "<p></p>", order * 1000, is_folder=True)
         for index, (title, body) in enumerate(children, start=1):
             _page(workspace, project, owner, title, body, index * 1000, parent=folder)
         folders.append(folder)
     return folders
 
 
-def _page(workspace, project, owner, name, html, sort_order, parent=None):
+def _page(workspace, project, owner, name, html, sort_order, parent=None, is_folder=False):
     page = Page.objects.create(
         workspace=workspace,
         name=name,
+        is_folder=is_folder,
         description_html=html,
         # Powers search without opening the document. Crude tag-strip is enough here because
         # every body above is authored in this file and contains no attributes or entities.

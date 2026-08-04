@@ -7,7 +7,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { observer } from "mobx-react";
 import { useParams, useRouter } from "next/navigation";
-import { ArchiveRestoreIcon, FileOutput, LockKeyhole, LockKeyholeOpen, Plus } from "lucide-react";
+import { ArchiveRestoreIcon, FileOutput, LockKeyhole, LockKeyholeOpen, Plus, FolderPlus } from "lucide-react";
 // constants
 import { EPageAccess } from "@plane/constants";
 // plane editor
@@ -44,7 +44,8 @@ export type TPageActions =
   | "version-history"
   | "export"
   | "move"
-  | "add-sub-page";
+  | "add-sub-page"
+  | "add-sub-folder";
 
 type Props = {
   extraOptions?: (TContextMenuItem & { key: TPageActions })[];
@@ -87,18 +88,22 @@ export const PageActions = observer(function PageActions(props: Props) {
     isContentEditable,
   } = page;
 
-  const handleAddSubPage = useCallback(async () => {
-    try {
-      const subPage = await createPage({ access, parent: page.id });
-      if (subPage?.id) router.push(`/${workspaceSlug}/projects/${projectId}/pages/${subPage.id}`);
-    } catch (error: any) {
-      setToast({
-        type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: error?.error ?? "The sub-page could not be created. Please try again.",
-      });
-    }
-  }, [access, createPage, page.id, projectId, router, workspaceSlug]);
+  const handleAddSubPage = useCallback(
+    async (isFolder = false) => {
+      try {
+        const subPage = await createPage({ access, parent: page.id, is_folder: isFolder });
+        // A folder has nothing to open; stay put so the new row is visible where it landed.
+        if (!isFolder && subPage?.id) router.push(`/${workspaceSlug}/projects/${projectId}/pages/${subPage.id}`);
+      } catch (error: any) {
+        setToast({
+          type: TOAST_TYPE.ERROR,
+          title: "Error!",
+          message: error?.error ?? "The sub-page could not be created. Please try again.",
+        });
+      }
+    },
+    [access, createPage, page.id, projectId, router, workspaceSlug]
+  );
   // menu items
   const MENU_ITEMS = useMemo(
     function MENU_ITEMS() {
@@ -174,9 +179,19 @@ export const PageActions = observer(function PageActions(props: Props) {
           action: () => {
             handleAddSubPage();
           },
-          title: "Add a sub-page",
+          title: "Add a page inside",
           icon: Plus,
-          shouldRender: isContentEditable,
+          // Only a folder holds anything, so only a folder offers to fill itself.
+          shouldRender: isContentEditable && !!page.is_folder,
+        },
+        {
+          key: "add-sub-folder",
+          action: () => {
+            handleAddSubPage(true);
+          },
+          title: "Add a folder inside",
+          icon: FolderPlus,
+          shouldRender: isContentEditable && !!page.is_folder,
         },
       ];
       if (extraOptions) {
@@ -197,6 +212,7 @@ export const PageActions = observer(function PageActions(props: Props) {
       canCurrentUserMovePage,
       isMovePageEnabled,
       isContentEditable,
+      page.is_folder,
       handleAddSubPage,
       pageOperations,
     ]

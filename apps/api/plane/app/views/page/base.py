@@ -56,6 +56,22 @@ from plane.bgtasks.copy_s3_object import copy_s3_objects_of_description_and_asse
 from plane.app.permissions import ProjectPagePermission
 
 
+def reject_non_folder_parent(parent_id):
+    """Only a folder may take children.
+
+    This is the rule that makes a folder a declared thing rather than an inference. Without
+    it the old behaviour survives by the back door: file a page under a document and that
+    document starts behaving like a container again, which is the surprise the folder type
+    exists to remove.
+    """
+    if parent_id and not Page.objects.filter(pk=parent_id, is_folder=True).exists():
+        return Response(
+            {"error": "Only a folder can contain pages. Create a folder, or pick one."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return None
+
+
 def descendant_ids(page_id):
     """Every page beneath `page_id`, breadth first.
 
@@ -161,6 +177,9 @@ class PageViewSet(BaseViewSet):
                 {"error": "The destination page does not exist in this project."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        rejected = reject_non_folder_parent(parent)
+        if rejected:
+            return rejected
 
         serializer = PageSerializer(
             data=request.data,
@@ -220,6 +239,23 @@ class PageViewSet(BaseViewSet):
                 if any(str(parent) == str(descendant) for descendant in descendant_ids(page_id)):
                     return Response(
                         {"error": "A page cannot be filed inside one of its own sub-pages."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                rejected = reject_non_folder_parent(parent)
+                if rejected:
+                    return rejected
+
+            if "is_folder" in request.data and bool(request.data["is_folder"]) != page.is_folder:
+                becoming_folder = bool(request.data["is_folder"])
+                body = (page.description_html or "").strip()
+                if becoming_folder and body not in ("", "<p></p>"):
+                    return Response(
+                        {"error": "This page has content. Empty it before turning it into a folder."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                if not becoming_folder and Page.objects.filter(parent_id=page_id, deleted_at__isnull=True).exists():
+                    return Response(
+                        {"error": "This folder still holds pages. Move them out before turning it into a page."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
@@ -629,6 +665,12 @@ class PagesDescriptionViewSet(BaseViewSet):
             projects__id=project_id,
             project_pages__deleted_at__isnull=True,
         )
+
+        if page.is_folder:
+            return Response(
+                {"error": "A folder has no document to edit."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if page.is_locked:
             return Response(

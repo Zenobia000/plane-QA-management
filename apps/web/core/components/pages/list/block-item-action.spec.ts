@@ -32,9 +32,13 @@ const optionsOrder = (source: string): string[] => {
 };
 
 describe("page row quick actions", () => {
-  it("offers a way to create a sub-page", () => {
-    // The only discoverable route to a folder from the list.
-    expect(optionsOrder(read("./block-item-action.tsx"))).toContain("add-sub-page");
+  it("offers both ways to fill a folder", () => {
+    // Without these the list has one entry point for nesting: a "+" held at opacity-0
+    // until the row is hovered. And without the folder variant a nested folder cannot be
+    // made from the list at all.
+    const ordered = optionsOrder(read("./block-item-action.tsx"));
+    expect(ordered).toContain("add-sub-page");
+    expect(ordered).toContain("add-sub-folder");
   });
 
   it("names only keys the actions component knows how to render", () => {

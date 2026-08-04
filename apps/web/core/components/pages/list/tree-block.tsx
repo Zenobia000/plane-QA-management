@@ -66,6 +66,7 @@ export const PageTreeBlock = observer(function PageTreeBlock(props: Props) {
   const hasSubPages = subPageIds.length > 0;
   const expanded = isExpanded(pageId);
   const canBeFiled = !!page?.isContentEditable;
+  const isFolder = !!page?.is_folder;
   const pageName = getPageName(page?.name);
 
   useEffect(() => {
@@ -153,7 +154,10 @@ export const PageTreeBlock = observer(function PageTreeBlock(props: Props) {
     <>
       <ListItem
         title={pageName}
-        itemLink={getRedirectionLink()}
+        // A folder opens by expanding. Routing it to the editor is what made the icon a
+        // lie: it promised a container and delivered a text document.
+        itemLink={isFolder ? "" : getRedirectionLink()}
+        onItemClick={isFolder ? () => toggleExpanded(pageId) : undefined}
         isMobile={isMobile}
         parentRef={elementRef}
         className={cn({
@@ -167,7 +171,7 @@ export const PageTreeBlock = observer(function PageTreeBlock(props: Props) {
               onClick={() => toggleExpanded(pageId)}
               className={cn(
                 "grid size-5 place-items-center rounded-sm text-tertiary hover:bg-layer-transparent-hover",
-                { invisible: !hasSubPages }
+                { invisible: !isFolder && !hasSubPages }
               )}
               aria-label={expanded ? `Collapse ${pageName}` : `Expand ${pageName}`}
               aria-expanded={hasSubPages ? expanded : undefined}
@@ -180,7 +184,7 @@ export const PageTreeBlock = observer(function PageTreeBlock(props: Props) {
         prependTitleElement={
           logo_props?.in_use ? (
             <Logo logo={logo_props} size={16} type="lucide" />
-          ) : hasSubPages ? (
+          ) : isFolder ? (
             expanded ? (
               <FolderOpen className="h-4 w-4 text-tertiary" />
             ) : (

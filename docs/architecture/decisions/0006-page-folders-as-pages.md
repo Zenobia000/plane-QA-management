@@ -4,7 +4,13 @@
 - Date: 2026-08-03
 - Owners: platform
 - Related work items/test cases: `docs/planning/enterprise-parity-wbs.md` C.3; `plane/tests/contract/app/test_page_hierarchy.py`
-- Supersedes/superseded by: —
+- Supersedes/superseded by: folder-as-inference superseded by ADR 0007 (2026-08-04)
+
+> **Partially superseded.** The tree argument here still holds and the cascades it protects are
+> untouched: archive, move and delete are still written against `Page.parent`. What no longer
+> holds is the answer to "what should a folder be" — inferring one from having children made a
+> document change type when somebody nested under it, and made a folder icon open a text editor.
+> Folders are now declared with `Page.is_folder`; see ADR 0007.
 
 ## Context
 

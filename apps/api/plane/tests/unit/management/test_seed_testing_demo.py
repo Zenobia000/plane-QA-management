@@ -398,12 +398,28 @@ class TestSeededPages:
         # Every child hangs off a folder that belongs to the same project.
         assert set(children.values_list("parent_id", flat=True)) <= set(parents.values_list("id", flat=True))
 
-    def test_pages_carry_body_text_and_a_search_stripe(self, seeded):
-        """A page seeded with no body is a title in a list, which demonstrates nothing."""
-        pages = Page.objects.filter(project_pages__project=seeded).distinct()
+    def test_documents_carry_body_text_and_a_search_stripe(self, seeded):
+        """A document seeded with no body is a title in a list, which demonstrates nothing.
 
-        assert all(p.description_html.strip() not in ("", "<p></p>") for p in pages)
-        assert all((p.description_stripped or "").strip() for p in pages)
+        Folders are excluded on purpose -- they render no body, so seeding one would put
+        prose where the product never shows it.
+        """
+        documents = Page.objects.filter(project_pages__project=seeded, is_folder=False).distinct()
+
+        assert documents.exists()
+        assert all(p.description_html.strip() not in ("", "<p></p>") for p in documents)
+        assert all((p.description_stripped or "").strip() for p in documents)
+
+    def test_the_containers_are_declared_folders(self, seeded):
+        """Every page holding children must be a folder; only folders may hold them."""
+        pages = Page.objects.filter(project_pages__project=seeded).distinct()
+        holders = {p.parent_id for p in pages if p.parent_id}
+
+        assert holders
+        assert all(Page.objects.get(pk=pid).is_folder for pid in holders)
+        assert not pages.filter(is_folder=True, parent__isnull=False).exclude(
+            parent__is_folder=True
+        ).exists()
 
     def test_reseeding_does_not_strand_the_previous_pages(self, seeded, workspace):
         """Pages reach a project through a join row, so the cascade leaves them behind.

@@ -302,6 +302,10 @@ Work Items 的 list 與 spreadsheet 都能 **group by Story**(顯示篩選的「
 
 可執行的參考實作是 `python manage.py seed_testing_demo --workspace <slug>`——它建立完整的 Epic → Feature → Story → Task 階層、契約、一輪驗證與一個缺陷迴圈,全程走服務層。**要看「正確設定長什麼樣」,先 seed 一個 DEMO 來讀。**
 
+Epic 那一層刻意做了五個而非兩個,因為 `/epics` 頁面就是依 `type__is_epic` 過濾的 work item 清單,它能做的每一件事都必須有互相不同的 epic 才看得出來:依 state 分組、依 priority 分組、gantt 與 calendar 依 `start_date` / `target_date` 排位,以及每個 epic 各自的進度條。五個各自示範一種讀法——一個底下鋪滿五種 state group 且帶一筆逾期、一個尚未開始、一個已取消(取消的工作**留在分母裡**,否則放棄掉的 epic 會顯示成接近完成)、一個完全沒有後代(進度區塊整段不渲染,而不是畫一條歸零的條)。
+
+> Epic 的進度**永遠**由後代算出,不讀它自己的 state。Epic 的 state 是人手動設的、estimate 通常是空的,拿它回答「這條線做得如何」等於問錯對象——`EpicAnalyticsEndpoint` 因此走到子樹底端,並把 epic 自己排除在計數之外。
+
 | 步驟 | 做什麼                                | 指令                                                              |
 | ---- | ------------------------------------- | ----------------------------------------------------------------- |
 | 0    | 連線設定                              | env:`PLANE_URL` `PLANE_API_KEY` `PLANE_WORKSPACE` `PLANE_PROJECT` |
@@ -356,7 +360,11 @@ Bug           level 2        ── 缺陷是一般 work item,同樣有 type
 
 - **不能用 type**,因為 type 已經透過 `level` 承載「多寬」。再讓它承載「什麼性質」,type 的數量就變成 `層數 × 性質數`——一個 workspace 因此長到九個 type(level 0 兩個、level 2 四個),而「Feature 層的效能要求」還會再逼出第三個。
 - **不能用 property**,因為 property 是**專案層級**的定義。每開一個新專案都要先建它,問題才問得出來;跨專案的報表則根本問不出來。
-- **`none` 不是 null**。Epic 是需求的集合、Task 是需求的實作,兩者都不是需求本身。null 會被讀成「還沒分類」,那是另一件事。
+- **`none` 不是 null**。Task 是需求的實作、Bug 是缺陷,兩者都不是需求本身,所以帶 `none`。Epic 與 Feature 則是需求,只是比 Story 寬——「通知服務可靠性」整條就是品質要求。null 會被讀成「還沒分類」,那是另一件事。
+
+> **這個 bullet 曾經寫成「Epic 是需求的集合…帶 `none`」,與同一節上方那張圖直接衝突**(圖寫的是「每一層都可以帶 requirement_kind」),兩句話相隔八行。收斂成上面這版的理由:`none` 的意思是「不是需求」,而不是「是容器」。若照容器邏輯,Feature 同樣是容器卻沒人主張它該是 `none`——那個不對稱就是判斷寫錯了的證據。承載欄位之所以在 `Issue` 而不在 `IssueType`,前提正是性質橫跨每一個層級;把 level 0 排除掉會把這個前提削掉一角。
+>
+> 順帶澄清一個容易被誤引的證據:`converge_work_item_types.py` 把 `Work Group` / `Scenario` 併進 Epic 時蓋上的是 `none`,那**不是**「Epic 必須是 none」的規則,而是遷移不去**猜**一個沒有記錄過的性質。同理 `KIND_ONLY` 只列 Story,因為未分類的 Story 絕大多數是功能需求、有個站得住的預設值;Epic 沒有這種預設,所以不碰。
 
 > **一致不等於正確。** 2026-07 那次把文件從 property 改成 type,理由是「跟 DEMO 一致」——文件與程式確實一致了,但一致的是一個會讓 type 數量相乘的設計。A5 那張漂移表的第三筆講的就是這件事。
 

@@ -56,6 +56,22 @@ from plane.bgtasks.copy_s3_object import copy_s3_objects_of_description_and_asse
 from plane.app.permissions import ProjectPagePermission
 
 
+def descendant_ids(page_id):
+    """Every page beneath `page_id`, breadth first.
+
+    Kept as a plain loop rather than the recursive CTE above because callers need the ids in
+    Python -- to re-home membership rows, or to refuse a re-parent that would close the tree
+    into a ring.
+    """
+    found = []
+    frontier = [page_id]
+    while frontier:
+        children = list(Page.objects.filter(parent_id__in=frontier).values_list("id", flat=True))
+        found.extend(children)
+        frontier = children
+    return found
+
+
 def unarchive_archive_page_and_descendants(page_id, archived_at):
     # Your SQL query
     sql = """
@@ -79,6 +95,14 @@ class PageViewSet(BaseViewSet):
     search_fields = ["name"]
 
     def get_queryset(self):
+        """Every page the user may see, sub-pages included.
+
+        This used to end in `.filter(parent__isnull=True)`, which meant `list` returned only
+        roots and `retrieve` 404'd on anything nested -- the `parent` column, and the archive
+        and move cascades built on top of it, were unreachable from the client. The tree is
+        returned flat and assembled by parent on the web side, so one round trip still covers
+        the whole project.
+        """
         subquery = UserFavorite.objects.filter(
             user=self.request.user,
             entity_type="page",
@@ -94,7 +118,6 @@ class PageViewSet(BaseViewSet):
                 projects__project_projectmember__is_active=True,
                 projects__archived_at__isnull=True,
             )
-            .filter(parent__isnull=True)
             .filter(Q(owned_by=self.request.user) | Q(access=0))
             .prefetch_related("projects")
             .select_related("workspace")
@@ -127,6 +150,18 @@ class PageViewSet(BaseViewSet):
         )
 
     def create(self, request, slug, project_id):
+        parent = request.data.get("parent", None)
+        if parent and not Page.objects.filter(
+            pk=parent,
+            workspace__slug=slug,
+            projects__id=project_id,
+            project_pages__deleted_at__isnull=True,
+        ).exists():
+            return Response(
+                {"error": "The destination page does not exist in this project."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = PageSerializer(
             data=request.data,
             context={
@@ -165,12 +200,28 @@ class PageViewSet(BaseViewSet):
 
             parent = request.data.get("parent", None)
             if parent:
-                _ = Page.objects.get(
+                if str(parent) == str(page_id):
+                    return Response(
+                        {"error": "A page cannot be its own parent."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                if not Page.objects.filter(
                     pk=parent,
                     workspace__slug=slug,
                     projects__id=project_id,
                     project_pages__deleted_at__isnull=True,
-                )
+                ).exists():
+                    return Response(
+                        {"error": "The destination page does not exist in this project."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                # Filing a page inside its own sub-tree would close the tree into a ring, and
+                # every traversal here -- the archive CTE, the move walk -- would spin forever.
+                if any(str(parent) == str(descendant) for descendant in descendant_ids(page_id)):
+                    return Response(
+                        {"error": "A page cannot be filed inside one of its own sub-pages."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
             # Only update access if the page owner is the requesting  user
             if page.access != request.data.get("access", page.access) and page.owned_by_id != request.user.id:
@@ -303,16 +354,7 @@ class PageViewSet(BaseViewSet):
                 {"error": "You are not a member of the destination project."}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        def descendants(root_id):
-            found = []
-            frontier = [root_id]
-            while frontier:
-                children = list(Page.objects.filter(parent_id__in=frontier).values_list("id", flat=True))
-                found.extend(children)
-                frontier = children
-            return found
-
-        page_ids = [page.id, *descendants(page.id)]
+        page_ids = [page.id, *descendant_ids(page.id)]
 
         with transaction.atomic():
             ProjectPage.objects.filter(page_id__in=page_ids, project_id=project_id).delete()
@@ -488,7 +530,6 @@ class PageViewSet(BaseViewSet):
                 projects__project_projectmember__is_active=True,
                 projects__archived_at__isnull=True,
             )
-            .filter(parent__isnull=True)
             .filter(Q(owned_by=request.user) | Q(access=0))
             .annotate(
                 project=Exists(

@@ -159,7 +159,11 @@
       "result_saved_upload_failed": "Result saved, but {count} attachment(s) failed. Retry without recording a duplicate result.",
       "result_saved_retry_hint": "The result is already saved and cannot be edited. Retry its pending attachments or continue.",
       "continue_without_files": "Continue without pending files",
-      "retry_uploads": "Retry uploads"
+      "retry_uploads": "Retry uploads",
+      "history": "실행 기록",
+      "correction_hint": "상태를 잘못 눌렀나요? 다시 기록하면 됩니다. 가장 최근 결과가 반영되며 둘 다 기록에 남습니다.",
+      "counts_now": "현재 반영",
+      "superseded": "대체됨"
     },
     "overview": {
       "heading": "Quality overview",

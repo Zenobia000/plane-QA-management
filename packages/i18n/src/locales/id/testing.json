@@ -159,7 +159,11 @@
       "result_saved_upload_failed": "Result saved, but {count} attachment(s) failed. Retry without recording a duplicate result.",
       "result_saved_retry_hint": "The result is already saved and cannot be edited. Retry its pending attachments or continue.",
       "continue_without_files": "Continue without pending files",
-      "retry_uploads": "Retry uploads"
+      "retry_uploads": "Retry uploads",
+      "history": "Riwayat eksekusi",
+      "correction_hint": "Salah mencatat status? Catat ulang saja — hasil terbaru yang berlaku, dan keduanya tetap tersimpan.",
+      "counts_now": "berlaku sekarang",
+      "superseded": "digantikan"
     },
     "overview": {
       "heading": "Quality overview",

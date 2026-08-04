@@ -4,10 +4,20 @@
  * See the LICENSE file for details.
  */
 
-import { useState } from "react";
-import { Pencil, Trash2, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Pencil, Tag, Trash2, X } from "lucide-react";
 import { useTranslation } from "@plane/i18n";
 import type { IIssueLabel, TEntityUpdate, TUpdateEntityName, TUpdateStatus } from "@plane/types";
+import { CustomSearchSelect } from "@plane/ui";
+
+/**
+ * How many topics the filter row shows before collapsing the rest behind a toggle.
+ *
+ * A project with four topics should not pay for a control it does not need, and one with
+ * twenty should not push the composer off the screen. Six is roughly one line at the
+ * panel's width.
+ */
+const VISIBLE_TOPIC_FILTERS = 6;
 
 /** Translation keys rather than English, so the pill reads in the reader's language. */
 export const UPDATE_STATUS_KEYS: Record<TUpdateStatus, string> = {
@@ -50,8 +60,20 @@ function TopicChip({ label }: { label: IIssueLabel }) {
   );
 }
 
-/** Toggle chips for filing an announcement under topics. */
-function TopicPicker({
+/**
+ * Topic selection for the post being written.
+ *
+ * A dropdown rather than a row of toggle chips, for two reasons that turned out to be one.
+ * Visually, the chips were indistinguishable from the filter row a few lines above -- same
+ * shape, same colours, same order -- so the panel appeared to draw one control twice, and
+ * nothing said which narrowed the reading and which tagged the writing. Structurally, both
+ * were unbounded `flex-wrap`: at seven topics each already filled a line, and a team that
+ * keeps inventing them pushes the composer down the page twice over.
+ *
+ * Filtering stays chips because it is a view control the reader scans. Tagging is form
+ * input and belongs in the form.
+ */
+function TopicSelect({
   labels,
   selected,
   onChange,
@@ -60,28 +82,58 @@ function TopicPicker({
   selected: string[];
   onChange: (next: string[]) => void;
 }) {
+  const { t } = useTranslation();
+
+  const options = useMemo(
+    () =>
+      labels.map((label) => ({
+        value: label.id,
+        query: label.name,
+        content: (
+          <span className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full" style={{ backgroundColor: label.color || "#a3a3a3" }} />
+            <span className="truncate">{label.name}</span>
+          </span>
+        ),
+      })),
+    [labels]
+  );
+
+  const chosen = labels.filter((label) => selected.includes(label.id));
+
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {labels.map((label) => {
-        const on = selected.includes(label.id);
-        const color = label.color || "#a3a3a3";
-        return (
-          <button
-            key={label.id}
-            type="button"
-            aria-pressed={on}
-            onClick={() => onChange(on ? selected.filter((id) => id !== label.id) : [...selected, label.id])}
-            className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-10 font-medium ${
-              on ? "border-transparent text-secondary" : "border-subtle text-tertiary"
-            }`}
-            style={on ? { backgroundColor: `${color}1f` } : undefined}
-          >
-            <span className="size-1.5 rounded-full" style={{ backgroundColor: color }} />
-            {label.name}
-          </button>
-        );
-      })}
-    </div>
+    <CustomSearchSelect
+      multiple
+      value={selected}
+      options={options}
+      onChange={(next: string[]) => onChange(next)}
+      maxHeight="md"
+      buttonClassName="w-full rounded border border-subtle px-2 py-1 text-10 font-medium"
+      noResultsMessage={t("project_overview.updates.no_topics_found")}
+      label={
+        <span className="flex items-center gap-1.5">
+          <Tag className="size-3 flex-shrink-0 text-tertiary" />
+          {chosen.length === 0 ? (
+            <span className="text-tertiary">{t("project_overview.updates.add_topics")}</span>
+          ) : (
+            // Named, not counted. "2 topics" would make the writer reopen the dropdown to
+            // find out which two.
+            <span className="flex flex-wrap items-center gap-1">
+              {chosen.map((label) => (
+                <span
+                  key={label.id}
+                  className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-secondary"
+                  style={{ backgroundColor: `${label.color || "#a3a3a3"}1f` }}
+                >
+                  <span className="size-1.5 rounded-full" style={{ backgroundColor: label.color || "#a3a3a3" }} />
+                  {label.name}
+                </span>
+              ))}
+            </span>
+          )}
+        </span>
+      }
+    />
   );
 }
 
@@ -238,7 +290,7 @@ function UpdateThread({
             value={editDraft}
             onChange={(event) => setEditDraft(event.target.value)}
           />
-          {!!labels.length && <TopicPicker labels={labels} selected={editTopics} onChange={setEditTopics} />}
+          {!!labels.length && <TopicSelect labels={labels} selected={editTopics} onChange={setEditTopics} />}
           <div className="flex gap-2">
             <button
               type="button"
@@ -371,6 +423,18 @@ export function UpdatesPanel({
   // but the board holds ten posts and a round trip to hide two of them would be slower
   // than the click that asked for it.
   const [topicFilter, setTopicFilter] = useState<string | null>(null);
+  const [showAllTopics, setShowAllTopics] = useState(false);
+
+  // The active filter is always shown, wherever it sits in the list. Collapsing the row
+  // while it is filtering by something now hidden would leave the reader looking at a
+  // narrowed board with nothing on screen saying why.
+  const visibleFilterLabels = useMemo(() => {
+    if (showAllTopics || labels.length <= VISIBLE_TOPIC_FILTERS) return labels;
+    const head = labels.slice(0, VISIBLE_TOPIC_FILTERS);
+    const active = labels.find((label) => label.id === topicFilter);
+    return active && !head.includes(active) ? [...head, active] : head;
+  }, [labels, showAllTopics, topicFilter]);
+  const hiddenFilterCount = labels.length - visibleFilterLabels.length;
   const { t } = useTranslation();
 
   const all = expanded ?? updates;
@@ -426,7 +490,7 @@ export function UpdatesPanel({
           >
             {t("project_overview.updates.all_topics")}
           </button>
-          {labels.map((label) => {
+          {visibleFilterLabels.map((label) => {
             const color = label.color || "#a3a3a3";
             const on = topicFilter === label.id;
             return (
@@ -445,6 +509,17 @@ export function UpdatesPanel({
               </button>
             );
           })}
+          {hiddenFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAllTopics((open) => !open)}
+              className="rounded px-2 py-0.5 text-10 font-medium text-tertiary hover:text-secondary"
+            >
+              {showAllTopics
+                ? t("project_overview.updates.show_fewer_topics")
+                : t("project_overview.updates.more_topics", { count: hiddenFilterCount })}
+            </button>
+          )}
           {topicFilter && (
             <button
               type="button"
@@ -481,7 +556,7 @@ export function UpdatesPanel({
             value={description}
             onChange={(event) => setDescription(event.target.value)}
           />
-          {!!labels.length && <TopicPicker labels={labels} selected={topics} onChange={setTopics} />}
+          {!!labels.length && <TopicSelect labels={labels} selected={topics} onChange={setTopics} />}
           <div className="flex items-center gap-2">
             <button
               type="button"

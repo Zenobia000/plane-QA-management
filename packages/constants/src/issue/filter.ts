@@ -300,8 +300,48 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
   },
 };
 
+/**
+ * The work-item page options, minus the two an epic cannot answer for.
+ *
+ * An epic is an ordinary work item, so everything else a user can group, order or show on
+ * the work-item list applies here unchanged -- see `ProjectEpicsFilter`, which scopes the
+ * same store rather than describing a different one. Derived rather than restated so the
+ * two pages cannot drift the next time a group-by or a column is added. Two are dropped:
+ *
+ * - `parent` groups rows by the story they hang off. An epic is the top of the hierarchy,
+ *   so every row would land in the same "None" column.
+ * - `leaf_only` is pinned to `false` by `ProjectEpicsFilter`, because an epic that has been
+ *   broken down is precisely what this page exists to show. A toggle the store overrules is
+ *   worse than no toggle.
+ */
+export const EPIC_DISPLAY_FILTERS: TFilterPropertiesByPageType = {
+  filters: ISSUE_DISPLAY_FILTERS_BY_PAGE.issues.filters,
+  layoutOptions: Object.fromEntries(
+    Object.entries(ISSUE_DISPLAY_FILTERS_BY_PAGE.issues.layoutOptions).map(([layout, options]) => [
+      layout,
+      {
+        ...options,
+        display_filters: {
+          ...options.display_filters,
+          ...(options.display_filters.group_by
+            ? { group_by: options.display_filters.group_by.filter((key) => key !== "parent") }
+            : {}),
+        },
+        extra_options: {
+          ...options.extra_options,
+          values: options.extra_options.values.filter((value) => value !== "leaf_only"),
+        },
+      } satisfies ILayoutDisplayFiltersOptions,
+    ])
+  ),
+};
+
 export const ISSUE_STORE_TO_FILTERS_MAP: Partial<Record<EIssuesStoreType, TFilterPropertiesByPageType>> = {
   [EIssuesStoreType.PROJECT]: ISSUE_DISPLAY_FILTERS_BY_PAGE.issues,
+  // Without this the Display panel on the epics page renders empty -- no group-by, no
+  // order-by, no columns -- and a grouping the page arrives with (switching to the kanban
+  // layout writes `group_by: state`, since a board has to have columns) can never be undone.
+  [EIssuesStoreType.EPIC]: EPIC_DISPLAY_FILTERS,
 };
 
 export const SUB_WORK_ITEM_AVAILABLE_FILTERS_FOR_WORK_ITEM_PAGE: (keyof IIssueFilterOptions)[] = [

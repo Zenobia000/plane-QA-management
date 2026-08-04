@@ -27,6 +27,7 @@ import { IssueFilterHelperStore } from "../helpers/issue-filter-helper.store";
 // helpers
 // types
 import type { IIssueRootStore } from "../root.store";
+import type { IProjectIssues } from "./issue.store";
 import { ProjectService } from "@/services/project";
 // constants
 // services
@@ -81,6 +82,19 @@ export class ProjectIssuesFilter extends IssueFilterHelperStore implements IProj
     this.rootIssueStore = _rootStore;
     // services
     this.projectService = new ProjectService();
+  }
+
+  /**
+   * The work-item store these filters drive.
+   *
+   * Reached through a getter rather than named inline at each call site so that a subclass
+   * filtering a different slice of the same project -- `ProjectEpicsFilter` -- can point it
+   * at its own store. Clearing and refetching `projectIssues` from the epics page left the
+   * page the user was looking at holding the rows its previous filters had fetched, while
+   * the work-item list it was not on quietly reloaded.
+   */
+  protected get issuesStore(): IProjectIssues {
+    return this.rootIssueStore.projectIssues;
   }
 
   get issueFilters() {
@@ -181,7 +195,7 @@ export class ProjectIssuesFilter extends IssueFilterHelperStore implements IProj
         set(this.filters, [projectId, "richFilters"], filters);
       });
 
-      this.rootIssueStore.projectIssues.fetchIssuesWithExistingPagination(workspaceSlug, projectId, "mutation");
+      this.issuesStore.fetchIssuesWithExistingPagination(workspaceSlug, projectId, "mutation");
       await this.projectService.updateProjectUserProperties(workspaceSlug, projectId, {
         rich_filters: filters,
       });
@@ -237,11 +251,11 @@ export class ProjectIssuesFilter extends IssueFilterHelperStore implements IProj
           });
 
           if (this.getShouldClearIssues(updatedDisplayFilters)) {
-            this.rootIssueStore.projectIssues.clear(true); // clear issues for local store when some filters like layout changes
+            this.issuesStore.clear(true); // clear issues for local store when some filters like layout changes
           }
 
           if (this.getShouldReFetchIssues(updatedDisplayFilters)) {
-            this.rootIssueStore.projectIssues.fetchIssuesWithExistingPagination(workspaceSlug, projectId, "mutation");
+            this.issuesStore.fetchIssuesWithExistingPagination(workspaceSlug, projectId, "mutation");
           }
 
           await this.projectService.updateProjectUserProperties(workspaceSlug, projectId, {

@@ -25,8 +25,9 @@ export type IProjectEpicsFilter = IProjectIssuesFilter;
  * do" and a node with children is a summary rather than a row you can pick up. An epic is
  * that summary, so carrying the default through would drop every epic anyone had broken
  * down: the demo project showed 1 epic of 5, the one nobody had added a feature to yet.
- * Pinned rather than merely defaulted, because the toggle stays visible in Display and a
- * user turning it on would otherwise empty the page they are looking at.
+ * Pinned rather than merely defaulted, so that it holds however the filter record it shares
+ * with the work-item list was last written; `EPIC_DISPLAY_FILTERS` drops the toggle from
+ * Display to match, rather than offering one this pin would overrule.
  */
 export class ProjectEpicsFilter extends ProjectIssuesFilter implements IProjectEpicsFilter {
   constructor(_rootStore: IIssueRootStore) {
@@ -54,5 +55,17 @@ export class ProjectEpicsFilter extends ProjectIssuesFilter implements IProjectE
         leaf_only: false,
       })
     );
+  }
+
+  /**
+   * The epic list, not the work-item list.
+   *
+   * The parent clears and refetches whichever store its filters drive whenever a display
+   * filter changes shape. Inheriting that unchanged pointed both at `projectIssues`, so
+   * regrouping the epics page reloaded the work-item list and left the epics on screen
+   * grouped by the setting they had a moment ago.
+   */
+  protected get issuesStore() {
+    return this.rootIssueStore.projectEpics;
   }
 }

@@ -270,7 +270,7 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
           {projectTypes?.map((item) => (
             <div
               key={item.id}
-              className="grid grid-cols-[auto_minmax(0,1fr)_6rem_auto_auto] items-center gap-3 rounded border border-subtle p-3"
+              className="grid grid-cols-[auto_minmax(0,1fr)_6rem_auto_auto_auto] items-center gap-3 rounded border border-subtle p-3"
             >
               {/* The only way to change a type's appearance after creation. Everything else
                   about a type is still fixed once created, which is a separate gap. */}
@@ -320,6 +320,30 @@ export function WorkItemExtensionSettings({ workspaceSlug, projectId }: Props) {
                   }}
                 />
               </label>
+              {/* Whether the coverage report asks this type for an acceptance test. Off for
+                  work that describes how something is built rather than what it must do --
+                  counting those buried the one real gap under seven that were not. Stored on
+                  the workspace type, so it applies wherever the type is enabled. */}
+              <button
+                type="button"
+                title={
+                  item.type.needs_acceptance
+                    ? "Counted by requirement coverage. Click to exclude."
+                    : "Not counted by requirement coverage. Click to include."
+                }
+                className={`${buttonClass} ${item.type.needs_acceptance ? "bg-layer-2 text-secondary" : "bg-layer-2 text-tertiary"}`}
+                disabled={busy}
+                onClick={() =>
+                  void workItemExtensionService
+                    .updateWorkspaceType(workspaceSlug, item.type.id, {
+                      needs_acceptance: !item.type.needs_acceptance,
+                    })
+                    .then(() => mutateProjectTypes())
+                    .catch((caught) => setError(errorMessage(caught)))
+                }
+              >
+                {item.type.needs_acceptance ? "Needs tests" : "No tests needed"}
+              </button>
               <button
                 type="button"
                 className={`${buttonClass} ${item.is_default ? "bg-success-subtle text-success-primary" : "bg-layer-2 text-secondary"}`}

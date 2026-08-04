@@ -58,9 +58,20 @@ def requirement_coverage(project_id):
     or epic reading its own links alone would always look untested. Each row
     therefore reports the contracts beneath it as well as its own.
 
-    Defects are excluded before anything is counted. A defect raised from a failed
-    result is evidence produced by testing, not a requirement awaiting it; leaving
-    them in means every defect ever filed is reported as an untested requirement.
+    Only types marked `needs_acceptance` produce rows. An implementation task is how
+    something gets built, not something the product promises, so nothing is owed an
+    acceptance test for it -- the story above it carries that. Counting them buried the
+    signal: eight uncovered rows on the authors' own instance, of which one was a real
+    gap. Their contracts still roll up, because `inherited` walks children regardless of
+    whether the child earns a row of its own.
+
+    Work items with no type at all are kept. A project that never adopted types would
+    otherwise report nothing, and silence is the one answer a coverage report must not give.
+
+    Defects are excluded before anything is counted, and this stays even though defects are
+    typed `Bug` and `Bug` is not a requirement type. The two rules catch different things:
+    the type says what a row is *for*, the link says where it *came from*, and a defect
+    filed under some other type is still evidence rather than a promise.
     """
     active_links = (
         TestCaseWorkItemLink.objects.filter(
@@ -73,7 +84,7 @@ def requirement_coverage(project_id):
     )
     issues = list(
         Issue.issue_objects.filter(project_id=project_id)
-        .select_related("state")
+        .select_related("state", "type")
         .prefetch_related(Prefetch("test_case_links", queryset=active_links))
     )
     defect_ids = set(
@@ -104,6 +115,9 @@ def requirement_coverage(project_id):
     rows = []
     for issue in issues:
         if issue.id in defect_ids:
+            continue
+        # Untyped is not a statement that this is not a requirement, so it stays.
+        if issue.type_id and not issue.type.needs_acceptance:
             continue
         own = own_cases.get(issue.id, [])
         effective = {case.id: case for case in inherited(issue.id, set())}.values()

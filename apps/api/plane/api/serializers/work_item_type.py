@@ -22,6 +22,7 @@ class WorkItemTypeSerializer(BaseSerializer):
             "is_epic",
             "is_default",
             "is_active",
+            "needs_acceptance",
             "level",
             "external_source",
             "external_id",

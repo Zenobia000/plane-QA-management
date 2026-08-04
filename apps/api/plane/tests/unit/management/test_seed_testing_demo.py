@@ -21,6 +21,7 @@ from django.utils import timezone
 
 from plane.db.models import (
     Cycle,
+    Page,
     EntityUpdate,
     EntityUpdateLabel,
     IntakeIssue,
@@ -375,3 +376,46 @@ class TestSeededFrontline:
     def test_intake_is_reachable_from_the_sidebar(self, seeded):
         """The panel links to Intake; a project with the module off would 404 the reader."""
         assert seeded.intake_view is True
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+class TestSeededPages:
+    """Pages was the one surface the seed left empty.
+
+    Two things were invisible because of it: the Overview's meeting-notes panel links here,
+    so the war room pointed at a blank list; and a folder in this product is a page with
+    children, so a flat seed cannot demonstrate the hierarchy at all.
+    """
+
+    def test_the_project_has_a_page_tree_not_a_flat_list(self, seeded):
+        pages = Page.objects.filter(project_pages__project=seeded).distinct()
+        parents = pages.filter(parent__isnull=True)
+        children = pages.filter(parent__isnull=False)
+
+        assert parents.count() >= 3
+        assert children.count() >= 4
+        # Every child hangs off a folder that belongs to the same project.
+        assert set(children.values_list("parent_id", flat=True)) <= set(parents.values_list("id", flat=True))
+
+    def test_pages_carry_body_text_and_a_search_stripe(self, seeded):
+        """A page seeded with no body is a title in a list, which demonstrates nothing."""
+        pages = Page.objects.filter(project_pages__project=seeded).distinct()
+
+        assert all(p.description_html.strip() not in ("", "<p></p>") for p in pages)
+        assert all((p.description_stripped or "").strip() for p in pages)
+
+    def test_reseeding_does_not_strand_the_previous_pages(self, seeded, workspace):
+        """Pages reach a project through a join row, so the cascade leaves them behind.
+
+        Saved views had exactly this bug and `purge` had to learn about them explicitly;
+        pages are the same shape and needed the same treatment.
+        """
+        before = Page.objects.filter(project_pages__project=seeded).distinct().count()
+        assert before > 0
+
+        call_command("seed_testing_demo", workspace=workspace.slug, identifier="DEMO", force=True, stdout=StringIO())
+
+        reseeded = Project.objects.get(workspace=workspace, identifier="DEMO")
+        # Same count, not double: the old tree was removed rather than accumulated beside it.
+        assert Page.objects.filter(project_pages__project=reseeded).distinct().count() == before

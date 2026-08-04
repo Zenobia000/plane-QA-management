@@ -544,3 +544,44 @@ class TestReleaseEvidence:
         # duplicate each time.
         assert len(evidence) == 1
         assert evidence[0]["status"] == "passing"
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+class TestCorrectingAMiskeyedResult:
+    """What a tester does after pressing the wrong status.
+
+    Results are append-only on purpose -- the record of what was observed is not rewritten,
+    which is the whole basis for treating a run as evidence. That is not the same as being
+    stuck with a typo: recording again supersedes the mistake for every downstream
+    consumer, and both entries stay visible so the correction is itself on the record.
+    """
+
+    def test_recording_again_supersedes_the_mistake(self, session_client, workspace, testing_project):
+        test_case = create_test_case(
+            project_id=testing_project.id, title="Mis-keyed", steps=[{"action": {"text": "Run it"}}]
+        )
+        run = session_client.post(
+            _runs_url(workspace, testing_project),
+            {"name": "Correction run", "test_case_ids": [str(test_case.id)]},
+            format="json",
+        ).json()
+        run_case = run["run_cases"][0]
+        results_url = f"{_runs_url(workspace, testing_project)}{run['id']}/cases/{run_case['id']}/results/"
+
+        session_client.post(results_url, {"status": "failed", "actual_result": {"text": "typo"}}, format="json")
+        correction = session_client.post(
+            results_url,
+            {"status": "passed", "actual_result": {"text": "Mis-keyed above; re-verified and it passes."}},
+            format="json",
+        )
+
+        assert correction.status_code == status.HTTP_201_CREATED
+
+        detail = session_client.get(f"{_runs_url(workspace, testing_project)}{run['id']}/").json()
+        corrected_case = detail["run_cases"][0]
+
+        # Downstream reads the newest, so the gate and coverage stop believing the typo.
+        assert corrected_case["latest_status"] == "passed"
+        # And the mistake is still on the record, with the correction beside it.
+        assert [r["status"] for r in corrected_case["results"]] == ["failed", "passed"]

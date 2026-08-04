@@ -317,22 +317,43 @@ export function ExecutionWorkspace({
           </div>
 
           <div className="mt-6 space-y-5">
-            <div>
-              <h4 className="text-12 font-semibold text-secondary uppercase">{t("testing.execution.given")}</h4>
-              <p className="mt-2 text-14 text-primary">{documentText(selected.test_case_version.preconditions)}</p>
-            </div>
+            {/* Read back as the scenario that was written. The author now types Given /
+                When / Then, so a tester who sees a numbered two-column table is reading a
+                different document from the one that was authored. An empty Given is dropped
+                rather than shown as a dash -- a heading over nothing is noise on the screen
+                someone is working from. */}
+            {!!documentText(selected.test_case_version.preconditions).trim() && (
+              <div>
+                <h4 className="text-12 font-semibold text-secondary uppercase">{t("testing.execution.given")}</h4>
+                <p className="mt-2 text-14 whitespace-pre-line text-primary">
+                  {documentText(selected.test_case_version.preconditions)}
+                </p>
+              </div>
+            )}
             <div>
               <h4 className="text-12 font-semibold text-secondary uppercase">{t("testing.execution.steps")}</h4>
               <ol className="mt-2 space-y-2">
                 {selected.test_case_version.steps.map((step) => (
                   <li
                     key={step.id}
-                    className="grid grid-cols-[2rem_1fr_1fr] gap-3 rounded-md border border-subtle p-3 text-13"
+                    className="grid grid-cols-[2rem_1fr] gap-3 rounded-md border border-subtle p-3 text-13"
                   >
-                    <span className="text-secondary">{step.position}</span>
-                    <span className="text-primary">{documentText(step.action)}</span>
-                    <span className="text-secondary">
-                      {t("testing.execution.expected", { expected: documentText(step.expected_result) })}
+                    <span className="text-tertiary">{step.position}</span>
+                    <span className="space-y-1">
+                      {/* Stacked, not side by side: the expectation is read after the action,
+                          and two narrow columns broke both of them onto three lines each. */}
+                      <span className="flex gap-2">
+                        <span className="shrink-0 font-medium text-tertiary">When</span>
+                        <span className="whitespace-pre-line text-primary">{documentText(step.action)}</span>
+                      </span>
+                      {!!documentText(step.expected_result).trim() && (
+                        <span className="flex gap-2">
+                          <span className="shrink-0 font-medium text-tertiary">Then</span>
+                          <span className="whitespace-pre-line text-secondary">
+                            {documentText(step.expected_result)}
+                          </span>
+                        </span>
+                      )}
                     </span>
                   </li>
                 ))}
@@ -343,13 +364,31 @@ export function ExecutionWorkspace({
             </div>
             {executionHistory.length > 0 && (
               <div>
-                <h4 className="text-12 font-semibold text-secondary uppercase">Execution history</h4>
+                <h4 className="text-12 font-semibold text-secondary uppercase">{t("testing.execution.history")}</h4>
+                {/* Results are append-only so the record of what was observed is never
+                    rewritten -- which is not the same as being stuck with a typo. Recording
+                    again supersedes the mistake everywhere downstream, and the tester has no
+                    way to know that unless the screen says so. */}
+                {run.status !== "completed" && (
+                  <p className="mt-1 text-11 text-tertiary">{t("testing.execution.correction_hint")}</p>
+                )}
                 <ul className="mt-2 space-y-2">
-                  {executionHistory.map((result) => (
-                    <li key={result.id} className="rounded-md border border-subtle p-3 text-12">
+                  {executionHistory.map((result, index) => (
+                    <li
+                      key={result.id}
+                      className={`rounded-md border p-3 text-12 ${index === 0 ? "border-subtle" : "border-subtle opacity-60"}`}
+                    >
                       <div className="flex items-center justify-between gap-3">
-                        <span className={`rounded px-1.5 py-0.5 text-10 font-medium ${statusStyle[result.status]}`}>
-                          {t(`testing.status.${result.status}`)}
+                        <span className="flex items-center gap-2">
+                          <span className={`rounded px-1.5 py-0.5 text-10 font-medium ${statusStyle[result.status]}`}>
+                            {t(`testing.status.${result.status}`)}
+                          </span>
+                          {/* Which row the gate and the coverage report actually read. */}
+                          {executionHistory.length > 1 && (
+                            <span className="text-10 text-tertiary">
+                              {index === 0 ? t("testing.execution.counts_now") : t("testing.execution.superseded")}
+                            </span>
+                          )}
                         </span>
                         <time className="text-tertiary">{new Date(result.created_at).toLocaleString()}</time>
                       </div>

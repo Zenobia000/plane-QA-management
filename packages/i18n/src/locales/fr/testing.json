@@ -159,7 +159,11 @@
       "result_saved_upload_failed": "Result saved, but {count} attachment(s) failed. Retry without recording a duplicate result.",
       "result_saved_retry_hint": "The result is already saved and cannot be edited. Retry its pending attachments or continue.",
       "continue_without_files": "Continue without pending files",
-      "retry_uploads": "Retry uploads"
+      "retry_uploads": "Retry uploads",
+      "history": "Historique d’exécution",
+      "correction_hint": "Mauvais statut enregistré ? Enregistrez à nouveau : c’est le résultat le plus récent qui compte, et les deux restent au dossier.",
+      "counts_now": "compte actuellement",
+      "superseded": "remplacé"
     },
     "overview": {
       "heading": "Quality overview",

@@ -159,7 +159,11 @@
       "result_saved_upload_failed": "结果已保存，但有 {count} 个附件失败。重试时不会重复新增结果。",
       "result_saved_retry_hint": "结果已保存且无法修改；可重试待上传附件，或直接继续。",
       "continue_without_files": "跳过待上传文件并继续",
-      "retry_uploads": "重试上传"
+      "retry_uploads": "重试上传",
+      "history": "执行记录",
+      "correction_hint": "按错状态了吗？再记录一次即可 —— 以最新一条为准，两条都会保留在记录中。",
+      "counts_now": "当前采计",
+      "superseded": "已被取代"
     },
     "overview": {
       "heading": "品質总览",

@@ -159,7 +159,11 @@
       "result_saved_upload_failed": "結果已儲存，但有 {count} 個附件失敗。重試時不會重複新增結果。",
       "result_saved_retry_hint": "結果已儲存且無法修改；可重試待上傳附件，或直接繼續。",
       "continue_without_files": "略過待上傳檔案並繼續",
-      "retry_uploads": "重試上傳"
+      "retry_uploads": "重試上傳",
+      "history": "執行紀錄",
+      "correction_hint": "按錯狀態了嗎？再記錄一次即可 —— 以最新一筆為準，兩筆都會保留在紀錄中。",
+      "counts_now": "目前採計",
+      "superseded": "已被取代"
     },
     "overview": {
       "heading": "品質總覽",

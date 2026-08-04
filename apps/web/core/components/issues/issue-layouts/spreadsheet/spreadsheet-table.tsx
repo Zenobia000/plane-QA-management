@@ -8,7 +8,13 @@ import type { MutableRefObject } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react";
 // plane imports
-import type { IIssueDisplayFilterOptions, IIssueDisplayProperties, TIssue } from "@plane/types";
+import type {
+  IGroupByColumn,
+  IIssueDisplayFilterOptions,
+  IIssueDisplayProperties,
+  TGroupedIssues,
+  TIssue,
+} from "@plane/types";
 // components
 import { SpreadsheetIssueRowLoader } from "@/components/ui/loader/layouts/spreadsheet-layout-loader";
 // hooks
@@ -20,13 +26,22 @@ import { useTableKeyboardNavigation } from "@/hooks/use-table-keyboard-navigatio
 import type { TRenderQuickActions } from "../list/list-view-types";
 import { getDisplayPropertiesCount } from "../utils";
 import { SpreadsheetIssueRow } from "./issue-row";
+import { SpreadsheetGroup } from "./spreadsheet-group";
 import { SpreadsheetHeader } from "./spreadsheet-header";
+
+// Fixed identities for the three placeholder rows. They are positional by nature, but an
+// array index as key is the pattern that silently breaks reorderable lists, so it is not one
+// worth keeping around for a reader to copy.
+const SKELETON_ROW_KEYS = ["skeleton-a", "skeleton-b", "skeleton-c"];
 
 type Props = {
   displayProperties: IIssueDisplayProperties;
   displayFilters: IIssueDisplayFilterOptions;
   handleDisplayFilterUpdate: (data: Partial<IIssueDisplayFilterOptions>) => void;
   issueIds: string[];
+  groups?: IGroupByColumn[] | undefined;
+  groupedIssueIds?: TGroupedIssues;
+  showEmptyGroups?: boolean;
   isEstimateEnabled: boolean;
   quickActions: TRenderQuickActions;
   updateIssue: ((projectId: string | null, issueId: string, data: Partial<TIssue>) => Promise<void>) | undefined;
@@ -34,7 +49,7 @@ type Props = {
   portalElement: React.MutableRefObject<HTMLDivElement | null>;
   containerRef: MutableRefObject<HTMLTableElement | null>;
   canLoadMoreIssues: boolean;
-  loadMoreIssues: () => void;
+  loadMoreIssues: (groupId?: string) => void;
   spreadsheetColumnsList: (keyof IIssueDisplayProperties)[];
   selectionHelpers: TSelectionHelper;
   isEpic?: boolean;
@@ -46,6 +61,9 @@ export const SpreadsheetTable = observer(function SpreadsheetTable(props: Props)
     displayFilters,
     handleDisplayFilterUpdate,
     issueIds,
+    groups,
+    groupedIssueIds,
+    showEmptyGroups = false,
     isEstimateEnabled,
     portalElement,
     quickActions,
@@ -109,6 +127,9 @@ export const SpreadsheetTable = observer(function SpreadsheetTable(props: Props)
   const ignoreFieldsForCounting: (keyof IIssueDisplayProperties)[] = ["key"];
   if (!isEstimateEnabled) ignoreFieldsForCounting.push("estimate");
   const displayPropertiesCount = getDisplayPropertiesCount(displayProperties, ignoreFieldsForCounting);
+  // Heading and load-more rows span the table. The +1 is the title column, which sits outside
+  // the display-property count because it can never be switched off.
+  const totalColumnCount = displayPropertiesCount + 1;
 
   return (
     <table className="w-full overflow-y-auto bg-surface-1" onKeyDown={handleKeyBoardNavigation}>
@@ -122,30 +143,54 @@ export const SpreadsheetTable = observer(function SpreadsheetTable(props: Props)
         selectionHelpers={selectionHelpers}
         isEpic={isEpic}
       />
-      <tbody>
-        {issueIds.map((id) => (
-          <SpreadsheetIssueRow
-            key={id}
-            issueId={id}
+      {groups ? (
+        groups.map((group) => (
+          <SpreadsheetGroup
+            key={group.id}
+            group={group}
+            groupIssueIds={groupedIssueIds?.[group.id]}
+            showEmptyGroups={showEmptyGroups}
+            columnCount={totalColumnCount}
             displayProperties={displayProperties}
-            quickActions={quickActions}
-            canEditProperties={canEditProperties}
-            nestingLevel={0}
             isEstimateEnabled={isEstimateEnabled}
+            quickActions={quickActions}
             updateIssue={updateIssue}
+            canEditProperties={canEditProperties}
             portalElement={portalElement}
             containerRef={containerRef}
             isScrolled={isScrolled}
             spreadsheetColumnsList={spreadsheetColumnsList}
             selectionHelpers={selectionHelpers}
+            loadMoreIssues={loadMoreIssues}
             isEpic={isEpic}
           />
-        ))}
-      </tbody>
-      {canLoadMoreIssues && (
+        ))
+      ) : (
+        <tbody>
+          {issueIds.map((id) => (
+            <SpreadsheetIssueRow
+              key={id}
+              issueId={id}
+              displayProperties={displayProperties}
+              quickActions={quickActions}
+              canEditProperties={canEditProperties}
+              nestingLevel={0}
+              isEstimateEnabled={isEstimateEnabled}
+              updateIssue={updateIssue}
+              portalElement={portalElement}
+              containerRef={containerRef}
+              isScrolled={isScrolled}
+              spreadsheetColumnsList={spreadsheetColumnsList}
+              selectionHelpers={selectionHelpers}
+              isEpic={isEpic}
+            />
+          ))}
+        </tbody>
+      )}
+      {!groups && canLoadMoreIssues && (
         <tfoot ref={setIntersectionElement}>
-          {Array.from({ length: 3 }).map((_, index) => (
-            <SpreadsheetIssueRowLoader key={index} columnCount={displayPropertiesCount} />
+          {SKELETON_ROW_KEYS.map((key) => (
+            <SpreadsheetIssueRowLoader key={key} columnCount={displayPropertiesCount} />
           ))}
         </tfoot>
       )}

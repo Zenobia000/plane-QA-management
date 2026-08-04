@@ -10,11 +10,12 @@ import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // plane imports
 import { ALL_ISSUES, EIssueFilterType, EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
-import type { EIssuesStoreType, IIssueDisplayFilterOptions } from "@plane/types";
+import type { EIssuesStoreType, GroupByColumnTypes, IIssueDisplayFilterOptions, TGroupedIssues } from "@plane/types";
 import { EIssueLayoutTypes } from "@plane/types";
 // hooks
 import { useIssues } from "@/hooks/store/use-issues";
 import { useUserPermissions } from "@/hooks/store/user";
+import { useParentGroupOptions } from "@/hooks/store/use-work-item-group-options";
 import { useIssueStoreType } from "@/hooks/use-issue-layout-store";
 import { useIssuesActions } from "@/hooks/use-issues-actions";
 // local imports
@@ -33,7 +34,7 @@ export type SpreadsheetStoreType =
 
 interface IBaseSpreadsheetRoot {
   QuickActions: FC<IQuickActionProps>;
-  canEditPropertiesBasedOnProject?: (projectId: string) => boolean;
+  canEditPropertiesBasedOnProject?: (id: string) => boolean;
   isCompletedCycle?: boolean;
   viewId?: string | undefined;
   isEpic?: boolean;
@@ -42,7 +43,7 @@ interface IBaseSpreadsheetRoot {
 export const BaseSpreadsheetRoot = observer(function BaseSpreadsheetRoot(props: IBaseSpreadsheetRoot) {
   const { QuickActions, canEditPropertiesBasedOnProject, isCompletedCycle = false, viewId, isEpic = false } = props;
   // router
-  const { projectId } = useParams();
+  const { workspaceSlug, projectId } = useParams();
   // store hooks
   const storeType = useIssueStoreType() as SpreadsheetStoreType;
   const { allowPermissions } = useUserPermissions();
@@ -66,22 +67,30 @@ export const BaseSpreadsheetRoot = observer(function BaseSpreadsheetRoot(props: 
     EUserPermissionsLevel.PROJECT
   );
 
+  const group_by = (issuesFilter?.issueFilters?.displayFilters?.group_by || null) as GroupByColumnTypes | null;
+  useParentGroupOptions(workspaceSlug?.toString(), projectId?.toString(), group_by);
+
   useEffect(() => {
-    fetchIssues("init-loader", { canGroup: false, perPageCount: 100 }, viewId);
-  }, [fetchIssues, storeType, viewId]);
+    // Same page sizes the list uses. A grouped page is one request per group, so the smaller
+    // count keeps a project with many groups from asking for a hundred rows in each.
+    fetchIssues("init-loader", { canGroup: !!group_by, perPageCount: group_by ? 50 : 100 }, viewId);
+  }, [fetchIssues, storeType, viewId, group_by]);
 
   const canEditProperties = useCallback(
-    (projectId: string | undefined) => {
+    (id: string | undefined) => {
       const isEditingAllowedBasedOnProject =
-        canEditPropertiesBasedOnProject && projectId ? canEditPropertiesBasedOnProject(projectId) : isEditingAllowed;
+        canEditPropertiesBasedOnProject && id ? canEditPropertiesBasedOnProject(id) : isEditingAllowed;
 
       return enableInlineEditing && isEditingAllowedBasedOnProject;
     },
     [canEditPropertiesBasedOnProject, enableInlineEditing, isEditingAllowed]
   );
 
+  // Ungrouped keeps its single flat list so nothing about the existing layout changes; grouped
+  // hands the whole map down and lets each group ask for its own next page.
   const issueIds = issues.groupedIssueIds?.[ALL_ISSUES] ?? [];
   const nextPageResults = issues.getPaginationData(ALL_ISSUES, undefined)?.nextPageResults;
+  const groupedIssueIds = (issues.groupedIssueIds ?? {}) as TGroupedIssues;
 
   const handleDisplayFiltersUpdate = useCallback(
     (updatedDisplayFilter: Partial<IIssueDisplayFilterOptions>) => {
@@ -108,7 +117,16 @@ export const BaseSpreadsheetRoot = observer(function BaseSpreadsheetRoot(props: 
         placements={placement}
       />
     ),
-    [isCompletedCycle, canEditProperties, removeIssue, updateIssue, removeIssueFromView, archiveIssue, restoreIssue]
+    [
+      QuickActions,
+      isCompletedCycle,
+      canEditProperties,
+      removeIssue,
+      updateIssue,
+      removeIssueFromView,
+      archiveIssue,
+      restoreIssue,
+    ]
   );
 
   if (!Array.isArray(issueIds)) return null;
@@ -120,6 +138,8 @@ export const BaseSpreadsheetRoot = observer(function BaseSpreadsheetRoot(props: 
         displayFilters={issuesFilter.issueFilters?.displayFilters ?? {}}
         handleDisplayFilterUpdate={handleDisplayFiltersUpdate}
         issueIds={issueIds}
+        groupBy={group_by}
+        groupedIssueIds={groupedIssueIds}
         quickActions={renderQuickActions}
         updateIssue={updateIssue}
         canEditProperties={canEditProperties}

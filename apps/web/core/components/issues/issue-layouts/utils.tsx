@@ -7,6 +7,7 @@
 import type { CSSProperties } from "react";
 import { extractInstruction } from "@atlaskit/pragmatic-drag-and-drop-hitbox/tree-item";
 import { clone, isNil, pull, uniq, concat } from "lodash-es";
+import { Layers } from "lucide-react";
 import scrollIntoView from "smooth-scroll-into-view-if-needed";
 // plane types
 import { EIconSize, ISSUE_PRIORITIES, STATE_GROUPS } from "@plane/constants";
@@ -62,7 +63,7 @@ export type IssueUpdates = {
   };
 };
 
-export const isWorkspaceLevel = (type: EIssuesStoreType) =>
+export const getIsWorkspaceLevel = (type: EIssuesStoreType) =>
   [
     EIssuesStoreType.PROFILE,
     EIssuesStoreType.GLOBAL,
@@ -70,9 +71,7 @@ export const isWorkspaceLevel = (type: EIssuesStoreType) =>
     EIssuesStoreType.TEAM_VIEW,
     EIssuesStoreType.TEAM_PROJECT_WORK_ITEMS,
     EIssuesStoreType.WORKSPACE_DRAFT,
-  ].includes(type)
-    ? true
-    : false;
+  ].includes(type);
 
 type TGetGroupByColumns = {
   groupBy: GroupByColumnTypes | null;
@@ -122,6 +121,7 @@ export const getGroupByColumns = ({
     assignees: getAssigneeColumns,
     created_by: getCreatedByColumns,
     team_project: getTeamProjectColumns,
+    parent: getParentColumns,
   };
 
   // Get and return the columns for the specified group by option
@@ -206,6 +206,35 @@ const getModuleColumns = (): IGroupByColumn[] | undefined => {
     payload: {},
   });
   return modules;
+};
+
+const getParentColumns = (): IGroupByColumn[] | undefined => {
+  const { currentProjectDetails } = store.projectRoot.project;
+  if (!currentProjectDetails?.id) return;
+  const stories = store.workItemGroupOptions.getParentOptions(currentProjectDetails.id);
+  // Undefined until `useParentGroupOptions` lands the fetch. Returning it unchanged makes
+  // `getGroupByColumns` return undefined too, which every layout already reads as "not ready"
+  // -- an empty array would instead say "this project has no stories" and render the page.
+  if (!stories) return;
+
+  const columns: IGroupByColumn[] = stories.map((story) => ({
+    id: story.id,
+    name: story.name,
+    icon: <Layers className="h-3.5 w-3.5" />,
+    payload: { parent_id: story.id },
+    // Dropping onto a heading would have to rewrite `parent_id`, which moves a work item in
+    // the breakdown tree rather than retagging it. Left disabled until that carries the cycle
+    // check the write paths do.
+    isDropDisabled: true,
+  }));
+  columns.push({
+    id: "None",
+    name: "None",
+    icon: <Layers className="h-3.5 w-3.5" />,
+    payload: {},
+    isDropDisabled: true,
+  });
+  return columns;
 };
 
 const getStateColumns = ({ projectId }: TGetColumns): IGroupByColumn[] | undefined => {
@@ -452,8 +481,8 @@ const handleSortOrder = (
 
   if (destinationIssues && destinationIssues.length > 0) {
     if (destinationIndex === 0) {
-      const destinationIssueId = destinationIssues[0];
-      const destinationIssue = getIssueById(destinationIssueId);
+      const neighbourIssueId = destinationIssues[0];
+      const destinationIssue = getIssueById(neighbourIssueId);
       if (!destinationIssue) return currentIssueState;
 
       currentIssueState = {
@@ -461,8 +490,8 @@ const handleSortOrder = (
         sort_order: destinationIssue.sort_order - sortOrderDefaultValue,
       };
     } else if (destinationIndex === destinationIssues.length) {
-      const destinationIssueId = destinationIssues[destinationIssues.length - 1];
-      const destinationIssue = getIssueById(destinationIssueId);
+      const neighbourIssueId = destinationIssues[destinationIssues.length - 1];
+      const destinationIssue = getIssueById(neighbourIssueId);
       if (!destinationIssue) return currentIssueState;
 
       currentIssueState = {
@@ -731,7 +760,7 @@ export const isDisplayFiltersApplied = (filters: Partial<IIssueFilters>): boolea
     (key) => !filters.displayProperties?.[key as keyof IIssueDisplayProperties]
   );
 
-  const isDisplayFiltersApplied = Object.keys(filters.displayFilters ?? {}).some((key) => {
+  const hasNonDefaultDisplayFilter = Object.keys(filters.displayFilters ?? {}).some((key) => {
     const value = filters.displayFilters?.[key as keyof IIssueDisplayFilterOptions];
     if (!value) return false;
     // -create_at is the default order
@@ -741,7 +770,7 @@ export const isDisplayFiltersApplied = (filters: Partial<IIssueFilters>): boolea
     return true;
   });
 
-  return isDisplayPropertiesApplied || isDisplayFiltersApplied;
+  return isDisplayPropertiesApplied || hasNonDefaultDisplayFilter;
 };
 
 /**

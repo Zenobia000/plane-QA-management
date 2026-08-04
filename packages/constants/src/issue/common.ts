@@ -33,9 +33,12 @@ export enum EIssueGroupByToServerOptions {
   "cycle" = "cycle_id",
   "module" = "issue_module__module_id",
   "target_date" = "target_date",
+  // Two grouping options resolve to the same server field on purpose: a team's projects and
+  // a workspace's projects are the same column read from different pages.
+  // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
   "project" = "project_id",
   "created_by" = "created_by",
-  // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
+  "parent" = "parent_id",
   "team_project" = "project_id",
 }
 
@@ -50,6 +53,7 @@ export enum EIssueGroupBYServerToProperty {
   "target_date" = "target_date",
   "project_id" = "project_id",
   "created_by" = "created_by",
+  "parent_id" = "parent_id",
 }
 
 export enum EIssueCommentAccessSpecifier {
@@ -124,6 +128,10 @@ export const ISSUE_GROUP_BY_OPTIONS: {
   { key: "labels", titleTranslationKey: "common.labels" },
   { key: "assignees", titleTranslationKey: "common.assignees" },
   { key: "created_by", titleTranslationKey: "common.created_by" },
+  // Named for what it groups by rather than for the field it reads. `parent_id` is the
+  // column, but the columns offered are stories, so calling this "Parent" would promise
+  // that a feature's children group too and leave someone hunting for the missing rows.
+  { key: "parent", titleTranslationKey: "common.story" },
   { key: null, titleTranslationKey: "common.none" },
 ];
 

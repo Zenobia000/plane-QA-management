@@ -8,6 +8,7 @@ from plane.app.views import (
     BulkCreateIssueLabelsEndpoint,
     BulkDeleteIssuesEndpoint,
     EpicAnalyticsEndpoint,
+    WorkItemParentGroupOptionsEndpoint,
     SubIssuesEndpoint,
     IssueLinkViewSet,
     IssueAttachmentEndpoint,
@@ -290,6 +291,11 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/epics/<uuid:epic_id>/analytics/",
         EpicAnalyticsEndpoint.as_view(),
         name="epic-analytics",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/work-item-group-options/parent/",
+        WorkItemParentGroupOptionsEndpoint.as_view(),
+        name="work-item-parent-group-options",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/bulk-update-issues/",

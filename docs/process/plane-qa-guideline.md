@@ -255,6 +255,21 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 
 這解釋了 #14 為什麼曾被評為阻擋級:roll-up 一旦算錯,不是某一格數字錯,而是**中上層全部是假的**——DEMO 上那個底下有 8 個契約的 Epic 顯示 UNCOVERED,而 Epic 正是管理層唯一會看的那一層。roll-up 的三條規則見 B5。
 
+### 在 Work Items 直接讀拆解軸
+
+Work Items 的 list 與 spreadsheet 都能 **group by Story**(顯示篩選的「Story」選項),把 task 依所屬 Story 分堆,每組標題帶該組筆數。等同 sprint 執行板;與 `leaf_only` 併用就只剩可執行的工作。
+
+| 行為               | 實際規則                                                                            |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| 哪些項目成為分組欄 | `type__level == 2`,不是「所有有子項的項目」                                         |
+| 為什麼限定 level 2 | 分頁器每個分組值開一個 window partition,「任意 parent」的數量隨 backlog 無上限成長  |
+| Bug 也會出現       | Bug 與 Story 同為 level 2。用名字排除會在 workspace 改名時失效;空欄由顯示空群組控制 |
+| 掛錯層的 task      | parent 是 Feature 的 task 落進 **None** 組——階層跳級了,這裡刻意不掩蓋               |
+| 每組筆數來源       | grouped response 既有的 `total_results`,不是前端另外算的                            |
+| 拖拉換組           | **停用**。拖到另一個標題等於改寫 `parent_id`,那是在拆解樹裡搬家,需要循環引用檢查    |
+
+分組欄的名稱由 `work-item-group-options/parent/` 提供,與分頁器共用 `story_grouping_queryset` 一份定義——兩份定義會漂移成「有標題沒群組」或「有群組沒標題」。
+
 ### 與 SAFe 詞彙對照
 
 | SAFe / 企業敏捷                  | 本系統                                 | 承載方式                                |

@@ -27,7 +27,13 @@ import type { RootStore } from "../root.store";
 // constants
 // helpers
 
-export type TIssueDisplayFilterOptions = Exclude<TIssueGroupByOptions, null | "team_project"> | "target_date";
+// `parent` joins `team_project` on the excluded list. Grouping by it needs the story names,
+// which come from an endpoint behind `ProjectEntityPermission` -- a published view is read by
+// anonymous visitors, so the headings could never be fetched. `IIssue` is a `Pick` of `TIssue`
+// that does not carry `parent_id` either, which is the same fact from the other side.
+export type TIssueDisplayFilterOptions =
+  | Exclude<TIssueGroupByOptions, null | "team_project" | "parent">
+  | "target_date";
 
 export enum EIssueGroupedAction {
   ADD = "ADD",
@@ -412,27 +418,27 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
     set(this.groupedIssueCount, [ALL_ISSUES], groupedIssueCount[ALL_ISSUES]);
 
     // loop through the groups of groupedIssues.
-    for (const groupId in groupedIssues) {
-      const issueGroup = groupedIssues[groupId];
-      const issueGroupCount = groupedIssueCount[groupId];
+    for (const currentGroupId in groupedIssues) {
+      const issueGroup = groupedIssues[currentGroupId];
+      const issueGroupCount = groupedIssueCount[currentGroupId];
 
       // update the groupId's issue count
-      set(this.groupedIssueCount, [groupId], issueGroupCount);
+      set(this.groupedIssueCount, [currentGroupId], issueGroupCount);
 
       // This updates the group issue list in the store, if the issueGroup is a string
-      const storeUpdated = this.updateIssueGroup(issueGroup, [groupId]);
+      const storeUpdated = this.updateIssueGroup(issueGroup, [currentGroupId]);
       // if issueGroup is indeed a string, continue
       if (storeUpdated) continue;
 
       // if issueGroup is not a string, loop through the sub group Issues
-      for (const subGroupId in issueGroup) {
-        const issueSubGroup = (issueGroup as TGroupedIssues)[subGroupId];
-        const issueSubGroupCount = groupedIssueCount[this.getGroupKey(groupId, subGroupId)];
+      for (const currentSubGroupId in issueGroup) {
+        const issueSubGroup = (issueGroup as TGroupedIssues)[currentSubGroupId];
+        const issueSubGroupCount = groupedIssueCount[this.getGroupKey(currentGroupId, currentSubGroupId)];
 
         // update the subGroupId's issue count
-        set(this.groupedIssueCount, [this.getGroupKey(groupId, subGroupId)], issueSubGroupCount);
+        set(this.groupedIssueCount, [this.getGroupKey(currentGroupId, currentSubGroupId)], issueSubGroupCount);
         // This updates the subgroup issue list in the store
-        this.updateIssueGroup(issueSubGroup, [groupId, subGroupId]);
+        this.updateIssueGroup(issueSubGroup, [currentGroupId, currentSubGroupId]);
       }
     }
   }
@@ -467,10 +473,10 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
   updateIssueCount(accumulatedUpdatesForCount: { [key: string]: EIssueGroupedAction }) {
     const updateKeys = Object.keys(accumulatedUpdatesForCount);
     for (const updateKey of updateKeys) {
-      const update = accumulatedUpdatesForCount[updateKey];
-      if (!update) continue;
+      const countUpdate = accumulatedUpdatesForCount[updateKey];
+      if (!countUpdate) continue;
 
-      const increment = update === EIssueGroupedAction.ADD ? 1 : -1;
+      const increment = countUpdate === EIssueGroupedAction.ADD ? 1 : -1;
       // get current count at the key
       const issueCount = get(this.groupedIssueCount, updateKey) ?? 0;
       // update the count at the key

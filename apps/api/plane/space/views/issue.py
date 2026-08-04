@@ -134,6 +134,16 @@ class ProjectIssuesPublicEndpoint(BaseAPIView):
         group_by = request.GET.get("group_by", False)
         sub_group_by = request.GET.get("sub_group_by", False)
 
+        # Grouping by story is an app-side feature: this module's `issue_group_values` has
+        # no branch for `parent_id`, so it would resolve to no groups and publish an empty
+        # board instead of failing. The shared allowlist cannot express that -- it says what
+        # the ORM may see, not what each surface can resolve -- so the surface says it here.
+        if "parent_id" in (group_by, sub_group_by):
+            return Response(
+                {"error": "Published views cannot be grouped by story."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # issue queryset
         issue_queryset = issue_queryset_grouper(queryset=issue_queryset, group_by=group_by, sub_group_by=sub_group_by)
 

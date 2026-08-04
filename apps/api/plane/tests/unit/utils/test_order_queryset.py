@@ -12,10 +12,15 @@ class TestIssueGroupByAllowlist:
     """Regression tests for GHSA-wwgj-929g-42cm.
 
     ISSUE_GROUP_BY_ALLOWLIST must contain exactly the field names that
-    `issue_group_values()` (plane/utils/grouper.py and
-    plane/space/utils/grouper.py) knows how to resolve safely. Anything
-    outside this set must never reach the ORM as a raw field name via
-    GroupedOffsetPaginator/SubGroupedOffsetPaginator.
+    `issue_group_values()` (plane/utils/grouper.py) knows how to resolve
+    safely. Anything outside this set must never reach the ORM as a raw
+    field name via GroupedOffsetPaginator/SubGroupedOffsetPaginator.
+
+    `parent_id` is on the list because the app resolver bounds it to stories.
+    The space resolver has no branch for it and would fall through to no
+    groups, so `plane/space/views/issue.py` refuses it at that surface --
+    this list says what the ORM may safely see, not what every surface can
+    render.
     """
 
     def test_allowlist_matches_known_safe_group_fields(self):
@@ -27,6 +32,7 @@ class TestIssueGroupByAllowlist:
             "assignees__id",
             "issue_module__module_id",
             "cycle_id",
+            "parent_id",
             "project_id",
             "created_by",
             "target_date",

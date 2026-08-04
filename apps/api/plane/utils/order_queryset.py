@@ -91,6 +91,7 @@ ISSUE_GROUP_BY_ALLOWLIST = frozenset({
     "assignees__id",
     "issue_module__module_id",
     "cycle_id",
+    "parent_id",
     "project_id",
     "created_by",
     "target_date",

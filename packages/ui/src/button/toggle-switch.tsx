@@ -11,16 +11,29 @@ import { cn } from "../utils";
 interface IToggleSwitchProps {
   value: boolean;
   onChange: (value: boolean) => void;
+  /** Screen-reader-only name. Use `labelContent` when the text is meant to be seen. */
   label?: string;
+  /**
+   * Visible, clickable label rendered beside the switch.
+   *
+   * Worth having on the component rather than at each call site: three call sites had
+   * built their own by wrapping the switch in a div that carried the click, and passing
+   * the switch an empty `onChange` so the two would not both fire. That works for a mouse
+   * and leaves the keyboard dead, because Headless UI routes Space through the switch's
+   * own handler -- straight into the empty function. `Switch.Label` is clickable and
+   * associated natively, so the switch keeps its real handler and nothing needs a wrapper.
+   */
+  labelContent?: React.ReactNode;
+  labelClassName?: string;
   size?: "sm" | "md" | "lg";
   disabled?: boolean;
   className?: string;
 }
 
 function ToggleSwitch(props: IToggleSwitchProps) {
-  const { value, onChange, label, size = "sm", disabled, className } = props;
+  const { value, onChange, label, labelContent, labelClassName, size = "sm", disabled, className } = props;
 
-  return (
+  const control = (
     <Switch
       checked={value}
       disabled={disabled}
@@ -54,6 +67,17 @@ function ToggleSwitch(props: IToggleSwitchProps) {
         )}
       />
     </Switch>
+  );
+
+  if (!labelContent) return control;
+
+  return (
+    <Switch.Group as="div" className="inline-flex items-center gap-1.5">
+      {control}
+      <Switch.Label className={cn("cursor-pointer select-none", { "cursor-not-allowed": disabled }, labelClassName)}>
+        {labelContent}
+      </Switch.Label>
+    </Switch.Group>
   );
 }
 

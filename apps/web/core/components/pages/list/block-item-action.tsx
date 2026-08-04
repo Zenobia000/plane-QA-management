@@ -77,6 +77,11 @@ export const BlockItemAction = observer(function BlockItemAction(props: Props) {
       {/* quick actions dropdown */}
       <PageActions
         optionsOrder={[
+          // First, and present at all: a folder here is a page with children, so this is
+          // the only way to build one. It was implemented and then left out of this list,
+          // which meant the sole entry point from the list was a "+" that stays at
+          // opacity-0 until the row is hovered -- a feature nobody could find.
+          "add-sub-page",
           "open-in-new-tab",
           "copy-link",
           "make-a-copy",

@@ -83,6 +83,37 @@ class TestGroupByStory:
         assert str(story.id) in grouped
         assert [item["name"] for item in grouped[str(story.id)]["results"]] == [task.name]
 
+    def test_no_work_item_is_dropped_when_the_tree_skips_a_level(
+        self, session_client, workspace, project, story_with_a_task
+    ):
+        """The reported symptom, as an assertion.
+
+        The paginator discards rows whose group is absent from the value set, so a column
+        set that misses a parent does not merely look wrong -- it hides work. On the
+        instance that reported it, an Epic -> Feature -> Story project displayed 2 of 14
+        rows under 15 headings, and the page gave no sign that twelve were missing.
+        """
+        story, task = story_with_a_task
+        epic_type = IssueType.objects.create(workspace=workspace, name="Epic", level=0)
+        ProjectIssueType.objects.create(workspace=workspace, project=project, issue_type=epic_type, level=0)
+        feature_type = IssueType.objects.create(workspace=workspace, name="Feature", level=1)
+        ProjectIssueType.objects.create(workspace=workspace, project=project, issue_type=feature_type, level=1)
+        feature = Issue.objects.create(
+            workspace=workspace, project=project, name="Export", type=feature_type
+        )
+        # A story parented to a Feature -- the shape the level rule could not place.
+        story.parent = feature
+        story.save()
+
+        body = session_client.get(
+            issues_url(workspace, project, group_by="parent_id", sub_issue="true", layout="list", per_page=50)
+        ).json()
+
+        placed = {item["id"] for group in body["results"].values() for item in group["results"]}
+        everything = set(map(str, Issue.issue_objects.filter(project=project).values_list("id", flat=True)))
+
+        assert placed == everything, f"{len(everything) - len(placed)} work item(s) vanished from the list"
+
     def test_grouping_by_an_unlisted_field_is_still_refused(self, session_client, workspace, project):
         """Widening the allowlist by one field must not widen it by any other."""
         response = session_client.get(

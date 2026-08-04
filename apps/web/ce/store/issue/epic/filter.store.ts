@@ -19,6 +19,14 @@ export type IProjectEpicsFilter = IProjectIssuesFilter;
  * work-item list with one more predicate, not a different list. The predicate is the `epic`
  * boolean rather than a type id because the id carrying the flag differs per workspace and
  * this store has no way to look it up.
+ *
+ * `leaf_only` is the one thing that cannot be inherited. It defaults to `true` for the
+ * work-item list -- see `buildDisplayFilters` -- because that list answers "what is there to
+ * do" and a node with children is a summary rather than a row you can pick up. An epic is
+ * that summary, so carrying the default through would drop every epic anyone had broken
+ * down: the demo project showed 1 epic of 5, the one nobody had added a feature to yet.
+ * Pinned rather than merely defaulted, because the toggle stays visible in Display and a
+ * user turning it on would otherwise empty the page they are looking at.
  */
 export class ProjectEpicsFilter extends ProjectIssuesFilter implements IProjectEpicsFilter {
   constructor(_rootStore: IIssueRootStore) {
@@ -43,6 +51,7 @@ export class ProjectEpicsFilter extends ProjectIssuesFilter implements IProjectE
       ) => ({
         ...inherited(options, projectId, cursor, groupId, subGroupId),
         epic: true,
+        leaf_only: false,
       })
     );
   }

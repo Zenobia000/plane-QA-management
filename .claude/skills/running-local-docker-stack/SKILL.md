@@ -104,7 +104,18 @@ docker compose -f $M/docker-compose-test.yml -p plane-merged-test --project-dire
 docker run --rm -v "$M/apps/api/plane/db/migrations:/m" alpine chown -R $(id -u):$(id -g) /m
 ```
 
-Then check the graph has one leaf: `manage.py showmigrations db`. Two migrations sharing a number — which happens whenever a branch is cut before another one lands — makes Django refuse to run *any* migration, and the error names neither file helpfully. Renumber the newer branch's migration and repoint its `dependencies`.
+Then check the graph has one leaf: `manage.py showmigrations db`. Two migrations sharing a number — which happens whenever a branch is cut before another one lands — makes Django refuse to run *any* migration, and the error names neither file helpfully.
+
+Two ways out, and picking the wrong one causes an outage:
+
+| Has the migration been applied anywhere you don't control? | Do this |
+|---|---|
+| No — only your machine, nobody has pulled it | **Renumber** your migration and repoint its `dependencies`. Keeps the chain linear. |
+| Yes — a colleague's DB, staging, production | **`makemigrations --merge`**. Writes a migration whose only content is `dependencies = [both leaves]`. |
+
+Renaming a migration that is already recorded elsewhere makes Django see it as unapplied and re-run it — `column already exists`, and someone has to `--fake` it by hand. Renumbering also leaves orphan rows in `django_migrations` on any database that recorded the old name, including your own: after renumbering, delete them (match recorded names against files on disk; do not delete by memory) or `showmigrations` keeps listing migrations that no longer exist.
+
+Rule of thumb: **repoint before you push, merge migration after.**
 
 ## Quick Reference
 
@@ -130,7 +141,8 @@ Changing a `packages/*` type or service needs `pnpm --filter @plane/types run bu
 | `port is already allocated` on 8000/5432 | Used `docker-compose-local.yml` → use full stack instead |
 | API 500s / signup mails point to localhost | `apps/api/.env` missing or has default URLs → step 1 |
 | Root `.env` lost 8787/LAN-IP settings | Someone ran `setup.sh` → restore the URL/proxy lines in step 1 |
-| `Conflicting migrations detected; multiple leaf nodes` | Two branches numbered a migration the same → renumber the later one and repoint `dependencies` (step 5) |
+| `Conflicting migrations detected; multiple leaf nodes` | Two branches numbered a migration the same → renumber if unpushed, `makemigrations --merge` if already applied elsewhere (step 5) |
+| `showmigrations` lists a migration with no file | Left behind by a renumber → delete those `django_migrations` rows, matching recorded names against files on disk |
 | Migration file can't be staged / permission denied | Written as root inside the container → `chown` it back (step 5) |
 | `check:types` fails on a field you just added to `@plane/types` | Web imports the built `dist` → rebuild the package first |
 | Panels render blank with no error | A 5xx the UI swallows into an empty state → `docker compose logs api`, and check `test_endpoint_smoke.py` covers the route |

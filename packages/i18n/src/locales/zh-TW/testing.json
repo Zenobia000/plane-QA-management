@@ -44,10 +44,6 @@
       "suite_label": "測試套件",
       "unfiled": "未歸檔",
       "priority_label": "優先級",
-      "given_label": "Given",
-      "given_hint": "情境執行前必須成立的前置條件",
-      "steps_label": "When / Then",
-      "steps_hint": "每行一步:操作 | 預期結果",
       "save_version": "儲存為新版本",
       "traceability": "需求追溯",
       "linked_count": "已連結 {count} 個需求",
@@ -81,7 +77,10 @@
       "measured": "最新量測",
       "headroom": "餘裕 {percent}%",
       "no_measurement": "尚未量測",
-      "threshold_hint": "以 metric、operator、threshold、unit 結構化,才能畫趨勢與自動判定。"
+      "threshold_hint": "以 metric、operator、threshold、unit 結構化,才能畫趨勢與自動判定。",
+      "scenario_label": "情境",
+      "scenario_hint": "Given / When / Then，一行一句",
+      "scenario_placeholder": "Given 使用者已登入\nWhen 匯出訂單\nThen 出現下載連結"
     },
     "runs": {
       "heading": "測試執行",

@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { orderBy } from "lodash-es";
 import {
   Archive,
@@ -38,7 +38,7 @@ import type {
 import { AlertModalCore, CustomMenu } from "@plane/ui";
 import { ExistingIssuesListModal } from "@/components/core/modals/existing-issues-list-modal";
 import { useTesting } from "@/hooks/store/use-testing";
-import { findCaseBySequence, testingPath } from "../helpers";
+import { findCaseBySequence, formatScenario, parseScenario, testingPath } from "../helpers";
 import { FolderTree } from "./folder-tree";
 import { WorkItemLink } from "./work-item-link";
 
@@ -270,6 +270,10 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
   const [scope, setScope] = useState<TTestingSearchScope>("all");
   const [searchResponse, setSearchResponse] = useState<TTestingSearchResponse>();
   const [draft, setDraft] = useState<TTestCaseInput>();
+  // The scenario box holds the author's text verbatim; `draft` is derived from it. Deriving
+  // the text back from `draft` on every keystroke would reformat mid-word -- type "Giv" and
+  // the parser calls it setup, the formatter writes "Given Giv", and the caret jumps.
+  const [scenario, setScenario] = useState("");
   const selectedFolder = searchParams.get("folder");
   const testFolders = orderBy(Object.values(folders), ["sort_order", "name"], ["asc", "asc"]);
   const testCases = orderBy(
@@ -305,6 +309,15 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
       tags: selected.current.tags,
       steps: selected.current.steps.map((step) => ({ action: step.action, expected_result: step.expected_result })),
     });
+    setScenario(
+      formatScenario(
+        textValue(selected.current.preconditions ?? {}),
+        selected.current.steps.map((step) => ({
+          action: textValue(step.action),
+          expected_result: textValue(step.expected_result),
+        }))
+      )
+    );
     void fetchAttachments(workspaceSlug, projectId, selected.id).catch((error) => {
       setToast({
         type: TOAST_TYPE.ERROR,
@@ -316,12 +329,6 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
     // itself would re-seed on every store mutation and discard in-progress edits.
     // oxlint-disable-next-line exhaustive-deps
   }, [selected?.id, selected?.current_version]);
-
-  const stepText = useMemo(
-    () =>
-      draft?.steps?.map((step) => `${textValue(step.action)} | ${textValue(step.expected_result)}`).join("\n") ?? "",
-    [draft?.steps]
-  );
 
   const handleCreate = async () => {
     if (!title.trim()) return;
@@ -736,32 +743,30 @@ export const TestLibraryView = observer(function TestLibraryView({ workspaceSlug
                   className="mt-1 h-10 w-full rounded border border-subtle bg-surface-1 px-3 text-13 text-primary outline-none"
                 />
               </label>
+              {/* One box. Setup, action and expectation are still stored apart -- the
+                  execution view shows them separately while a tester works, and the
+                  auto-built defect quotes them -- but nobody writes a test as two fields
+                  and a pipe character. They write Given / When / Then. */}
               <label className="block text-12 font-medium text-secondary">
-                {t("testing.cases.given_label")}
+                {t("testing.cases.scenario_label")}{" "}
+                <span className="font-normal text-tertiary">({t("testing.cases.scenario_hint")})</span>
                 <textarea
-                  value={textValue(draft.preconditions ?? {})}
-                  onChange={(event) => setDraft({ ...draft, preconditions: { text: event.target.value } })}
-                  className="mt-1 min-h-20 w-full rounded border border-subtle bg-surface-1 p-3 text-13 text-primary outline-none"
-                />
-              </label>
-              <label className="block text-12 font-medium text-secondary">
-                {t("testing.cases.steps_label")}{" "}
-                <span className="font-normal text-tertiary">({t("testing.cases.steps_hint")})</span>
-                <textarea
-                  value={stepText}
-                  onChange={(event) =>
+                  value={scenario}
+                  spellCheck={false}
+                  placeholder={t("testing.cases.scenario_placeholder")}
+                  onChange={(event) => {
+                    setScenario(event.target.value);
+                    const parsed = parseScenario(event.target.value);
                     setDraft({
                       ...draft,
-                      steps: event.target.value
-                        .split("\n")
-                        .filter(Boolean)
-                        .map((line) => {
-                          const [action, expected = ""] = line.split("|");
-                          return { action: { text: action.trim() }, expected_result: { text: expected.trim() } };
-                        }),
-                    })
-                  }
-                  className="font-mono mt-1 min-h-32 w-full rounded border border-subtle bg-surface-1 p-3 text-12 text-primary outline-none"
+                      preconditions: { text: parsed.preconditions },
+                      steps: parsed.steps.map((step) => ({
+                        action: { text: step.action },
+                        expected_result: { text: step.expected_result },
+                      })),
+                    });
+                  }}
+                  className="font-mono mt-1 min-h-44 w-full rounded border border-subtle bg-surface-1 p-3 text-12 text-primary outline-none"
                 />
               </label>
               <div className="rounded border border-subtle p-3">

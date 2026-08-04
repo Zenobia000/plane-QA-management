@@ -50,9 +50,13 @@ export function WorkItemModalAdditionalProperties(props: TWorkItemModalAdditiona
   if (!projectId || !activeDefinitions.length) return null;
 
   return (
+    // The rule stays full-bleed because it separates two parts of the modal, but the
+    // content inside it takes the same `px-5` as the description editor it sits under.
+    // Without that the fields ran to the modal's own edge while every other row was
+    // inset, which read as a rendering fault rather than as a section.
     <section className="mt-4 border-t border-subtle pt-4">
-      <h4 className="mb-3 text-12 font-medium text-secondary">Custom properties</h4>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <h4 className="mb-3 px-5 text-12 font-medium text-secondary">Custom properties</h4>
+      <div className="grid grid-cols-1 gap-3 px-5 md:grid-cols-2">
         {activeDefinitions.map((definition) => (
           <label key={definition.id} className="min-w-0">
             <span className="mb-1 block text-11 font-medium text-secondary">

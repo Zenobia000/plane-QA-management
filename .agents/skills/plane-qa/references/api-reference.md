@@ -272,14 +272,18 @@ number.
 
 Unusually, the public tree is the _only_ way in. `/api/v1` `work-items/` reads and writes it like
 any other field, while the app tree's serializer omits it from its field list — so the web UI can
-neither show nor set it, and neither the CLI nor MCP has a dedicated flag. Outside the seed and
-`converge_work_item_types`, an API-key caller is the only thing that sets it:
+neither show nor set it. Everything that reaches the field goes through an API key: the seed
+commands, `converge_work_item_types`, and the three tooling surfaces below.
 
 ```bash
 curl -X PATCH "$BASE/work-items/<issue_uuid>/" -H "X-API-Key: $PLANE_API_KEY" \
   -H "Content-Type: application/json" -d '{"requirement_kind": "quality"}'
-# CLI equivalent: plane-qa issue update --issue QA-12 --body '{"requirement_kind":"quality"}'
+plane-qa issue update --issue QA-12 --requirement-kind quality
+# MCP: issue_create / issue_update take requirement_kind
 ```
+
+Omitting it leaves the stored value alone rather than resetting to `none` — a default would
+declassify every requirement touched by an unrelated rename.
 
 Two things follow, and both are mistakes this field exists to prevent:
 

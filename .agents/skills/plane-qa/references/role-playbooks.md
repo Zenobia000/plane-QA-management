@@ -53,8 +53,8 @@ CLI flags cover name/state/priority/description; put scheduling fields in `--bod
 
 ```bash
 plane-qa type list                        # resolve type UUIDs; do not invent a new vocabulary
-plane-qa issue create --name "Support Visa 3DS" --priority high \
-  --body '{"type_id":"<story_type_uuid>","parent":"<feature_uuid>","requirement_kind":"functional",
+plane-qa issue create --name "Support Visa 3DS" --priority high --requirement-kind functional \
+  --body '{"type_id":"<story_type_uuid>","parent":"<feature_uuid>",
            "start_date":"2026-08-03","target_date":"2026-08-07",
            "assignees":["<member_uuid>"],"labels":["<label_uuid>"]}'
 ```

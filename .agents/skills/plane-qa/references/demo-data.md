@@ -103,9 +103,14 @@ git log --oneline -5 -- apps/api/plane/testing/demo/     # when the seed last ch
 Compare that against the project's creation date. If the seed moved since, re-seed with `--force`
 after confirming nobody has hand-edited the project.
 
-> As of 2026-08-05 the `DEMO` project on the local stack is one such case: seeded 2026-08-03 13:12,
-> before the same day's field-report and five-epic commits landed. It has 2 epics, no intake
-> reports, no announcements and no grouping dimension.
+> This is not hypothetical. The local stack's `DEMO` spent two days seeded from a commit a few hours
+> older than the field-report and five-epic changes, and presented as a working demo with 2 epics,
+> no intake reports, no announcements and no grouping dimension — nothing looked broken, the panels
+> simply had less to say. Re-seeded 2026-08-05.
+
+"Hand-edited" is worth checking rather than assuming: compare each work item's `updated_at` against
+the project's `created_at`, and read `IssueActivity` rows created after the seed. Field edits a
+person made in the UI show up there with the author and the before/after values.
 
 ## Repair commands (not seeds)
 

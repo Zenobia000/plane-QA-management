@@ -267,6 +267,15 @@
       "click_to_downvote": "Nhấp để bỏ phiếu chống",
       "click_to_view_upvotes": "Nhấp để xem phiếu thuận",
       "click_to_view_downvotes": "Nhấp để xem phiếu chống"
+    },
+    "requirement_kind": {
+      "label": "Loại yêu cầu",
+      "none": "Không phải yêu cầu",
+      "none_hint": "Công việc triển khai hoặc sửa lỗi",
+      "functional": "Chức năng",
+      "functional_hint": "Hành vi mà hệ thống phải có",
+      "quality": "Chất lượng",
+      "quality_hint": "Hệ thống phải hoạt động tốt đến mức nào"
     }
   },
   "sub_work_item": {

@@ -267,6 +267,15 @@
       "click_to_downvote": "Kliknij, aby zagłosować przeciw",
       "click_to_view_upvotes": "Kliknij, aby zobaczyć głosy za",
       "click_to_view_downvotes": "Kliknij, aby zobaczyć głosy przeciw"
+    },
+    "requirement_kind": {
+      "label": "Rodzaj wymagania",
+      "none": "Nie jest wymaganiem",
+      "none_hint": "Praca wdrożeniowa lub naprawcza",
+      "functional": "Funkcjonalne",
+      "functional_hint": "Zachowanie, które system musi mieć",
+      "quality": "Jakościowe",
+      "quality_hint": "Jak dobrze system musi działać"
     }
   },
   "sub_work_item": {

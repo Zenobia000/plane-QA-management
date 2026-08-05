@@ -23,6 +23,7 @@ import { EstimateDropdown } from "@/components/dropdowns/estimate";
 import { MemberDropdown } from "@/components/dropdowns/member/dropdown";
 import { ModuleDropdown } from "@/components/dropdowns/module/dropdown";
 import { PriorityDropdown } from "@/components/dropdowns/priority";
+import { RequirementKindDropdown } from "@/components/dropdowns/requirement-kind";
 import { StateDropdown } from "@/components/dropdowns/state/dropdown";
 import { ParentIssuesListModal } from "@/components/issues/parent-issues-list-modal";
 import { IssueLabelSelect } from "@/components/issues/select";
@@ -119,6 +120,26 @@ export const IssueDefaultProperties = observer(function IssueDefaultProperties(p
               }}
               buttonVariant="border-with-text"
               tabIndex={getIndex("priority")}
+            />
+          </div>
+        )}
+      />
+      <Controller
+        control={control}
+        name="requirement_kind"
+        render={({ field: { value, onChange } }) => (
+          // Fixed width rather than the neighbours' hug-the-content sizing: the three labels
+          // differ enough in length that the control would resize as you pick, shifting every
+          // chip after it in the row.
+          <div className="h-7 w-36">
+            <RequirementKindDropdown
+              value={value}
+              onChange={(kind) => {
+                onChange(kind);
+                handleFormChange();
+              }}
+              className="h-7"
+              buttonClassName="h-7 rounded border border-strong bg-transparent px-2 text-body-xs-medium"
             />
           </div>
         )}

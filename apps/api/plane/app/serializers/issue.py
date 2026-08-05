@@ -870,6 +870,11 @@ class IssueSerializer(DynamicBaseSerializer):
             # but absent here, so the browser could set a milestone and never see which one
             # an item was on. The overview could show milestones; nothing else could.
             "milestone_id",
+            # Same omission, found the same way: the create serializer has always accepted
+            # this, so the browser could classify a requirement and then had no way to read
+            # back what it had said. Until now nothing in the UI sent it either, so every
+            # work item on this instance still carries the default.
+            "requirement_kind",
             "label_ids",
             "assignee_ids",
             "sub_issues_count",

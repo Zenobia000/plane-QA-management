@@ -153,6 +153,7 @@ class SubIssuesEndpoint(BaseAPIView):
                 "project_id",
                 "parent_id",
                 "type_id",
+                "requirement_kind",
                 "cycle_id",
                 "module_ids",
                 "label_ids",

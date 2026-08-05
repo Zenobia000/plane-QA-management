@@ -267,6 +267,15 @@
       "click_to_downvote": "點擊反對",
       "click_to_view_upvotes": "點擊查看贊成票",
       "click_to_view_downvotes": "點擊查看反對票"
+    },
+    "requirement_kind": {
+      "label": "需求類型",
+      "none": "非需求",
+      "none_hint": "實作或缺陷處理工作",
+      "functional": "功能需求",
+      "functional_hint": "系統必須具備的行為",
+      "quality": "品質需求",
+      "quality_hint": "系統必須達到的表現水準"
     }
   },
   "sub_work_item": {

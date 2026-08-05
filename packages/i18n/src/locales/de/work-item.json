@@ -267,6 +267,15 @@
       "click_to_downvote": "Klicken zum Runterstimmen",
       "click_to_view_upvotes": "Klicken um Hochstimmen anzuzeigen",
       "click_to_view_downvotes": "Klicken um Runterstimmen anzuzeigen"
+    },
+    "requirement_kind": {
+      "label": "Anforderungsart",
+      "none": "Keine Anforderung",
+      "none_hint": "Umsetzungs- oder Fehlerarbeit",
+      "functional": "Funktional",
+      "functional_hint": "Ein Verhalten, das das System haben muss",
+      "quality": "Qualität",
+      "quality_hint": "Wie gut sich das System verhalten muss"
     }
   },
   "sub_work_item": {

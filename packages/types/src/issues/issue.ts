@@ -42,6 +42,16 @@ export enum EIssuesStoreType {
   TEAM_PROJECT_WORK_ITEMS = "TEAM_PROJECT_WORK_ITEMS",
 }
 
+/**
+ * What a work item states: a behaviour the system must have, a quality it must hold to, or
+ * nothing — a task implements a requirement and a bug reports one broken, so neither is one.
+ *
+ * Crosses the breakdown rather than sitting inside it: an epic, a feature and a story can each
+ * carry any of the three. Not null for "unclassified" — the backend defaults to `none`, and a
+ * null would mean "nobody has decided yet", which is a different and less useful thing to say.
+ */
+export type TRequirementKind = "none" | "functional" | "quality";
+
 export type TBaseIssue = {
   id: string;
   sequence_id: number;
@@ -63,6 +73,7 @@ export type TBaseIssue = {
   cycle_id: string | null;
   module_ids: string[] | null;
   type_id: string | null;
+  requirement_kind: TRequirementKind;
 
   created_at: string;
   updated_at: string;

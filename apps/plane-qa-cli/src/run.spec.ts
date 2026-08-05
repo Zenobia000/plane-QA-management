@@ -218,6 +218,123 @@ describe("plane-qa CLI", () => {
     expect(output.stderr.join("")).toContain("none, functional, quality");
   });
 
+  it("sends a complete threshold on case create", async () => {
+    const output = capture();
+    const createTestCase = vi.fn().mockResolvedValue({ id: "c1" });
+    const client = {
+      createTestCase,
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+    } as unknown as PlaneQAClient;
+
+    const code = await runCLI({
+      argv: [
+        "case",
+        "create",
+        "--title",
+        "Checkout stays under 2s at peak",
+        "--case-type",
+        "performance",
+        "--threshold-metric",
+        "checkout P95 latency",
+        "--threshold-operator",
+        "lt",
+        "--threshold-value",
+        "2",
+        "--threshold-unit",
+        "s",
+      ],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(code).toBe(0);
+    expect(createTestCase).toHaveBeenCalledWith(
+      "sunny",
+      "p1",
+      expect.objectContaining({
+        case_type: "performance",
+        threshold_metric: "checkout P95 latency",
+        threshold_operator: "lt",
+        threshold_value: 2,
+        threshold_unit: "s",
+      })
+    );
+  });
+
+  // All four go together or none do. A lone flag reaching the server as a partial threshold
+  // would be rejected there, with a message about a field the caller did not think they were
+  // touching.
+  it("fills in the rest of the threshold when only some of it is given", async () => {
+    const output = capture();
+    const createTestCase = vi.fn().mockResolvedValue({ id: "c1" });
+    const client = {
+      createTestCase,
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+    } as unknown as PlaneQAClient;
+
+    await runCLI({
+      argv: ["case", "create", "--title", "Uptime", "--threshold-unit", "s"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(createTestCase).toHaveBeenCalledWith(
+      "sunny",
+      "p1",
+      expect.objectContaining({
+        threshold_metric: "",
+        threshold_operator: "",
+        threshold_value: null,
+        threshold_unit: "s",
+      })
+    );
+  });
+
+  it("omits the threshold entirely when no threshold flag is given", async () => {
+    const output = capture();
+    const updateTestCase = vi.fn().mockResolvedValue({ id: "c1" });
+    const client = {
+      updateTestCase,
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+    } as unknown as PlaneQAClient;
+
+    await runCLI({
+      argv: ["case", "update", "--case", "c1", "--title", "Renamed"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(updateTestCase).toHaveBeenCalledWith(
+      "sunny",
+      "p1",
+      "c1",
+      expect.not.objectContaining({ threshold_metric: expect.anything() })
+    );
+  });
+
+  it("rejects an operator outside the set, naming the four", async () => {
+    const output = capture();
+    const createTestCase = vi.fn();
+    const client = {
+      createTestCase,
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+    } as unknown as PlaneQAClient;
+
+    const code = await runCLI({
+      argv: ["case", "create", "--title", "Uptime", "--threshold-operator", "<"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(code).not.toBe(0);
+    expect(createTestCase).not.toHaveBeenCalled();
+    expect(output.stderr.join("")).toContain("lt, lte, gt, gte");
+  });
+
   it("refuses destructive commands without explicit confirmation", async () => {
     const output = capture();
     const client = {

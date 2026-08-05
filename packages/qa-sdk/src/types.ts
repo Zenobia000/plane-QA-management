@@ -45,6 +45,26 @@ export interface State {
 export const REQUIREMENT_KINDS = ["none", "functional", "quality"] as const;
 export type RequirementKind = (typeof REQUIREMENT_KINDS)[number];
 
+/**
+ * How a test case's contract is verified — not what kind of requirement it answers for.
+ *
+ * A functional requirement can carry a performance threshold among its acceptance conditions,
+ * so this is never an FR/NFR classification. That is `requirement_kind`, and it lives on the
+ * work item.
+ */
+export const TEST_CASE_TYPES = ["functional", "performance", "security", "reliability", "compliance"] as const;
+export type TestCaseType = (typeof TEST_CASE_TYPES)[number];
+
+/**
+ * The comparison a measured contract is judged by.
+ *
+ * Spelled rather than symbolic (`lt`, not `<`) because these travel through query strings and
+ * JSON payloads where `<` and `>` need escaping in some hop or other, and a threshold that
+ * survives only some of the way is worse than one that never left.
+ */
+export const THRESHOLD_OPERATORS = ["lt", "lte", "gt", "gte"] as const;
+export type ThresholdOperator = (typeof THRESHOLD_OPERATORS)[number];
+
 export interface WorkItem {
   id: string;
   name: string;

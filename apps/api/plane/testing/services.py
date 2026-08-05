@@ -85,6 +85,10 @@ def create_test_case(
     case_type="functional",
     tags=None,
     steps=None,
+    threshold_metric="",
+    threshold_operator="",
+    threshold_value=None,
+    threshold_unit="",
 ):
     project = Project.objects.select_for_update().get(id=project_id)
     folder = _folder_for_project(project, folder_id)
@@ -98,7 +102,7 @@ def create_test_case(
     )
     _validate_domain_model(test_case)
     test_case.save()
-    version = TestCaseVersion.objects.create(
+    version = TestCaseVersion(
         project=project,
         workspace=project.workspace,
         test_case=test_case,
@@ -109,7 +113,15 @@ def create_test_case(
         priority=priority,
         case_type=case_type,
         tags=tags or [],
+        threshold_metric=(threshold_metric or "").strip(),
+        threshold_operator=threshold_operator or "",
+        threshold_value=threshold_value,
+        threshold_unit=(threshold_unit or "").strip(),
     )
+    # Built then validated then saved, rather than `objects.create`, so the version's own
+    # `clean` runs. `create` would write a half-stated threshold straight past it.
+    _validate_domain_model(version)
+    version.save()
     _create_steps(version, steps or [])
     return test_case
 
@@ -126,10 +138,14 @@ def publish_test_case_version(
     case_type="functional",
     tags=None,
     steps=None,
+    threshold_metric="",
+    threshold_operator="",
+    threshold_value=None,
+    threshold_unit="",
 ):
     test_case = TestCase.objects.select_for_update().get(id=test_case_id, project_id=project_id)
     next_version = test_case.current_version + 1
-    version = TestCaseVersion.objects.create(
+    version = TestCaseVersion(
         project=test_case.project,
         workspace=test_case.workspace,
         test_case=test_case,
@@ -140,7 +156,13 @@ def publish_test_case_version(
         priority=priority,
         case_type=case_type,
         tags=tags or [],
+        threshold_metric=(threshold_metric or "").strip(),
+        threshold_operator=threshold_operator or "",
+        threshold_value=threshold_value,
+        threshold_unit=(threshold_unit or "").strip(),
     )
+    _validate_domain_model(version)
+    version.save()
     _create_steps(version, steps or [])
     TestCase.objects.filter(id=test_case.id).update(current_version=next_version)
     test_case.current_version = next_version

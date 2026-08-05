@@ -1,5 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { type JsonObject, type JsonValue, type PlaneQAClient, REQUIREMENT_KINDS } from "@plane/qa-sdk";
+import {
+  type JsonObject,
+  type JsonValue,
+  type PlaneQAClient,
+  REQUIREMENT_KINDS,
+  TEST_CASE_TYPES,
+  THRESHOLD_OPERATORS,
+} from "@plane/qa-sdk";
 import { z } from "zod";
 
 import { safely, toolResult } from "./results";
@@ -663,6 +670,33 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
     description: z.record(z.unknown()).optional(),
     preconditions: z.record(z.unknown()).optional(),
     priority: z.enum(["urgent", "high", "medium", "low", "none"]).optional(),
+    case_type: z
+      .enum(TEST_CASE_TYPES)
+      .optional()
+      .describe(
+        "How this contract is verified, not what kind of requirement it answers for. " +
+          "A functional requirement can carry a performance threshold among its acceptance " +
+          "conditions, so this is never an FR/NFR classification -- that is the work item's " +
+          "requirement_kind."
+      ),
+    threshold_metric: z
+      .string()
+      .optional()
+      .describe(
+        "What is measured, in the project's own words: 'checkout P95 latency', " +
+          "'monthly availability'. Give it with threshold_operator and threshold_value or not " +
+          "at all -- a partial threshold is rejected, because a number with no comparison " +
+          "cannot be judged and a comparison with no number cannot be met."
+      ),
+    threshold_operator: z
+      .enum(THRESHOLD_OPERATORS)
+      .optional()
+      .describe("How the measurement is compared to the value: lt, lte, gt, gte."),
+    threshold_value: z.number().optional().describe("The number that decides pass or fail."),
+    threshold_unit: z
+      .string()
+      .optional()
+      .describe("Unit of the value: 's', 'ms', '%', 'req/s'. Optional -- a ratio or a count has none."),
     tags: z.array(z.string()).optional(),
     steps: z
       .array(z.object({ action: z.record(z.unknown()), expected_result: z.record(z.unknown()).optional() }))

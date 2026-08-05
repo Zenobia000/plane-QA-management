@@ -191,6 +191,52 @@ describe("Plane QA MCP server", () => {
     expect(createIssue).not.toHaveBeenCalled();
   });
 
+  it("carries a measured contract's threshold through case create", async () => {
+    const createTestCase = vi.fn().mockResolvedValue({ id: "c1" });
+    const connection = await connect({ createTestCase });
+    connections.push(connection);
+
+    const response = await connection.client.callTool({
+      name: "test_case_create",
+      arguments: {
+        workspace: "acme",
+        project: "QA",
+        title: "Checkout stays under 2s at peak",
+        case_type: "performance",
+        threshold_metric: "checkout P95 latency",
+        threshold_operator: "lt",
+        threshold_value: 2,
+        threshold_unit: "s",
+      },
+    });
+
+    expect(response.isError).not.toBe(true);
+    expect(createTestCase).toHaveBeenCalledWith(
+      "acme",
+      project.id,
+      expect.objectContaining({
+        case_type: "performance",
+        threshold_metric: "checkout P95 latency",
+        threshold_operator: "lt",
+        threshold_value: 2,
+      })
+    );
+  });
+
+  it("rejects a symbolic threshold operator before the backend is called", async () => {
+    const createTestCase = vi.fn();
+    const connection = await connect({ createTestCase });
+    connections.push(connection);
+
+    const response = await connection.client.callTool({
+      name: "test_case_create",
+      arguments: { workspace: "acme", project: "QA", title: "Uptime", threshold_operator: "<" },
+    });
+
+    expect(response.isError).toBe(true);
+    expect(createTestCase).not.toHaveBeenCalled();
+  });
+
   it("rejects destructive calls without literal confirmation before the backend is called", async () => {
     const deleteTestFolder = vi.fn();
     const connection = await connect({ deleteTestFolder });

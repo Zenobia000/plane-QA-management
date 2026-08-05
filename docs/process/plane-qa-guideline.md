@@ -142,7 +142,7 @@ Part A 與 Part B 都不可違反以下兩組規則。
 **已知實作陷阱:**
 
 - **換掉編輯器會打壞執行工作區的鍵盤流。** P/F/B/S 快捷鍵目前只擋 `HTMLInputElement` 與 `HTMLTextAreaElement`。富文本編輯器是 `contentEditable`,不屬於這兩者——換上去之後在編輯器裡打的每個 p、f、b、s 都會送出一筆結果,而**結果是 append-only,送出就收不回來**。改動時必須同步擴充焦點判斷並補回歸測試
-- **契約的分類欄位是 `TestCaseVersion.case_type`**(functional / performance / security / reliability / compliance),服務層 `create_test_case` 已收這個參數。它在 version 上而不是在 `TestCase` 上,因為改分類等於改契約內容,要發新版本。**不要用 tag 硬撐。** 缺口 #17 剩下的是門檻的結構化與趨勢圖,不是這個欄位
+- **契約的分類欄位是 `TestCaseVersion.case_type`**(functional / performance / security / reliability / compliance),REST、CLI(`--case-type`)與 MCP 都收。它在 version 上而不是在 `TestCase` 上,因為改分類等於改契約內容,要發新版本。**不要用 tag 硬撐。** 門檻本身另有四個欄位(見 [B3](#b3));缺口 #17 現在只剩「拿實測值去比對門檻」與趨勢圖
 - **`TestFolder.parent` 有階層,UI 卻渲染成扁平清單**(缺口 #19)。動資料夾相關功能時別假設 UI 已經是樹
 
 <details>
@@ -369,9 +369,11 @@ commit `9ed58492d` 修好了 #14(coverage roll-up、型別過濾、指標方向)
 - **接合點 D** —— run builder 送出 `cycle_id` 與 `module_id`(`run-builder.tsx:94`),兩個下拉都接上了。「這個 sprint 驗了什麼」答得出來(#10)
 - **④ 證據軸收得下測試產不出來的證據** —— `ReleaseEvidence`(`kind` = slo / scan / review / other),出貨閘門把 `failing` 與 `pending` 都列為 blocker。審查簽核與持續 SLO **攔得到**,不再需要靠人工在出貨會議上逐條念(#15)。[B3](#b3) 的四形態表因此全部有歸屬
 
-**仍然缺的一塊:結構化門檻(#17 的後半)。** `TestCaseVersion.case_type` 已經可以區分驗證方式,但 `{metric, operator, threshold, unit}` 在模型與 UI 都不存在,所以形態 1 的 NFR 只能把門檻寫進自由文字,自動判定與趨勢圖都做不到。backlog 一度把 #17 整條標成已完成,2026-08-04 查核後降回 PARTIAL。
+**#17 的後半已落地一半(2026-08-05)。** `TestCaseVersion` 現在有 `threshold_metric` / `threshold_operator`(lt / lte / gt / gte)/ `threshold_value`(Decimal)/ `threshold_unit` 四個欄位,REST、CLI(`--threshold-*`)與 MCP 都收,改門檻等於發新版本。三者(metric / operator / value)必須同時給或同時不給——半條門檻不是比較弱的門檻,而是讀不出來的門檻;unit 可留空,因為比例與計數本來就沒有單位。
 
-> 前兩條都曾經以「缺口」的身分寫在這裡,而且都在程式修好之後才被發現文件沒跟上;#17 則相反,是程式沒做完而文件先標了完成。兩個方向的漂移都出現過,[A5](#a5) 的三處回寫規則存在的理由就是這個。
+**仍然缺的是判定與趨勢。** 門檻現在是數字了,但**沒有任何東西拿結果去比對它**:`TestResult` 不帶實測值,pass / fail 仍然是呼叫端的斷言,趨勢圖也還不存在。這是刻意的取捨——自動判定會改變 result 的語意(目前狀態由呼叫端斷言),牽動 CI ingestion 與出貨閘門,範圍比「把門檻存成數字」大一個量級。所以 #17 仍是 PARTIAL,但缺的那一塊換了:從「數字沒地方放」變成「沒人拿數字去比」。
+
+> 前兩條都曾經以「缺口」的身分寫在這裡,而且都在程式修好之後才被發現文件沒跟上;#17 則相反,是程式沒做完而文件先標了完成。兩個方向的漂移都出現過,[A5](#a5) 的三處回寫規則存在的理由就是這個。這次收斂時同樣不要把 #17 標成 DONE——落地的是儲存,不是判定。
 
 </details>
 
@@ -575,7 +577,18 @@ Test case: NFR-PERF-001 訂單歷程查詢 P95 < 2s
   Then    P95 回應時間 < 2000ms
 ```
 
-**門檻要結構化為 `{metric, operator, threshold, unit}`,量測值為 `{measured, unit}`。** 塞在自由文字裡就畫不出趨勢、也無法自動判定。欄位已是 `JSONField`,寫得進去——但**目前 UI 只當純文字顯示**(缺口 #17),趨勢圖尚未存在。現在就用結構化格式寫,#17 落地時資料直接可用。
+**門檻不要再寫進自由文字。** `TestCaseVersion` 有四個專用欄位:
+
+| 欄位                 | 說明                                                                                       | 例                     |
+| -------------------- | ------------------------------------------------------------------------------------------ | ---------------------- |
+| `threshold_metric`   | 量的是什麼,用專案自己的話                                                                  | `checkout P95 latency` |
+| `threshold_operator` | `lt` / `lte` / `gt` / `gte`(拼字不用符號,`<` 在 query string 與 JSON 之間某一跳會需要跳脫) | `lt`                   |
+| `threshold_value`    | 判定用的數字(Decimal)                                                                      | `2`                    |
+| `threshold_unit`     | 選填,比例與計數沒有單位                                                                    | `s`                    |
+
+metric / operator / value 三者同時給或同時不給,API 會擋下只給一半的門檻。改門檻等於改契約,會發新版本。
+
+**量測值仍然沒有欄位。** `TestResult` 不帶 `{measured, unit}`,所以沒有任何東西會拿結果去比對門檻——pass / fail 依然是呼叫端的斷言,趨勢圖也還不存在(#17 剩下的部分)。門檻先變成數字,是為了讓判定與趨勢**有東西可比**,不是已經在比。
 
 **DoR:一個 Story 不算 ready,除非至少連結一個 happy path 與一個 unhappy path 的契約。** 要跳過需要人類(通常 PM)明確同意並記錄理由,agent 不可自行放行。
 

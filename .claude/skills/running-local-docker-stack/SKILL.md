@@ -104,45 +104,66 @@ docker compose -f $M/docker-compose-test.yml -p plane-merged-test --project-dire
 docker run --rm -v "$M/apps/api/plane/db/migrations:/m" alpine chown -R $(id -u):$(id -g) /m
 ```
 
-Then check the graph has one leaf: `manage.py showmigrations db`. Two migrations sharing a number — which happens whenever a branch is cut before another one lands — makes Django refuse to run *any* migration, and the error names neither file helpfully.
+Then check the graph has one leaf: `manage.py showmigrations db`. Two migrations sharing a number — which happens whenever a branch is cut before another one lands — makes Django refuse to run _any_ migration, and the error names neither file helpfully.
 
 Two ways out, and picking the wrong one causes an outage:
 
-| Has the migration been applied anywhere you don't control? | Do this |
-|---|---|
-| No — only your machine, nobody has pulled it | **Renumber** your migration and repoint its `dependencies`. Keeps the chain linear. |
-| Yes — a colleague's DB, staging, production | **`makemigrations --merge`**. Writes a migration whose only content is `dependencies = [both leaves]`. |
+| Has the migration been applied anywhere you don't control? | Do this                                                                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| No — only your machine, nobody has pulled it               | **Renumber** your migration and repoint its `dependencies`. Keeps the chain linear.                    |
+| Yes — a colleague's DB, staging, production                | **`makemigrations --merge`**. Writes a migration whose only content is `dependencies = [both leaves]`. |
 
 Renaming a migration that is already recorded elsewhere makes Django see it as unapplied and re-run it — `column already exists`, and someone has to `--fake` it by hand. Renumbering also leaves orphan rows in `django_migrations` on any database that recorded the old name, including your own: after renumbering, delete them (match recorded names against files on disk; do not delete by memory) or `showmigrations` keeps listing migrations that no longer exist.
 
 Rule of thumb: **repoint before you push, merge migration after.**
 
+### 6. Seed a project to look at
+
+A freshly migrated instance has no data, and every panel renders its empty state. Sign up (first
+account becomes instance admin), create a workspace, then:
+
+```bash
+docker compose exec api python manage.py seed_testing_demo --workspace <slug>       # DEMO
+docker compose exec api python manage.py seed_ai_software_demo --workspace <slug>   # AIDEMO
+```
+
+`DEMO` is the one to use for process, states, coverage and the Overview; `AIDEMO` for custom-field
+kinds and evidence attachments (add `--skip-attachments` if MinIO is not reachable). Re-running
+needs `--force`, which **deletes** the existing project of that identifier along with the
+workspace-level initiative and view the seed owns — never against a project someone has edited by
+hand. Details: `.agents/skills/plane-qa/references/demo-data.md`.
+
+A seeded project only ever holds what the seed held the day it ran; after pulling changes under
+`apps/api/plane/testing/demo/`, re-seed rather than wondering why the docs describe rows you cannot
+find.
+
 ## Quick Reference
 
-| What | Where |
-|---|---|
-| App / login | http://localhost:8787 |
-| Instance admin | http://localhost:8787/god-mode |
-| Public spaces | http://localhost:8787/spaces |
-| API | http://localhost:8787/api |
-| Stop / start / logs | `docker compose stop` / `up -d` / `logs -f api` |
-| Backend tests | `docker-compose-test.yml` with `-p plane-merged-test` (step 4) |
-| Frontend checks | `pnpm --filter web run check:types` / `run test`; `pnpm --filter @plane/i18n run sync:check` |
-| First-time account | First signup becomes instance admin |
+| What                | Where                                                                                        |
+| ------------------- | -------------------------------------------------------------------------------------------- |
+| App / login         | http://localhost:8787                                                                        |
+| Instance admin      | http://localhost:8787/god-mode                                                               |
+| Public spaces       | http://localhost:8787/spaces                                                                 |
+| API                 | http://localhost:8787/api                                                                    |
+| Seed demo data      | `docker compose exec api python manage.py seed_testing_demo --workspace <slug>` (step 6)     |
+| Stop / start / logs | `docker compose stop` / `up -d` / `logs -f api`                                              |
+| Backend tests       | `docker-compose-test.yml` with `-p plane-merged-test` (step 4)                               |
+| Frontend checks     | `pnpm --filter web run check:types` / `run test`; `pnpm --filter @plane/i18n run sync:check` |
+| First-time account  | First signup becomes instance admin                                                          |
 
 Changing a `packages/*` type or service needs `pnpm --filter @plane/types run build` (and `@plane/services`) before `check:types` sees it — the web app imports the built `dist`, so a source-only edit typechecks against a stale copy.
 
 ## Common Mistakes
 
-| Symptom | Cause → Fix |
-|---|---|
-| `proxy` container `Restarting`, log says "server block without any key" | `SITE_ADDRESS` missing in `.env` or compose config → step 1 |
-| `plane-live` `Restarting`, log says "Invalid environment variables" | `apps/api/.env` missing `LIVE_SERVER_SECRET_KEY` or `REDIS_URL` → step 1 |
-| `port is already allocated` on 8000/5432 | Used `docker-compose-local.yml` → use full stack instead |
-| API 500s / signup mails point to localhost | `apps/api/.env` missing or has default URLs → step 1 |
-| Root `.env` lost 8787/LAN-IP settings | Someone ran `setup.sh` → restore the URL/proxy lines in step 1 |
-| `Conflicting migrations detected; multiple leaf nodes` | Two branches numbered a migration the same → renumber if unpushed, `makemigrations --merge` if already applied elsewhere (step 5) |
-| `showmigrations` lists a migration with no file | Left behind by a renumber → delete those `django_migrations` rows, matching recorded names against files on disk |
-| Migration file can't be staged / permission denied | Written as root inside the container → `chown` it back (step 5) |
-| `check:types` fails on a field you just added to `@plane/types` | Web imports the built `dist` → rebuild the package first |
-| Panels render blank with no error | A 5xx the UI swallows into an empty state → `docker compose logs api`, and check `test_endpoint_smoke.py` covers the route |
+| Symptom                                                                 | Cause → Fix                                                                                                                       |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `proxy` container `Restarting`, log says "server block without any key" | `SITE_ADDRESS` missing in `.env` or compose config → step 1                                                                       |
+| `plane-live` `Restarting`, log says "Invalid environment variables"     | `apps/api/.env` missing `LIVE_SERVER_SECRET_KEY` or `REDIS_URL` → step 1                                                          |
+| `port is already allocated` on 8000/5432                                | Used `docker-compose-local.yml` → use full stack instead                                                                          |
+| API 500s / signup mails point to localhost                              | `apps/api/.env` missing or has default URLs → step 1                                                                              |
+| Root `.env` lost 8787/LAN-IP settings                                   | Someone ran `setup.sh` → restore the URL/proxy lines in step 1                                                                    |
+| `Conflicting migrations detected; multiple leaf nodes`                  | Two branches numbered a migration the same → renumber if unpushed, `makemigrations --merge` if already applied elsewhere (step 5) |
+| `showmigrations` lists a migration with no file                         | Left behind by a renumber → delete those `django_migrations` rows, matching recorded names against files on disk                  |
+| Migration file can't be staged / permission denied                      | Written as root inside the container → `chown` it back (step 5)                                                                   |
+| `check:types` fails on a field you just added to `@plane/types`         | Web imports the built `dist` → rebuild the package first                                                                          |
+| Panels render blank with no error                                       | A 5xx the UI swallows into an empty state → `docker compose logs api`, and check `test_endpoint_smoke.py` covers the route        |

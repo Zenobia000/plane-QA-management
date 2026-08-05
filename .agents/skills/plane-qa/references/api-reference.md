@@ -37,7 +37,7 @@ Paths relative to `.../testing/`.
 | ---------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GET              | `capabilities/`                                       | Feature flags (`enabled`, `stage`, capability booleans)                                                                                                                                                                                                                                                         |
 | GET              | `overview/`                                           | Quality dashboard: coverage %, run counts, latest-run status counts, `open_defects`, per-run scorecards (≤10), `release_gate`                                                                                                                                                                                   |
-| GET              | `requirement-coverage/`                               | Per-work-item coverage; multiple linked cases roll up worst-wins: `failed < blocked < open < skipped < passed`                                                                                                                                                                                                  |
+| GET              | `requirement-coverage/`                               | Per-requirement coverage; multiple linked cases roll up worst-wins: `failed < blocked < open < skipped < passed`. **Not one row per work item** — see "Which work items owe a contract"                                                                                                                         |
 | GET/POST         | `folders/`                                            | List / create (`name`, `parent_id?`, `sort_order?`)                                                                                                                                                                                                                                                             |
 | GET/PATCH/DELETE | `folders/{folder_uuid}/`                              | PATCH rejects descendant-cycle moves (400); DELETE only if empty — no child folders and no non-archived cases (409 otherwise; empty it by moving cases to another folder via case PATCH `folder_id`, or archiving them, and deleting subfolders first)                                                          |
 | GET/POST         | `test-cases/`                                         | List (filters `search`, `folder_id`, `work_item_id`; opt-in cursor pagination `per_page` ≤200, default 50) / create (`title` required, `folder_id?`, `priority?`, `steps?` = `[{action, expected_result}]`, `preconditions?`, `tags?`)                                                                          |
@@ -59,6 +59,25 @@ Paths relative to `.../testing/`.
 
 The search syntax is a field-query DSL, not SQL. Unknown fields are rejected; arbitrary database statements are never executed. Example: `type:test_case priority:high tag:smoke "card payment"`.
 
+### Write a case the way the editor reads it back
+
+Storage is unchanged — `preconditions` plus ordered `(action, expected_result)` pairs — and it stays
+that way because the execution workspace, the CSV export and the auto-built defect description all
+read the three parts separately. What changed is the web editor: a case is now written and shown as
+one Gherkin block, mapped `Given` → `preconditions`, each `When` → an `action`, the `Then` that
+follows → that step's `expected_result`, with `And`/`But` and bare lines continuing whatever came
+last.
+
+Nothing about the payload changes, but a case authored over the API is displayed through that
+mapping, so shape it to survive the round trip:
+
+- Put setup in `preconditions`, not in the first step's `action` — it renders as `Given`.
+- One action per step. Two actions crammed into one `action` come back as `When … And …`, which
+  reads as one step with two halves rather than two steps.
+- Multi-line values are fine: the second and later lines render as `And`.
+- An `action` with an empty `expected_result` renders a `When` with no `Then`, which reads as an
+  unfinished case.
+
 ## PM planning endpoints (upstream Plane, same `/api/v1` tree, X-API-Key)
 
 Relative to `/api/v1/workspaces/{slug}/projects/{project_uuid}/` (outside `testing/`):
@@ -71,8 +90,22 @@ Relative to `/api/v1/workspaces/{slug}/projects/{project_uuid}/` (outside `testi
 | POST                        | `cycles/{uuid}/archive/`                                     | Archive a cycle                                                                                                                                                                   |
 | GET/POST · GET/PATCH/DELETE | `modules/` · `modules/{uuid}/`                               | Epics/capabilities                                                                                                                                                                |
 | GET/POST · DELETE           | `modules/{module_uuid}/module-issues/` · `.../{issue_uuid}/` | Add work items to a module                                                                                                                                                        |
-| GET/POST                    | `work-items/`, `labels/`, `states/`, `members/`              | Work items (fields incl. `start_date` ≤ `target_date`, `assignees` must be project members, `labels`), plus supporting lookups                                                    |
+| GET/POST                    | `work-items/`, `labels/`, `states/`, `members/`              | Work items (fields incl. `start_date` ≤ `target_date`, `assignees` must be project members, `labels`, `requirement_kind`), plus supporting lookups                                |
 | GET/POST · GET/PATCH/DELETE | `views/` · `views/{uuid}/`                                   | Saved views. Send `filters`; `query` is compiled from it server-side and a supplied one is ignored. PATCH on a locked view returns 409; DELETE requires ownership (403 otherwise) |
+
+### States: resolve by name, and expect more than one per group
+
+A project's states are data, not an enum, and a project seeded with the SDLC set carries 14 of them
+— `Planning`, `In Design`, `In progress`, `In developing`, `PR Reviewing`, `In Diversity Testing`,
+`PM Retest`, `Pending` and `Wait to Release` all share the `started` group. Code that maps group →
+state silently keeps whichever row the queryset yielded last, so resolve the **name** from `states/`
+and pass the UUID.
+
+The group still decides four things, which is why the mapping is not cosmetic: coverage treats
+every group except `backlog`/`cancelled` as owing a contract, the release gate counts a defect open
+until its group is `completed` or `cancelled` (so a defect sitting in `Wait to Release` still
+blocks), `completed_at` is stamped on entry to `completed`, and cycle progress counts
+`completed + cancelled` as delivered.
 
 ### Workspace-scoped views
 
@@ -90,14 +123,14 @@ Pages have no public endpoints. Their content is a Yjs CRDT document, so an HTML
 
 These are native to this fork's `/api/v1/` tree; do not call Plane commercial endpoints for them.
 
-| Method                      | Path                                                                                          | Scope and purpose                                                                                      |
-| --------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------ | ---- | ------- | ------ | ------------ | ------------------------------------------- |
-| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/work-item-types/` · `.../work-item-types/{type_uuid}/`                    | Workspace type definitions. POST/PATCH/DELETE requires an active workspace Admin or Member.            |
-| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/projects/{project_uuid}/work-item-types/` · `.../{project_type_uuid}/`    | Enable/order/default a workspace type in one project. A Work Item may use only an enabled active type. |
-| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/projects/{project_uuid}/work-item-properties/` · `.../{property_uuid}/`   | Project custom-property definitions. `kind` is `text                                                   | number | date | boolean | select | multi_select | url`; options require unique stable values. |
-| GET · PUT/DELETE            | `.../work-items/{issue_uuid}/properties/` · `.../properties/{property_uuid}/`                 | Read, set, or clear a typed custom value. Property and work item must be in the same project.          |
-| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/projects/{project_uuid}/milestones/` · `.../milestones/{milestone_uuid}/` | Project delivery checkpoints. A Work Item `milestone` must be from its own project.                    |
-| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/initiatives/` · `.../initiatives/{initiative_uuid}/`                      | Workspace strategic outcomes, with optional same-workspace `project_ids`.                              |
+| Method                      | Path                                                                                          | Scope and purpose                                                                                                                                                      |
+| --------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---- | ------- | ------ | ------------ | ------------------------------------------- |
+| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/work-item-types/` · `.../work-item-types/{type_uuid}/`                    | Workspace type definitions: `name`, `level`, `is_epic`, `is_default`, `is_active`, `needs_acceptance`. POST/PATCH/DELETE requires an active workspace Admin or Member. |
+| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/projects/{project_uuid}/work-item-types/` · `.../{project_type_uuid}/`    | Enable/order/default a workspace type in one project. A Work Item may use only an enabled active type.                                                                 |
+| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/projects/{project_uuid}/work-item-properties/` · `.../{property_uuid}/`   | Project custom-property definitions. `kind` is `text                                                                                                                   | number | date | boolean | select | multi_select | url`; options require unique stable values. |
+| GET · PUT/DELETE            | `.../work-items/{issue_uuid}/properties/` · `.../properties/{property_uuid}/`                 | Read, set, or clear a typed custom value. Property and work item must be in the same project.                                                                          |
+| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/projects/{project_uuid}/milestones/` · `.../milestones/{milestone_uuid}/` | Project delivery checkpoints. A Work Item `milestone` must be from its own project.                                                                                    |
+| GET/POST · GET/PATCH/DELETE | `/workspaces/{slug}/initiatives/` · `.../initiatives/{initiative_uuid}/`                      | Workspace strategic outcomes, with optional same-workspace `project_ids`.                                                                                              |
 
 Create or update a Work Item with custom values using `properties`, keyed by property UUID:
 
@@ -115,33 +148,45 @@ Create or update a Work Item with custom values using `properties`, keyed by pro
 
 Required active properties with no default must be present on Work Item creation. `select` accepts one option value; `multi_select` accepts a unique list of option values. Use `null` only for non-required properties.
 
+### Parent and child levels
+
+`IssueType.level` ranks a type by breadth, and **lower is broader**: Epic 0 → Feature 1 → Story 2
+(Bug also 2) → Task 3. Work-item create/update refuses a parent narrower than its child
+(`parent.level <= child.level`), so an Epic filed under a Task is a 400 naming both types.
+
+The rule is deliberately not strict — a Bug (2) parented to the Story (2) it was found in is a real
+modelling choice, not an inversion — and untyped work items are exempt, so a project that never
+switched types on keeps saving. Upstream Plane numbers its two default types the other way round
+(Task 0, Epic 1); this fork follows the seeded data, so do not carry an upstream example's numbers
+across.
+
 ## Project Overview — app tree only, no API key reaches it
 
 The overview is this fork's product war room: release readiness, progress, milestones, a noticeboard, intake grouped by customer, and the overdue/urgent shortlist. **Every one of these routes exists only under `/api/workspaces/...` with session auth.** There is no `/api/v1` mirror and no MCP tool. An API key gets 404, which reads like a missing project rather than a missing tree — check here before debugging permissions.
 
 Relative to `/api/workspaces/{slug}/projects/{project_uuid}/`:
 
-| Method                    | Path                       | Purpose                                                                                                                                                                    |
-| ------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET                       | `overview/`                | Progress, links, newest 10 updates + `updates_total`, milestone summaries — one request                                                                                    |
-| GET                       | `progress/`                | Work-item counts by state group; `cancelled` is out of scope, not outstanding, so it leaves the denominator                                                                |
-| GET                       | `activity/`                | `IssueActivity` for the project, cursor-paginated 20 at a time                                                                                                             |
-| GET/POST · PATCH/DELETE   | `updates/` · `updates/{uuid}/` | The noticeboard. `?entity_name=work_item&entity_identifier=` targets an item; `?parent=` fetches replies; `?label=` filters by topic. PATCH/DELETE need author or ADMIN |
-| GET                       | `frontline/`               | Intake grouped by the project's chosen dimension. `dimension: null` when none is marked — the signal to render nothing                                                      |
-| GET                       | `attention/`               | Overdue before urgent, oldest miss first, ≤5, with `total_overdue`/`total_urgent` saying what the cap held back                                                             |
-| GET/POST · PATCH/DELETE   | `milestones/`, `links/`    | Also on `/api/v1` (milestones under `portfolio`, links per work item)                                                                                                      |
+| Method                  | Path                           | Purpose                                                                                                                                                                 |
+| ----------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET                     | `overview/`                    | Progress, links, newest 10 updates + `updates_total`, milestone summaries — one request                                                                                 |
+| GET                     | `progress/`                    | Work-item counts by state group; `cancelled` is out of scope, not outstanding, so it leaves the denominator                                                             |
+| GET                     | `activity/`                    | `IssueActivity` for the project, cursor-paginated 20 at a time                                                                                                          |
+| GET/POST · PATCH/DELETE | `updates/` · `updates/{uuid}/` | The noticeboard. `?entity_name=work_item&entity_identifier=` targets an item; `?parent=` fetches replies; `?label=` filters by topic. PATCH/DELETE need author or ADMIN |
+| GET                     | `frontline/`                   | Intake grouped by the project's chosen dimension. `dimension: null` when none is marked — the signal to render nothing                                                  |
+| GET                     | `attention/`                   | Overdue before urgent, oldest miss first, ≤5, with `total_overdue`/`total_urgent` saying what the cap held back                                                         |
+| GET/POST · PATCH/DELETE | `milestones/`, `links/`        | Also on `/api/v1` (milestones under `portfolio`, links per work item)                                                                                                   |
 
 ### What an agent can still do
 
 Not reaching the panels does not mean not feeding them. Everything they read from is on `/api/v1`:
 
-| To make this appear                  | Write this over `/api/v1`                                                                             |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| A row in the frontline panel         | `intake-issues/` for the report, then `work-items/{uuid}/properties/{property_uuid}/` to attribute it |
-| A new frontline grouping             | `work-item-properties/` with a `select`/`multi_select` — a human marks it as the dimension in settings |
-| An item in the attention panel       | a `work-items/` `target_date` in the past, or `priority: urgent`, in a live state                     |
-| A noticeboard topic                  | `labels/` — the panel renders whatever the project has                                                |
-| Movement in progress / release gate  | state transitions and test results, as usual                                                          |
+| To make this appear                 | Write this over `/api/v1`                                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| A row in the frontline panel        | `intake-issues/` for the report, then `work-items/{uuid}/properties/{property_uuid}/` to attribute it  |
+| A new frontline grouping            | `work-item-properties/` with a `select`/`multi_select` — a human marks it as the dimension in settings |
+| An item in the attention panel      | a `work-items/` `target_date` in the past, or `priority: urgent`, in a live state                      |
+| A noticeboard topic                 | `labels/` — the panel renders whatever the project has                                                 |
+| Movement in progress / release gate | state transitions and test results, as usual                                                           |
 
 The one thing an agent cannot do is post to the noticeboard — `updates/` has no `/api/v1` route at all. Treat that as a property to preserve rather than a gap to close: an announcement is a person telling other people something, and a board that fills itself with generated status is the failure mode this surface was built to replace.
 
@@ -182,3 +227,70 @@ Every ≥400 response uses a stable envelope and echoes `X-Request-ID` (send you
 ## Release gate
 
 `overview.release_gate.ready` = a latest run exists AND zero blockers, where blockers = failed/blocked/open cases in the latest run + open defects. A defect is "open" while its issue's state **group** is anything other than `completed` or `cancelled` (state groups come from `states/`). Report blockers, coverage, failures, and open defects together — never infer readiness from one number.
+
+## Which work items owe a contract
+
+`requirement-coverage/` does not return one row per work item, and the rows it does return are not
+all in the totals. Two separate decisions, both in `plane/app/views/testing/report.py`, and each row
+carries the flag that records them — read the flags rather than re-deriving the rules.
+
+**Which work items get a row**
+
+1. **Only types with `needs_acceptance` produce one.** An implementation task is how something gets
+   built, not something the product promises; the story above it carries the promise. The shipped
+   default is `true` for Epic/Feature/Story and `false` for Task/Bug. Their linked cases still roll
+   up — the walk down the hierarchy does not care whether a child earns a row of its own.
+2. **Work items with no type at all are kept.** A project that never adopted types would otherwise
+   report nothing, and silence is the one answer a coverage report must not give.
+3. **Defects never get one.** A separate rule from #1, and both are needed: the type says what a row
+   is _for_, the link says where it _came from_, and a defect filed under some other type is
+   evidence rather than a promise.
+
+**Which rows the totals use** — `counts_toward_coverage && requires_contract`
+
+- `counts_toward_coverage` is `false` for a row that summarises other counted rows, at any depth. An
+  epic is covered exactly when its stories are; counting it again is a second vote for one decision.
+  The row stays in the list so the tree still shows where a gap sits, and its own directly-linked
+  contracts still count.
+- `requires_contract` is `false` in the `backlog` and `cancelled` state groups. Nobody has scheduled
+  the first and the second will never ship. Definition of Ready asks for the contract when work is
+  scheduled, so the first state that owes one is whatever `unstarted` state the project schedules
+  into.
+
+An uncovered requirement worth reporting is therefore a row with both flags true and
+`covered: false` — that set is exactly what the overview counts as in-scope and uncovered.
+
+`needs_acceptance` is a workspace-level field on the type
+(`PATCH /workspaces/{slug}/work-item-types/{uuid}/`, both trees). Flipping it changes what every
+project in the workspace counts, so treat it as a configuration decision, not a way to move a
+number.
+
+## Requirement nature (`requirement_kind`)
+
+`Issue.requirement_kind` carries whether a requirement is functional or a quality constraint:
+`functional` | `quality` | `none`, defaulting to `none`.
+
+Unusually, the public tree is the _only_ way in. `/api/v1` `work-items/` reads and writes it like
+any other field, while the app tree's serializer omits it from its field list — so the web UI can
+neither show nor set it, and neither the CLI nor MCP has a dedicated flag. Outside the seed and
+`converge_work_item_types`, an API-key caller is the only thing that sets it:
+
+```bash
+curl -X PATCH "$BASE/work-items/<issue_uuid>/" -H "X-API-Key: $PLANE_API_KEY" \
+  -H "Content-Type: application/json" -d '{"requirement_kind": "quality"}'
+# CLI equivalent: plane-qa issue update --issue QA-12 --body '{"requirement_kind":"quality"}'
+```
+
+Two things follow, and both are mistakes this field exists to prevent:
+
+- **Do not create a work-item type for it.** Type already carries breadth through `level`; adding
+  nature multiplies the two axes, and one workspace here reached nine types that way before
+  `converge_work_item_types` collapsed them back.
+- **Do not create a custom property for it.** A property is defined per project, so every new
+  project would have to declare it before the question could be asked at all, and no report
+  spanning projects could ask it.
+
+`none` is not `null`: a Task implements a requirement and a Bug reports a broken one, so neither
+_is_ one. `null` would read as "not yet classified", which is a different claim. Nothing in the
+coverage report reads this field today — `needs_acceptance` decides who owes a contract. It answers
+_what kind of promise this is_, not _whether one is owed_.

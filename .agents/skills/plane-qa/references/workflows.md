@@ -75,8 +75,22 @@ plane-qa issue comment --issue QA-34 --body "<p>Deployed to staging</p>"
 
 Create configuration before creating dependent Work Items. A type is workspace-wide but must be enabled for the current project; properties and milestones are project-scoped; initiatives are workspace-scoped.
 
+**List before you create.** The product ships five work-item types — Epic (level 0, `is_epic`),
+Feature (1), Story (2), Bug (2), Task (3) — and a workspace draws from one shared pool, so a type
+typed in by hand becomes a second name for a tier that already exists. That happened here: one
+workspace reached nine types and needed `converge_work_item_types` to collapse them again. Run
+`plane-qa type list` first, and add a type only when the breakdown genuinely has a level these five
+do not cover.
+
+Requirement _nature_ is never a type and never a property — it is `Issue.requirement_kind`
+(`functional` / `quality` / `none`). A type carries breadth through `level`; making it carry nature
+as well multiplies the two axes, which is exactly how that workspace grew to nine.
+
 ```bash
-plane-qa type create --name "Test case" --description "A testable requirement"
+plane-qa type list                        # what the workspace already has
+plane-qa issue create --name "退貨金額必須在 3 秒內回寫金流" \
+  --body '{"requirement_kind":"quality"}'  # nature is a field on the item, not a new type
+
 plane-qa property create --name "Browser" --kind select \
   --options '[{"label":"Chrome","value":"chrome"},{"label":"Firefox","value":"firefox"}]'
 plane-qa property create --name "Build" --kind text --is-required
@@ -87,6 +101,11 @@ plane-qa issue create --name "Validate checkout" \
 ```
 
 For MCP, use `create_work_item_type`, `create_work_item_property`, `create_milestone`, and `create_initiative`. To set a value after issue creation, use `set_work_item_property_value`. Never pass a type, property, milestone, or project UUID across project/workspace boundaries; the API rejects it.
+
+If you do create a type for implementation work, set `needs_acceptance: false` on it — MCP's
+`create_work_item_type` has no such input and the field defaults to `true`, so the type starts
+demanding an acceptance contract and every item of it shows up as an uncovered requirement. See
+"Two fields MCP cannot reach" in [tooling.md](tooling.md).
 
 ## 7. Field report → attributed backlog item
 
@@ -111,8 +130,23 @@ Rules that matter here:
 
 - **Intake, not a work item.** Anything originating outside the team lands `pending` and stays out of the plan until a human accepts it. Creating it directly as a work item skips the triage decision.
 - **A multi-select value is a list**, and a report two accounts hit should carry both — the panel shows it under each heading, which is the honest rendering.
-- **Accepting is a scheduling commitment.** `PATCH intake-issues/{issue_uuid}/ {"status": 1}` is ADMIN-only and keyed by the *work item's* id, not the intake row's. Propose it; perform it only when asked.
+- **Accepting is a scheduling commitment.** `PATCH intake-issues/{issue_uuid}/ {"status": 1}` is ADMIN-only and keyed by the _work item's_ id, not the intake row's. Propose it; perform it only when asked.
 - **The assembled view is browser-only.** You are writing what the Project Overview reads; you cannot read it back over `/api/v1`. Report what you wrote, not what the panel now shows.
+
+## 8. Stand up data to work against
+
+An empty instance is a bad place to check a report, and a customer's project is a worse one. Two
+management commands build a fully connected project — breakdown, schedule, contracts, executed
+runs, a defect loop, field reports:
+
+```bash
+docker compose exec api python manage.py seed_testing_demo --workspace <slug>       # DEMO
+docker compose exec api python manage.py seed_ai_software_demo --workspace <slug>   # AIDEMO
+```
+
+`--force` re-seeds by **deleting** the existing project of that identifier, plus the workspace-level
+initiative and view the seed owns. Never point it at a project holding hand-written data. Full
+usage, contents, and the repair commands: [demo-data.md](demo-data.md).
 
 ## Failure handling
 

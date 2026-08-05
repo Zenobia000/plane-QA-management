@@ -33,4 +33,22 @@ Prereq (once): `./setup.sh` — generates `apps/api/.env` from `.env.example`.
 - Subset: `docker compose -f docker-compose-test.yml run --rm api-tests pytest -m unit`
 - Teardown: `docker compose -f docker-compose-test.yml down -v`
 
-See `apps/api/tests/RUNNING_TESTS.md` for the full walkthrough and troubleshooting; see `apps/api/tests/TESTING_GUIDE.md` for test conventions and fixtures.
+See `apps/api/tests/RUNNING_TESTS.md` for the full walkthrough and troubleshooting; see `apps/api/plane/tests/TESTING_GUIDE.md` for test conventions and fixtures.
+
+## The QA platform itself
+
+This fork adds a test-management domain and a delivery layer (work-item types and properties,
+milestones, initiatives, intake, the Project Overview) on top of Plane. Before operating or
+modifying any of it, read `.agents/skills/plane-qa/SKILL.md` — the single source of truth, which
+Claude Code reaches through `.claude/skills/operating-plane-qa/`. Its references cover the REST API,
+the SDK/CLI/MCP tooling, canonical workflows, the codebase map, and the demo data.
+
+Two commands build a whole project to work against, rather than testing against an empty instance:
+
+```bash
+docker compose exec api python manage.py seed_testing_demo --workspace <slug>       # DEMO
+docker compose exec api python manage.py seed_ai_software_demo --workspace <slug>   # AIDEMO
+```
+
+`--force` re-seeds by deleting the existing project of that identifier. See
+`.agents/skills/plane-qa/references/demo-data.md`.

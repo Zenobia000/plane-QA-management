@@ -33,6 +33,24 @@ Before creating work items that need a custom type or required property, create 
 
 Type, property, milestone, and project IDs are scope-sensitive. Read or resolve them first; never reuse an ID from another project or workspace.
 
+## Know the model before you add to it
+
+Four facts decide whether a write lands where the product will read it. All four have been got
+wrong in this codebase before, and each mistake is still visible in a repair command or an ADR.
+
+- **The breakdown ships with five types** — Epic (level 0), Feature (1), Story (2), Bug (2),
+  Task (3) — and types are workspace-wide. `list` before you create; a hand-typed name becomes a
+  second vocabulary for a tier that already exists.
+- **Requirement nature is `Issue.requirement_kind`** (`functional` / `quality` / `none`), not a
+  type and not a custom property. A type already carries breadth through `level`, so making it
+  carry nature multiplies the two axes; a property is per-project, so no cross-project report could
+  ask the question. It is writable on `/api/v1` only — no CLI flag, no MCP input, no UI control.
+- **`IssueType.needs_acceptance` decides who owes a test.** Types created through MCP default to
+  `true`, so a type meant for implementation work will demand acceptance contracts until it is
+  patched to `false`.
+- **States are data, and a project may hold 14 of them** with nine sharing the `started` group.
+  Resolve a state by name; a lookup keyed by group returns whichever row came last.
+
 ## Read the project's vocabulary; do not assume one
 
 No category name is compiled into this product. Announcement topics are the project's own `Label`s, and the frontline panel groups by whichever `WorkItemProperty` a project marked as its dimension — customer for one team, tenant or region for the next. So:
@@ -55,5 +73,8 @@ No category name is compiled into this product. Announcement topics are the proj
 - For exact MCP tool and CLI command mappings, inputs, exit codes, and safety classes, read [tooling.md](references/tooling.md).
 - For PM / QA / product job-to-be-done playbooks (sprint planning, test library design, run execution, field-report triage), read [role-playbooks.md](references/role-playbooks.md).
 - For raw REST endpoints and payloads, read [api-reference.md](references/api-reference.md); for modifying the platform itself, read [codebase-map.md](references/codebase-map.md).
+- For seeding, refreshing, or reading a demo project — and for the repair commands that undo a
+  drifted vocabulary — read [demo-data.md](references/demo-data.md). `--force` re-seeding deletes a
+  project; never point it at one holding hand-written data.
 
 If a write fails, report the stable error category and request identifier. Re-read state before retrying conflicts; do not broaden permissions or bypass confirmation.

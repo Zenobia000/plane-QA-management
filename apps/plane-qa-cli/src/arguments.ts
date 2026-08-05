@@ -78,6 +78,27 @@ export const booleanOption = (options: ParsedArguments["options"], name: string)
   throw new Error(`--${name.replaceAll("_", "-")} must be a boolean.`);
 };
 
+/**
+ * One of a closed set of values, rejected here rather than by the server.
+ *
+ * The server does reject an unknown value, but its error names the field and not the
+ * alternatives, and the likely mistake for a small vocabulary is a near miss -- `NFR` or
+ * `non-functional` for `quality` -- where knowing the three legal spellings is the whole
+ * fix. Returns undefined when absent so callers leave the stored value alone.
+ */
+export const enumOption = <T extends string>(
+  options: ParsedArguments["options"],
+  name: string,
+  allowed: readonly T[]
+): T | undefined => {
+  const value = optionString(options, name);
+  if (value === undefined) return undefined;
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new Error(`--${name.replaceAll("_", "-")} must be one of: ${allowed.join(", ")}.`);
+  }
+  return value as T;
+};
+
 export const commaListOption = (options: ParsedArguments["options"], name: string): string[] =>
   (optionString(options, name) ?? "")
     .split(",")

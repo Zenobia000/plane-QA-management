@@ -29,6 +29,22 @@ export interface State {
   [key: string]: unknown;
 }
 
+/**
+ * Whether a work item states a behaviour the system must have, a quality it must hold to,
+ * or is not a requirement at all -- a task implements one and a bug reports one broken,
+ * so neither *is* one.
+ *
+ * Crosses every level of the breakdown: an epic, a feature and a story can each carry any
+ * of the three. That is why it sits beside the work item type rather than inside it -- the
+ * backend keeps it on `Issue`, not `IssueType`, so that the number of types stays the depth
+ * of the tree instead of depth × nature.
+ *
+ * Declared once here because the CLI and the MCP server both narrow user input against it;
+ * two copies of a closed set drift the moment the backend adds a fourth.
+ */
+export const REQUIREMENT_KINDS = ["none", "functional", "quality"] as const;
+export type RequirementKind = (typeof REQUIREMENT_KINDS)[number];
+
 export interface WorkItem {
   id: string;
   name: string;
@@ -37,6 +53,7 @@ export interface WorkItem {
   state_id?: string;
   priority?: string;
   description_html?: string;
+  requirement_kind?: RequirementKind;
   created_at?: string;
   updated_at?: string;
   [key: string]: unknown;

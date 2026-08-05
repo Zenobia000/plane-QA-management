@@ -120,6 +120,24 @@ describe("Plane QA MCP server", () => {
     );
   });
 
+  it("passes a requirement-kind selection through to the list query", async () => {
+    const listIssues = vi.fn().mockResolvedValue({ results: [] });
+    const connection = await connect({ listIssues });
+    connections.push(connection);
+
+    const response = await connection.client.callTool({
+      name: "issue_list",
+      arguments: { workspace: "acme", project: "QA", requirement_kind: "functional,quality" },
+    });
+
+    expect(response.isError).not.toBe(true);
+    expect(listIssues).toHaveBeenCalledWith(
+      "acme",
+      project.id,
+      expect.objectContaining({ requirement_kind: "functional,quality" })
+    );
+  });
+
   it("carries the requirement classification through create and update", async () => {
     const createIssue = vi.fn().mockResolvedValue({ id: "i1", sequence_id: 1 });
     const updateIssue = vi.fn().mockResolvedValue({ id: "i1", sequence_id: 34 });

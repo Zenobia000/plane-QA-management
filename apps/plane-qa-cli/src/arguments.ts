@@ -99,6 +99,32 @@ export const enumOption = <T extends string>(
   return value as T;
 };
 
+/**
+ * A comma-separated selection from a closed set, returned in the wire form the filter takes.
+ *
+ * Checked for the same reason as `enumOption`, and more urgently: a filter given a value the
+ * server does not recognise matches nothing, so a misspelt kind comes back as an empty list
+ * that reads like a true answer. One bad member fails the whole flag rather than being
+ * dropped, because silently narrowing a union is the same lie in smaller print.
+ */
+export const enumListOption = <T extends string>(
+  options: ParsedArguments["options"],
+  name: string,
+  allowed: readonly T[]
+): string | undefined => {
+  const value = optionString(options, name);
+  if (value === undefined) return undefined;
+  const requested = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const unknown = requested.filter((item) => !(allowed as readonly string[]).includes(item));
+  if (!requested.length || unknown.length) {
+    throw new Error(`--${name.replaceAll("_", "-")} must be a comma-separated selection from: ${allowed.join(", ")}.`);
+  }
+  return requested.join(",");
+};
+
 export const commaListOption = (options: ParsedArguments["options"], name: string): string[] =>
   (optionString(options, name) ?? "")
     .split(",")

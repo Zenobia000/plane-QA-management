@@ -182,6 +182,29 @@ def filter_issue_type(params, issue_filter, method, prefix=""):
     return issue_filter
 
 
+def filter_requirement_kind(params, issue_filter, method, prefix=""):
+    """Functional requirement, quality requirement, or not a requirement at all.
+
+    Unknown values are passed to `__in` rather than dropped, so a request for a kind that
+    does not exist returns nothing. That is the honest answer and the one `priority` already
+    gives; the alternative -- ignoring the parameter -- returns the whole project and reads
+    as "there are no NFRs here" when the truth is "you spelled it wrong". `issue_type` shipped
+    with exactly that bug and the docstring above it exists to record it.
+
+    No "None" spelling, unlike labels or assignees. The field is never null: work items that
+    state no requirement carry `none`, which is a value a caller can ask for by name.
+    """
+    if method == "GET":
+        kinds = [item for item in params.get("requirement_kind").split(",") if item != "null"]
+        if len(kinds) and "" not in kinds:
+            issue_filter[f"{prefix}requirement_kind__in"] = kinds
+    else:
+        requested = params.get("requirement_kind", None)
+        if requested and len(requested) and requested != "null":
+            issue_filter[f"{prefix}requirement_kind__in"] = requested
+    return issue_filter
+
+
 def filter_assignees(params, issue_filter, method, prefix=""):
     if method == "GET":
         assignees = [item for item in params.get("assignees").split(",") if item != "null"]
@@ -556,6 +579,7 @@ def issue_filters(query_params, method, prefix=""):
         "completed_at": filter_completed_at,
         "type": filter_issue_state_type,
         "issue_type": filter_issue_type,
+        "requirement_kind": filter_requirement_kind,
         "epic": filter_epic,
         "project": filter_project,
         "cycle": filter_cycle,

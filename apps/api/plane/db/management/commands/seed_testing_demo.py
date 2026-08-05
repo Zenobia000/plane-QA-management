@@ -3,14 +3,28 @@
 # See the LICENSE file for details.
 
 # Python imports
+from collections import Counter
 from typing import Any
 
 # Django imports
 from django.core.management.base import BaseCommand, CommandError
 
 # Module imports
-from plane.db.models import Project, User, Workspace
+from plane.db.models import (
+    IssueRelation,
+    Project,
+    ReleaseEvidence,
+    TestCaseAutomationLink,
+    TestFolder,
+    User,
+    Workspace,
+)
 from plane.testing import demo
+
+# Backlog to shipped, then the work that left the line. `State.StateGroup` is a set of
+# choices with no inherent order, so a report that wants to read as a progression has to
+# state one.
+STATE_GROUP_ORDER = ("backlog", "unstarted", "started", "completed", "cancelled")
 
 
 class Command(BaseCommand):
@@ -71,6 +85,29 @@ class Command(BaseCommand):
         return owner
 
     @staticmethod
+    def _epics(items):
+        """The epic layer as it was built: how many, and across which state groups.
+
+        Stated as `5 across backlog / unstarted / started / cancelled` while the count and
+        the groups were both literals. Both are facts the run already knows, and the count
+        had been wrong before -- see `_breakdown`.
+        """
+        epics = [issue for issue in items.values() if issue.type and issue.type.is_epic]
+        present = {issue.state.group for issue in epics if issue.state}
+        # Lifecycle order, not alphabetical: this line is read as a progression, and
+        # `backlog / cancelled / started / unstarted` invites the reader to work out that
+        # it is not one.
+        groups = [group for group in STATE_GROUP_ORDER if group in present]
+        return f"{len(epics)} across {' / '.join(groups)}, each with its own window"
+
+    @staticmethod
+    def _relations(project):
+        counts = Counter(
+            IssueRelation.objects.filter(project=project).values_list("relation_type", flat=True)
+        )
+        return ", ".join(f"{count} {name}" for name, count in sorted(counts.items()))
+
+    @staticmethod
     def _breakdown(items):
         """Counted from what was built, not restated from the design.
 
@@ -93,7 +130,7 @@ class Command(BaseCommand):
         write(self.style.SUCCESS(f"Seeded {project.identifier} ({project.id})"))
         write("")
         write("  Classification")
-        write("    types        Epic / Feature / Story")
+        write(f"    types        {' / '.join(result['types'])}")
         write(f"    properties   {', '.join(result['properties'])}")
         write(f"    labels       {', '.join(result['labels'])}")
         write("    estimate     Fibonacci, on stories only")
@@ -101,23 +138,34 @@ class Command(BaseCommand):
         write("  Breakdown and schedule")
         write(f"    initiative   {result['initiative'].name} -> 1 project")
         write(f"    items        {self._breakdown(result['items'])}")
-        write(
-            "    epics        5 across backlog / unstarted / started / cancelled, "
-            "each with its own window"
-        )
+        write(f"    epics        {self._epics(result['items'])}")
         write(f"    milestones   {', '.join(result['milestones'])}")
-        write("    sprints      2026-07B delivered, 2026-08A in flight, one story carried over")
-        write("    relations    2 blocked_by, 2 relates_to")
+        cycles = result["cycles"]
+        write(
+            f"    sprints      {cycles['previous'].name} delivered, "
+            f"{cycles['current'].name} in flight, one story carried over"
+        )
+        write(f"    relations    {self._relations(project)}")
         write("")
         write("  Verification and evidence")
-        write(f"    contracts    {len(result['cases'])} across functional, performance, reliability, security")
-        write("    runs         2, each bound to its cycle")
-        write("    automation   4 contracts mapped to CI by external_id, 1 ingestion receipt")
+        write(
+            f"    contracts    {len(result['cases'])} across "
+            f"{TestFolder.objects.filter(project=project).count()} folders, "
+            "functional through security"
+        )
+        write(f"    runs         {len(result['runs'])}, each bound to its cycle")
+        write(
+            f"    automation   {TestCaseAutomationLink.objects.filter(project=project).count()} "
+            "contracts mapped to CI by external_id, 1 ingestion receipt"
+        )
         write(
             f"    defect loop  {project.identifier}-{result['defect'].sequence_id} "
             "raised from a failure, retest appended beside it"
         )
-        write("    release      5 evidence records for what cannot be tested before shipping")
+        write(
+            f"    release      {ReleaseEvidence.objects.filter(project=project).count()} "
+            "evidence records for what cannot be tested before shipping"
+        )
         write("")
         field = result["frontline"]
         write("  Field and announcements")

@@ -153,13 +153,18 @@ def seed(workspace, owner, identifier):
     # the project, the field reports become work items, and both are only interesting once
     # there is a project for them to be about.
     field = frontline.create_frontline(workspace, project, owner, labels)
-    folders = pages.create_pages(workspace, project, owner)
+    # Named for what it holds. This was `folders` until the page tree arrived and reused
+    # the name, which left the returned "folders" key holding pages and the test folders
+    # unreachable -- a caller asking for folders got the other tree with no error anywhere.
+    page_folders = pages.create_pages(workspace, project, owner)
 
     views = saved_views.create_views(workspace, project, owner, context)
 
     return {
         "project": project,
         "initiative": initiative,
+        "types": types,
+        "cycles": cycles,
         "items": items,
         "labels": labels,
         "properties": properties,
@@ -170,5 +175,5 @@ def seed(workspace, owner, identifier):
         "defect": defect,
         "views": views,
         "frontline": field,
-        "pages": folders,
+        "pages": page_folders,
     }

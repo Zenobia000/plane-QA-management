@@ -13,6 +13,7 @@ The state assertions are the reason this file exists now. Every item is placed b
 project had one state per group.
 """
 
+import re
 from io import StringIO
 
 import pytest
@@ -21,6 +22,9 @@ from django.utils import timezone
 
 from plane.db.models import (
     Cycle,
+    IssueRelation,
+    IssueType,
+    ReleaseEvidence,
     Page,
     EntityUpdate,
     EntityUpdateLabel,
@@ -34,6 +38,10 @@ from plane.db.models import (
     WorkItemProperty,
     WorkItemPropertyValue,
 )
+from plane.db.models import TestCase as Case
+from plane.db.models import TestFolder as Folder
+from plane.db.models import TestCaseAutomationLink as AutomationLink
+from plane.db.models import TestRun as Run
 from plane.db.models.state import SDLC_STATES, StateGroup
 from plane.utils.analytics_plot import burndown_plot
 
@@ -435,3 +443,89 @@ class TestSeededPages:
         reseeded = Project.objects.get(workspace=workspace, identifier="DEMO")
         # Same count, not double: the old tree was removed rather than accumulated beside it.
         assert Page.objects.filter(project_pages__project=reseeded).distinct().count() == before
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+class TestSeedReport:
+    """The summary must be counted from what was built, never restated from the design.
+
+    `_breakdown` already carries that rule in its docstring, having once printed eleven
+    stories against ten that existed. The lines beside it did not follow it: the report
+    announced `types Epic / Feature / Story` while the seed created five types, Bug and
+    Task included, and kept announcing it after `Task` became the fourth level of the
+    hierarchy. A reader checking whether this project models implementation work was told
+    no by the one output they were given.
+
+    These assertions compare the printed line against the rows the same run created, so a
+    literal reintroduced later fails here rather than quietly misdescribing the project.
+    """
+
+    @pytest.fixture
+    def report(self, workspace):
+        out = StringIO()
+        call_command("seed_testing_demo", workspace=workspace.slug, identifier="DEMO", stdout=out)
+        return out.getvalue()
+
+    @staticmethod
+    def _line(report, label):
+        for raw in report.splitlines():
+            if raw.startswith(f"    {label} "):
+                return raw
+        raise AssertionError(f"the report has no {label!r} line:\n{report}")
+
+    @staticmethod
+    def _numbers(line):
+        return [int(token) for token in re.findall(r"\d+", line)]
+
+    def test_the_types_line_names_every_type_the_seed_enabled(self, report, workspace):
+        project = Project.objects.get(workspace=workspace, identifier="DEMO")
+        enabled = set(
+            IssueType.objects.filter(project_issue_types__project=project).values_list("name", flat=True)
+        )
+        assert enabled == {"Epic", "Feature", "Story", "Bug", "Task"}
+
+        line = self._line(report, "types")
+        assert {name for name in enabled if name in line} == enabled, line
+
+    def test_the_epic_count_is_the_epics_that_exist(self, report, workspace):
+        project = Project.objects.get(workspace=workspace, identifier="DEMO")
+        epics = Issue.issue_objects.filter(project=project, type__is_epic=True).count()
+
+        assert self._numbers(self._line(report, "epics"))[0] == epics
+
+    def test_the_epic_state_groups_read_as_a_lifecycle(self, report):
+        """Alphabetical order puts `cancelled` second, which reads as a stage of progress."""
+        line = self._line(report, "epics")
+        positions = [line.find(group) for group in ("backlog", "unstarted", "started", "cancelled")]
+        assert all(position >= 0 for position in positions), line
+        assert positions == sorted(positions), line
+
+    def test_the_contract_counts_match_the_library(self, report, workspace):
+        project = Project.objects.get(workspace=workspace, identifier="DEMO")
+        cases, folders = self._numbers(self._line(report, "contracts"))[:2]
+
+        assert cases == Case.objects.filter(project=project).count()
+        assert folders == Folder.objects.filter(project=project).count()
+
+    def test_the_evidence_counts_match_the_rows(self, report, workspace):
+        project = Project.objects.get(workspace=workspace, identifier="DEMO")
+
+        assert self._numbers(self._line(report, "runs"))[0] == Run.objects.filter(project=project).count()
+        assert (
+            self._numbers(self._line(report, "automation"))[0]
+            == AutomationLink.objects.filter(project=project).count()
+        )
+        assert (
+            self._numbers(self._line(report, "release"))[0]
+            == ReleaseEvidence.objects.filter(project=project).count()
+        )
+
+    def test_the_relation_counts_match_the_edges(self, report, workspace):
+        project = Project.objects.get(workspace=workspace, identifier="DEMO")
+        relations = IssueRelation.objects.filter(project=project)
+        line = self._line(report, "relations")
+
+        for relation_type in ("blocked_by", "relates_to"):
+            count = relations.filter(relation_type=relation_type).count()
+            assert f"{count} {relation_type}" in line, line

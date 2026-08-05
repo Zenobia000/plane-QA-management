@@ -117,6 +117,7 @@ def issue_on_results(
         "project_id",
         "parent_id",
         "type_id",
+        "requirement_kind",
         "cycle_id",
         "sub_issues_count",
         "created_at",

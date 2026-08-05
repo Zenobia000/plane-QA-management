@@ -267,6 +267,15 @@
       "click_to_downvote": "Clic pentru a vota negativ",
       "click_to_view_upvotes": "Clic pentru a vedea voturile pozitive",
       "click_to_view_downvotes": "Clic pentru a vedea voturile negative"
+    },
+    "requirement_kind": {
+      "label": "Tip de cerință",
+      "none": "Nu este o cerință",
+      "none_hint": "Muncă de implementare sau de remediere",
+      "functional": "Funcțională",
+      "functional_hint": "Un comportament pe care sistemul trebuie să îl aibă",
+      "quality": "Calitate",
+      "quality_hint": "Cât de bine trebuie să funcționeze sistemul"
     }
   },
   "sub_work_item": {

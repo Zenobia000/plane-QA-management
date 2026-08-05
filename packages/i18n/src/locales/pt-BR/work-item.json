@@ -267,6 +267,15 @@
       "click_to_downvote": "Clique para votar contra",
       "click_to_view_upvotes": "Clique para ver os votos a favor",
       "click_to_view_downvotes": "Clique para ver os votos contra"
+    },
+    "requirement_kind": {
+      "label": "Tipo de requisito",
+      "none": "Não é um requisito",
+      "none_hint": "Trabalho de implementação ou de correção",
+      "functional": "Funcional",
+      "functional_hint": "Um comportamento que o sistema deve ter",
+      "quality": "Qualidade",
+      "quality_hint": "Quão bem o sistema deve se comportar"
     }
   },
   "sub_work_item": {

@@ -267,6 +267,15 @@
       "click_to_downvote": "クリックして反対票を投じる",
       "click_to_view_upvotes": "クリックして賛成票を表示",
       "click_to_view_downvotes": "クリックして反対票を表示"
+    },
+    "requirement_kind": {
+      "label": "要求の種類",
+      "none": "要求ではない",
+      "none_hint": "実装または不具合対応の作業",
+      "functional": "機能要求",
+      "functional_hint": "システムが備えるべき振る舞い",
+      "quality": "品質要求",
+      "quality_hint": "システムがどの程度うまく動作すべきか"
     }
   },
   "sub_work_item": {

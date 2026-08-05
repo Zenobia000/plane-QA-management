@@ -52,7 +52,7 @@ Escape hatch: `project update`, `initiative create`, `type create`, `property cr
 
 `issue list` takes the same flag as a filter, comma-separated for a union — `--requirement-kind functional,quality` is every requirement regardless of nature, `--requirement-kind quality` is the NFRs at epic, feature and story level alike. Both API trees honour it. A kind the server does not recognise selects nothing rather than everything, so a misspelling comes back as an empty list; the CLI and the MCP schema both reject one before the request for that reason.
 
-One limit worth knowing before building a process on it: the browser UI neither displays nor sets the field, so anything classified here is invisible to someone working in the web app.
+The browser shows and sets it too, so what an agent classifies here is what a person sees: a Requirement kind row in the work item's properties sidebar and in the peek view, and a control in the create/edit modal. What the UI does **not** yet have is a way to filter or group a board by it — that is API-only, via the flag above.
 
 | Group        | Actions                                                                                                                                                                                                                                                                                                 |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------- |

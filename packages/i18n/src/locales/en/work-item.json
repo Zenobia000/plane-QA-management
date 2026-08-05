@@ -267,6 +267,15 @@
       "click_to_downvote": "Click to downvote",
       "click_to_view_upvotes": "Click to view upvotes",
       "click_to_view_downvotes": "Click to view downvotes"
+    },
+    "requirement_kind": {
+      "label": "Requirement kind",
+      "none": "Not a requirement",
+      "none_hint": "Implementation or defect work",
+      "functional": "Functional",
+      "functional_hint": "A behaviour the system must have",
+      "quality": "Quality",
+      "quality_hint": "How well the system must behave"
     }
   },
   "sub_work_item": {

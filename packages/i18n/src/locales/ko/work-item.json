@@ -267,6 +267,15 @@
       "click_to_downvote": "클릭하여 비추천",
       "click_to_view_upvotes": "클릭하여 추천 목록 보기",
       "click_to_view_downvotes": "클릭하여 비추천 목록 보기"
+    },
+    "requirement_kind": {
+      "label": "요구사항 종류",
+      "none": "요구사항 아님",
+      "none_hint": "구현 또는 결함 대응 작업",
+      "functional": "기능 요구사항",
+      "functional_hint": "시스템이 갖추어야 할 동작",
+      "quality": "품질 요구사항",
+      "quality_hint": "시스템이 얼마나 잘 동작해야 하는지"
     }
   },
   "sub_work_item": {

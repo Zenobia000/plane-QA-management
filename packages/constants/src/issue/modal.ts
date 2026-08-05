@@ -16,6 +16,10 @@ export const DEFAULT_WORK_ITEM_FORM_VALUES: Partial<TIssue> = {
   state_id: "",
   parent_id: null,
   priority: "none",
+  // Matches the column default. Left out, the form would submit `undefined` and the backend
+  // would apply the same value anyway -- but the control would render blank on the way there,
+  // which reads as "not yet classified" for a field that has no such state.
+  requirement_kind: "none",
   assignee_ids: [],
   label_ids: [],
   cycle_id: null,

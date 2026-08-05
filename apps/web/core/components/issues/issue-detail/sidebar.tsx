@@ -10,6 +10,7 @@ import { useTranslation } from "@plane/i18n";
 // ui
 import {
   CycleIcon,
+  DropdownPropertyIcon,
   StatePropertyIcon,
   ModuleIcon,
   MembersPropertyIcon,
@@ -28,6 +29,7 @@ import { EstimateDropdown } from "@/components/dropdowns/estimate";
 import { ButtonAvatars } from "@/components/dropdowns/member/avatar";
 import { MemberDropdown } from "@/components/dropdowns/member/dropdown";
 import { PriorityDropdown } from "@/components/dropdowns/priority";
+import { RequirementKindDropdown } from "@/components/dropdowns/requirement-kind";
 import { StateDropdown } from "@/components/dropdowns/state/dropdown";
 // hooks
 import { useProjectEstimates } from "@/hooks/store/estimates";
@@ -130,6 +132,16 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
                 className="h-7.5 w-full grow rounded-sm"
                 buttonContainerClassName="size-full text-left"
                 buttonClassName="size-full px-2 py-0.5 whitespace-nowrap [&_svg]:size-3.5"
+              />
+            </SidebarPropertyListItem>
+
+            <SidebarPropertyListItem icon={DropdownPropertyIcon} label={t("issue.requirement_kind.label")}>
+              <RequirementKindDropdown
+                value={issue?.requirement_kind}
+                onChange={(val) => issueOperations.update(workspaceSlug, projectId, issueId, { requirement_kind: val })}
+                disabled={!isEditable}
+                className="h-7.5 w-full grow rounded-sm"
+                buttonClassName="size-full px-2 py-0.5"
               />
             </SidebarPropertyListItem>
 

@@ -267,6 +267,15 @@
       "click_to_downvote": "Klik untuk memberi suara turun",
       "click_to_view_upvotes": "Klik untuk melihat suara naik",
       "click_to_view_downvotes": "Klik untuk melihat suara turun"
+    },
+    "requirement_kind": {
+      "label": "Jenis kebutuhan",
+      "none": "Bukan kebutuhan",
+      "none_hint": "Pekerjaan implementasi atau perbaikan",
+      "functional": "Fungsional",
+      "functional_hint": "Perilaku yang harus dimiliki sistem",
+      "quality": "Kualitas",
+      "quality_hint": "Seberapa baik sistem harus bekerja"
     }
   },
   "sub_work_item": {

@@ -267,6 +267,15 @@
       "click_to_downvote": "Klikněte pro hlasování dolů",
       "click_to_view_upvotes": "Klikněte pro zobrazení hlasů nahoru",
       "click_to_view_downvotes": "Klikněte pro zobrazení hlasů dolů"
+    },
+    "requirement_kind": {
+      "label": "Typ požadavku",
+      "none": "Není požadavek",
+      "none_hint": "Implementační nebo opravná práce",
+      "functional": "Funkční",
+      "functional_hint": "Chování, které systém musí mít",
+      "quality": "Kvalitativní",
+      "quality_hint": "Jak dobře musí systém fungovat"
     }
   },
   "sub_work_item": {

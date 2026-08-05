@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { JsonObject, JsonValue, PlaneQAClient } from "@plane/qa-sdk";
+import { type JsonObject, type JsonValue, type PlaneQAClient, REQUIREMENT_KINDS } from "@plane/qa-sdk";
 import { z } from "zod";
 
 import { safely, toolResult } from "./results";
@@ -8,6 +8,21 @@ const scope = {
   workspace: z.string().min(1).describe("Workspace slug"),
   project: z.string().min(1).describe("Project UUID or identifier"),
 };
+
+// Spelled out because the caller is a model choosing between three words that all sound
+// plausible for a performance target. The distinction that decides it is what the item
+// *states*, not how wide it is: nature is orthogonal to the Epic/Feature/Story breakdown,
+// so naming the levels here is the difference between a usable field and one that gets
+// filled with `functional` for everything under a functional epic.
+const requirementKind = z
+  .enum(REQUIREMENT_KINDS)
+  .describe(
+    "What this work item states: 'functional' = a behaviour the system must have, " +
+      "'quality' = how well it must behave (performance, availability, security -- an NFR), " +
+      "'none' = not a requirement at all, which is what a task implementing one and a bug " +
+      "reporting one broken both are. Independent of the work item type: an epic, a feature " +
+      "and a story can each be functional or quality."
+  );
 
 const readAnnotations = {
   readOnlyHint: true,
@@ -268,6 +283,7 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
         state_id: z.string().uuid().optional(),
         priority: z.string().optional(),
         description_html: z.string().optional(),
+        requirement_kind: requirementKind.optional(),
       }),
       annotations: writeAnnotations,
     },
@@ -287,6 +303,7 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
         name: z.string().min(1).optional(),
         priority: z.string().optional(),
         description_html: z.string().optional(),
+        requirement_kind: requirementKind.optional(),
       }),
       annotations: writeAnnotations,
     },

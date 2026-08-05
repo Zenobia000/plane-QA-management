@@ -120,6 +120,59 @@ describe("Plane QA MCP server", () => {
     );
   });
 
+  it("carries the requirement classification through create and update", async () => {
+    const createIssue = vi.fn().mockResolvedValue({ id: "i1", sequence_id: 1 });
+    const updateIssue = vi.fn().mockResolvedValue({ id: "i1", sequence_id: 34 });
+    const resolveIssue = vi.fn().mockResolvedValue({ id: "i1", sequence_id: 34 });
+    const connection = await connect({ createIssue, updateIssue, resolveIssue });
+    connections.push(connection);
+
+    const created = await connection.client.callTool({
+      name: "issue_create",
+      arguments: {
+        workspace: "acme",
+        project: "QA",
+        name: "Checkout stays under 2s at peak",
+        requirement_kind: "quality",
+      },
+    });
+    const updated = await connection.client.callTool({
+      name: "issue_update",
+      arguments: { workspace: "acme", project: "QA", issue: "QA-34", requirement_kind: "functional" },
+    });
+
+    expect(created.isError).not.toBe(true);
+    expect(updated.isError).not.toBe(true);
+    expect(createIssue).toHaveBeenCalledWith(
+      "acme",
+      project.id,
+      expect.objectContaining({ requirement_kind: "quality" })
+    );
+    expect(updateIssue).toHaveBeenCalledWith(
+      "acme",
+      project.id,
+      "i1",
+      expect.objectContaining({ requirement_kind: "functional" })
+    );
+  });
+
+  // A model reaching for `NFR` or `non-functional` should be corrected by the schema rather
+  // than by a 400 several seconds later, and the enum is what puts the three legal words in
+  // the tool listing where the model reads them before choosing.
+  it("rejects a requirement kind outside the closed set before the backend is called", async () => {
+    const createIssue = vi.fn();
+    const connection = await connect({ createIssue });
+    connections.push(connection);
+
+    const response = await connection.client.callTool({
+      name: "issue_create",
+      arguments: { workspace: "acme", project: "QA", name: "Uptime", requirement_kind: "NFR" },
+    });
+
+    expect(response.isError).toBe(true);
+    expect(createIssue).not.toHaveBeenCalled();
+  });
+
   it("rejects destructive calls without literal confirmation before the backend is called", async () => {
     const deleteTestFolder = vi.fn();
     const connection = await connect({ deleteTestFolder });

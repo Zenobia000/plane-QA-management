@@ -16,6 +16,8 @@ Commands:
   property list|create|set
   milestone list|create
   issue list|get|create|update|transition|comment|archive
+      create|update also take --requirement-kind none|functional|quality
+      (functional = the system must do this; quality = it must do it this well; none = not a requirement)
   folder list|get|create|update|delete
   case list|get|create|update|version|archive|link-issue|unlink-issue|attachments|attach|detach
   search query --query 'type:test_case priority:high payment' [--scope all|test_cases|work_items]

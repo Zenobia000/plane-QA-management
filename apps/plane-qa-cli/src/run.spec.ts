@@ -83,6 +83,97 @@ describe("plane-qa CLI", () => {
     );
   });
 
+  it("classifies a work item as a quality requirement on create", async () => {
+    const output = capture();
+    const createIssue = vi.fn().mockResolvedValue({ id: "i1", sequence_id: 1 });
+    const client = {
+      createIssue,
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+    } as unknown as PlaneQAClient;
+
+    const code = await runCLI({
+      argv: ["issue", "create", "--name", "Checkout stays under 2s at peak", "--requirement-kind", "quality"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(code).toBe(0);
+    expect(createIssue).toHaveBeenCalledWith("sunny", "p1", expect.objectContaining({ requirement_kind: "quality" }));
+  });
+
+  it("reclassifies an existing work item on update", async () => {
+    const output = capture();
+    const updateIssue = vi.fn().mockResolvedValue({ id: "i1", sequence_id: 1 });
+    const client = {
+      updateIssue,
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+      resolveIssue: vi.fn().mockResolvedValue({ id: "i1", sequence_id: 34 }),
+    } as unknown as PlaneQAClient;
+
+    const code = await runCLI({
+      argv: ["issue", "update", "--issue", "QA-34", "--requirement-kind", "functional"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(code).toBe(0);
+    expect(updateIssue).toHaveBeenCalledWith(
+      "sunny",
+      "p1",
+      "i1",
+      expect.objectContaining({ requirement_kind: "functional" })
+    );
+  });
+
+  // Absent must mean "leave it alone" rather than "set it to none": `none` is a real
+  // classification meaning "not a requirement", so sending it by default would silently
+  // declassify every requirement touched by an unrelated rename.
+  it("omits requirement_kind entirely when the flag is absent", async () => {
+    const output = capture();
+    const updateIssue = vi.fn().mockResolvedValue({ id: "i1", sequence_id: 1 });
+    const client = {
+      updateIssue,
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+      resolveIssue: vi.fn().mockResolvedValue({ id: "i1", sequence_id: 34 }),
+    } as unknown as PlaneQAClient;
+
+    await runCLI({
+      argv: ["issue", "update", "--issue", "QA-34", "--name", "Renamed"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(updateIssue).toHaveBeenCalledWith(
+      "sunny",
+      "p1",
+      "i1",
+      expect.not.objectContaining({ requirement_kind: expect.anything() })
+    );
+  });
+
+  it("names the three legal kinds when given a near miss, without calling the backend", async () => {
+    const output = capture();
+    const createIssue = vi.fn();
+    const client = {
+      createIssue,
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+    } as unknown as PlaneQAClient;
+
+    const code = await runCLI({
+      argv: ["issue", "create", "--name", "Uptime", "--requirement-kind", "NFR"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(code).not.toBe(0);
+    expect(createIssue).not.toHaveBeenCalled();
+    expect(output.stderr.join("")).toContain("none, functional, quality");
+  });
+
   it("refuses destructive commands without explicit confirmation", async () => {
     const output = capture();
     const client = {

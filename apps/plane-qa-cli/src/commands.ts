@@ -1,18 +1,20 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 
-import type {
-  JsonObject,
-  PlaneQAClient,
-  Project,
-  TestingExportFormat,
-  TestingSearchScope,
-  WorkItem,
+import {
+  type JsonObject,
+  type PlaneQAClient,
+  type Project,
+  REQUIREMENT_KINDS,
+  type TestingExportFormat,
+  type TestingSearchScope,
+  type WorkItem,
 } from "@plane/qa-sdk";
 
 import {
   booleanOption,
   commaListOption,
+  enumOption,
   jsonOption,
   numberOption,
   optionString,
@@ -202,6 +204,7 @@ export const executeCommand = async (
           state_id: optionString(args.options, "state_id"),
           priority: optionString(args.options, "priority"),
           description_html: optionString(args.options, "description"),
+          requirement_kind: enumOption(args.options, "requirement_kind", REQUIREMENT_KINDS),
           ...jsonOption(args.options, "body", {}),
         })
       );
@@ -219,6 +222,7 @@ export const executeCommand = async (
           state_id: optionString(args.options, "state_id"),
           priority: optionString(args.options, "priority"),
           description_html: optionString(args.options, "description"),
+          requirement_kind: enumOption(args.options, "requirement_kind", REQUIREMENT_KINDS),
           ...jsonOption(args.options, "body", {}),
         })
       );

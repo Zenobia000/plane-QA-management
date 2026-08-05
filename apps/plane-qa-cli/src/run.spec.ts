@@ -83,6 +83,50 @@ describe("plane-qa CLI", () => {
     );
   });
 
+  it("filters the list by requirement kind, including a union of kinds", async () => {
+    const output = capture();
+    const listIssues = vi.fn().mockResolvedValue({ results: [] });
+    const client = {
+      listIssues,
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+    } as unknown as PlaneQAClient;
+
+    await runCLI({
+      argv: ["issue", "list", "--requirement-kind", "functional,quality"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(listIssues).toHaveBeenCalledWith(
+      "sunny",
+      "p1",
+      expect.objectContaining({ requirement_kind: "functional,quality" })
+    );
+  });
+
+  // A filter given a kind the server does not know matches nothing, so the mistake comes back
+  // as an empty list that reads like a true answer. Worth catching before the request.
+  it("rejects an unknown kind in a list filter rather than returning an empty answer", async () => {
+    const output = capture();
+    const listIssues = vi.fn();
+    const client = {
+      listIssues,
+      resolveProject: vi.fn().mockResolvedValue({ id: "p1", identifier: "QA" }),
+    } as unknown as PlaneQAClient;
+
+    const code = await runCLI({
+      argv: ["issue", "list", "--requirement-kind", "quality,NFR"],
+      environment,
+      io: output.io,
+      createClient: () => client,
+    });
+
+    expect(code).not.toBe(0);
+    expect(listIssues).not.toHaveBeenCalled();
+    expect(output.stderr.join("")).toContain("none, functional, quality");
+  });
+
   it("classifies a work item as a quality requirement on create", async () => {
     const output = capture();
     const createIssue = vi.fn().mockResolvedValue({ id: "i1", sequence_id: 1 });

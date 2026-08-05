@@ -250,6 +250,15 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
           .describe(
             "Return only work items that summarise nothing, which is what the work-item list shows by default. An epic or feature holding live children is excluded: its state is a hand-set summary and its estimate is blank, so it answers 'how is this going' rather than 'what should I pick up'. Use the epic hierarchy for the summary view."
           ),
+        requirement_kind: z
+          .string()
+          .optional()
+          .describe(
+            "Select by what the work items state, comma-separated: 'functional', 'quality', 'none', " +
+              "or a union such as 'functional,quality' for every requirement regardless of nature. " +
+              "Crosses the breakdown, so 'quality' returns quality requirements at epic, feature and " +
+              "story level alike. A kind that does not exist returns nothing rather than everything."
+          ),
         per_page: z.number().int().min(1).max(100).default(50),
       }),
       annotations: readAnnotations,

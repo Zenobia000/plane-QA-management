@@ -14,6 +14,7 @@ import {
 import {
   booleanOption,
   commaListOption,
+  enumListOption,
   enumOption,
   jsonOption,
   numberOption,
@@ -191,6 +192,7 @@ export const executeCommand = async (
           state: optionString(args.options, "state"),
           priority: optionString(args.options, "priority"),
           leaf_only: booleanOption(args.options, "leaf_only"),
+          requirement_kind: enumListOption(args.options, "requirement_kind", REQUIREMENT_KINDS),
           per_page: numberOption(args.options, "per_page"),
         }) as Record<string, string | number | boolean>
       );

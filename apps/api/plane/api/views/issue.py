@@ -88,7 +88,7 @@ from plane.utils.order_queryset import (
 from plane.bgtasks.storage_metadata_task import get_asset_object_metadata
 from .base import BaseAPIView
 from plane.utils.host import base_host
-from plane.utils.issue_filters import leaf_work_item_ids, wants_leaf_only
+from plane.utils.issue_filters import filter_requirement_kind, leaf_work_item_ids, wants_leaf_only
 from plane.utils.issue_relation_mapper import get_actual_relation
 from plane.bgtasks.webhook_task import model_activity
 from plane.app.permissions import ROLE
@@ -367,11 +367,19 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
             )
         )
 
-        # The token API does not route through `issue_filters`, so the same predicate is
+        # The token API does not route through `issue_filters`, so the same predicates are
         # applied here rather than reimplemented. Criterion 3 in the guideline: what the UI
         # can ask for, MCP and the CLI have to be able to ask for too.
         if wants_leaf_only(request.GET):
             issue_queryset = issue_queryset.filter(pk__in=leaf_work_item_ids())
+
+        # Built by the shared filter function, not a second reading of the parameter, so the
+        # two trees cannot disagree about what `requirement_kind=quality,functional` selects.
+        # Applied one predicate at a time rather than through `issue_filters`, which would
+        # quietly turn on every other filter for this endpoint as well -- including the label
+        # and assignee joins, which multiply rows.
+        if "requirement_kind" in request.GET:
+            issue_queryset = issue_queryset.filter(**filter_requirement_kind(request.GET, {}, "GET"))
 
         total_issue_queryset = Issue.issue_objects.filter(project_id=project_id, workspace__slug=slug)
 

@@ -89,7 +89,7 @@ as well multiplies the two axes, which is exactly how that workspace grew to nin
 ```bash
 plane-qa type list                        # what the workspace already has
 plane-qa issue create --name "退貨金額必須在 3 秒內回寫金流" \
-  --body '{"requirement_kind":"quality"}'  # nature is a field on the item, not a new type
+  --requirement-kind quality              # nature is a field on the item, not a new type
 
 plane-qa property create --name "Browser" --kind select \
   --options '[{"label":"Chrome","value":"chrome"},{"label":"Firefox","value":"firefox"}]'
@@ -105,7 +105,7 @@ For MCP, use `create_work_item_type`, `create_work_item_property`, `create_miles
 If you do create a type for implementation work, set `needs_acceptance: false` on it — MCP's
 `create_work_item_type` has no such input and the field defaults to `true`, so the type starts
 demanding an acceptance contract and every item of it shows up as an uncovered requirement. See
-"Two fields MCP cannot reach" in [tooling.md](tooling.md).
+"One field MCP cannot reach" in [tooling.md](tooling.md).
 
 ## 7. Field report → attributed backlog item
 

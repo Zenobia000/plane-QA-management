@@ -44,7 +44,9 @@ wrong in this codebase before, and each mistake is still visible in a repair com
 - **Requirement nature is `Issue.requirement_kind`** (`functional` / `quality` / `none`), not a
   type and not a custom property. A type already carries breadth through `level`, so making it
   carry nature multiplies the two axes; a property is per-project, so no cross-project report could
-  ask the question. It is writable on `/api/v1` only — no CLI flag, no MCP input, no UI control.
+  ask the question. CLI `--requirement-kind` and the MCP `requirement_kind` input on
+  `issue_create`/`issue_update` both set it; the web UI cannot, because the app-tree serializer
+  omits the field. Omitting it leaves the stored value alone.
 - **`IssueType.needs_acceptance` decides who owes a test.** Types created through MCP default to
   `true`, so a type meant for implementation work will demand acceptance contracts until it is
   patched to `false`.

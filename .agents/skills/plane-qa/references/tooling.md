@@ -46,7 +46,7 @@ Method groups (all take `workspace` first, most then `projectId`):
 
 `node apps/plane-qa-cli/dist/cli.mjs <group> <action> [flags]`. Flags: `--flag value` or `--flag=value`; JSON flags parsed strictly. Success = pretty JSON on stdout; errors = `{error:{code,message}}` on stderr.
 
-Escape hatch: `project update`, `initiative create`, `type create`, `property create`, `milestone create`, `issue create/update/transition`, `case create/update`, and `run create` all accept `--body <JSON>` whose keys are spread verbatim into the request payload — use it for fields without dedicated flags (issue `start_date`/`target_date`/`assignees`/`labels`/`requirement_kind`, type `needs_acceptance`, run `cycle_id`/`module_id`, …). Dedicated flags win only by position; keep a field in exactly one place.
+Escape hatch: `project update`, `initiative create`, `type create`, `property create`, `milestone create`, `issue create/update/transition`, `case create/update`, and `run create` all accept `--body <JSON>` whose keys are spread verbatim into the request payload — use it for fields without dedicated flags (issue `start_date`/`target_date`/`assignees`/`labels`/`type_id`/`parent`, type `needs_acceptance`, run `cycle_id`/`module_id`, …). Dedicated flags win only by position; keep a field in exactly one place.
 
 `--requirement-kind none|functional|quality` (MCP: `requirement_kind`) says what a work item _states_: a behaviour the system must have (`functional`, an FR), how well it must behave (`quality`, an NFR), or nothing — `none` is what a task implementing a requirement and a bug reporting one broken both are. It is independent of the work item type, so any level of Epic → Feature → Story can carry any of the three; see the requirement-classification section of the delivery guideline for why nature is not another tier of type. Omitting the flag leaves the stored value alone, because `none` is a classification rather than an absence and a default would declassify every requirement touched by an unrelated rename.
 
@@ -149,12 +149,17 @@ Priority enum: `urgent|high|medium|low|none`. Result status enum: `passed|failed
 
 For `create_work_item_property`, `kind` is one of `text|number|date|boolean|select|multi_select|url`. `select` and `multi_select` values must match an option's stable `value`, not its display label. `create_work_item_type`, custom-property definitions, milestones, and initiatives are writes but not destructive; all delete/archive/unlink rules above remain unchanged.
 
-### Two fields MCP cannot reach
+### One field MCP cannot reach
 
-Both are real fields on the REST API with no tool input and no CLI flag. Neither is a bug worth
-routing around with an invented property or type — reach them through `--body` or REST.
+`IssueType.needs_acceptance` is a real field on the REST API with no tool input and no CLI flag of
+its own. It decides whether items of that type produce a coverage row, and **a type created through
+`create_work_item_type` defaults to `true`** — so a type meant for implementation work starts
+demanding acceptance contracts, and every item of it reads as an uncovered requirement.
 
-| Field                        | Where it lives                            | Why it matters                                                                                                                                                                                                                                     | How to set it                                                                                                         |
-| ---------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `IssueType.needs_acceptance` | workspace work-item type                  | Decides whether items of that type produce a coverage row. **A type created through `create_work_item_type` defaults to `true`**, so an implementation-work type created that way starts demanding acceptance contracts and shows up as uncovered. | CLI `type create … --body '{"needs_acceptance":false}'`, or `PATCH /api/v1/workspaces/{slug}/work-item-types/{uuid}/` |
-| `Issue.requirement_kind`     | work item (`none`/`functional`/`quality`) | Carries functional vs quality requirement. Absent from the app tree entirely, so an API key is the only way in.                                                                                                                                    | CLI `issue create/update … --body '{"requirement_kind":"quality"}'`, or the same key on `POST/PATCH work-items/`      |
+Set it with CLI `type create … --body '{"needs_acceptance":false}'`, or
+`PATCH /api/v1/workspaces/{slug}/work-item-types/{uuid}/`. It is workspace-level: flipping it
+changes what every project in the workspace counts, so treat it as a configuration decision rather
+than a way to move a number.
+
+Do not route around a missing input by inventing a property or a type to carry the value — that is
+the failure mode `converge_work_item_types` exists to undo. `--body` and REST are the escape hatch.

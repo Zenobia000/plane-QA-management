@@ -6,8 +6,10 @@ import {
   type PlaneQAClient,
   type Project,
   REQUIREMENT_KINDS,
+  TEST_CASE_TYPES,
   type TestingExportFormat,
   type TestingSearchScope,
+  THRESHOLD_OPERATORS,
   type WorkItem,
 } from "@plane/qa-sdk";
 
@@ -47,6 +49,29 @@ const dryRunReceipt = (args: ParsedArguments, operation: string, target: Record<
 
 const compact = (input: Record<string, unknown>): Record<string, unknown> =>
   Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined));
+
+/**
+ * The four threshold columns, present together or absent together.
+ *
+ * Emitted as a group rather than four independent options because clearing a threshold means
+ * sending all four -- `compact` drops undefined, so a lone `--threshold-value ""` would reach
+ * the server as a partial threshold and be rejected there with a message about a field the
+ * caller did not think they were touching. Passing any of the four sends all four; passing
+ * none sends nothing, which leaves whatever the current version holds.
+ */
+const thresholdOptions = (args: ParsedArguments): Record<string, unknown> => {
+  const metric = optionString(args.options, "threshold_metric");
+  const operator = enumOption(args.options, "threshold_operator", THRESHOLD_OPERATORS);
+  const value = numberOption(args.options, "threshold_value");
+  const unit = optionString(args.options, "threshold_unit");
+  if (metric === undefined && operator === undefined && value === undefined && unit === undefined) return {};
+  return {
+    threshold_metric: metric ?? "",
+    threshold_operator: operator ?? "",
+    threshold_value: value ?? null,
+    threshold_unit: unit ?? "",
+  };
+};
 
 export const executeCommand = async (
   client: PlaneQAClient,
@@ -345,8 +370,10 @@ export const executeCommand = async (
           title: requiredOption(args.options, "title"),
           folder_id: optionString(args.options, "folder_id"),
           priority: optionString(args.options, "priority"),
+          case_type: enumOption(args.options, "case_type", TEST_CASE_TYPES),
           description: jsonOption(args.options, "description", undefined),
           preconditions: jsonOption(args.options, "preconditions", undefined),
+          ...thresholdOptions(args),
           tags: commaListOption(args.options, "tags"),
           steps: jsonOption(args.options, "steps", undefined),
           ...jsonOption(args.options, "body", {}),
@@ -392,8 +419,10 @@ export const executeCommand = async (
           title: optionString(args.options, "title"),
           folder_id: optionString(args.options, "folder_id"),
           priority: optionString(args.options, "priority"),
+          case_type: enumOption(args.options, "case_type", TEST_CASE_TYPES),
           description: jsonOption(args.options, "description", undefined),
           preconditions: jsonOption(args.options, "preconditions", undefined),
+          ...thresholdOptions(args),
           steps: jsonOption(args.options, "steps", undefined),
           ...jsonOption(args.options, "body", {}),
         })

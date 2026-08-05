@@ -160,12 +160,24 @@ class TestCaseDetailEndpoint(BaseAPIView):
     def patch(self, request, slug, project_id, test_case_id):
         test_case = _case_queryset(slug=slug, project_id=project_id).get(id=test_case_id)
         current = test_case.versions.get(version=test_case.current_version)
+        # Everything the next version inherits when the request does not mention it. A field
+        # missing from here does not keep its value -- the write serializer supplies its own
+        # default instead, and the new version is published with that.
+        #
+        # `case_type` was missing, so renaming a performance case reclassified it as
+        # functional, quietly, in a new immutable version. The thresholds below would have
+        # inherited the same defect, which is how it was found.
         initial = {
             "title": current.title,
             "folder_id": test_case.folder_id,
             "description": current.description,
             "preconditions": current.preconditions,
             "priority": current.priority,
+            "case_type": current.case_type,
+            "threshold_metric": current.threshold_metric,
+            "threshold_operator": current.threshold_operator,
+            "threshold_value": current.threshold_value,
+            "threshold_unit": current.threshold_unit,
             "tags": current.tags,
             "steps": [{"action": step.action, "expected_result": step.expected_result} for step in current.steps.all()],
         }

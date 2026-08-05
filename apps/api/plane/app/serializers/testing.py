@@ -41,6 +41,10 @@ class TestCaseVersionSerializer(BaseSerializer):
             "preconditions",
             "priority",
             "case_type",
+            "threshold_metric",
+            "threshold_operator",
+            "threshold_value",
+            "threshold_unit",
             "tags",
             "steps",
             "created_at",
@@ -181,8 +185,42 @@ class TestCaseWriteSerializer(serializers.Serializer):
     preconditions = serializers.JSONField(required=False, default=dict)
     priority = serializers.ChoiceField(choices=TestCaseVersion.PRIORITY_CHOICES, required=False, default="none")
     case_type = serializers.ChoiceField(choices=TestCaseVersion.CASE_TYPE_CHOICES, required=False, default="functional")
+    threshold_metric = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+    threshold_operator = serializers.ChoiceField(
+        choices=TestCaseVersion.THRESHOLD_OPERATOR_CHOICES, required=False, allow_blank=True, default=""
+    )
+    threshold_value = serializers.DecimalField(
+        max_digits=20, decimal_places=6, required=False, allow_null=True, default=None
+    )
+    threshold_unit = serializers.CharField(max_length=32, required=False, allow_blank=True, default="")
     tags = serializers.ListField(child=serializers.CharField(max_length=100), required=False, default=list)
     steps = TestStepInputSerializer(many=True, required=False, default=list)
+
+    def validate(self, attrs):
+        """Reject a half-stated threshold here as well as at the model.
+
+        The model's `clean` is the guarantee; this is the message. A `ValidationError`
+        raised from `full_clean` inside the service surfaces as a 500-shaped failure
+        rather than a 400 naming the field, and the caller most likely to get this wrong
+        is a script filling in three of four keys.
+        """
+        present = [
+            bool(attrs.get("threshold_metric")),
+            bool(attrs.get("threshold_operator")),
+            attrs.get("threshold_value") is not None,
+        ]
+        if any(present) and not all(present):
+            raise serializers.ValidationError(
+                {
+                    "threshold_metric": "A threshold needs a metric, an operator and a value together, "
+                    "or none of the three."
+                }
+            )
+        if attrs.get("threshold_unit") and not any(present):
+            raise serializers.ValidationError(
+                {"threshold_unit": "A threshold unit means nothing without a metric, an operator and a value."}
+            )
+        return attrs
 
 
 class TestFolderWriteSerializer(serializers.Serializer):

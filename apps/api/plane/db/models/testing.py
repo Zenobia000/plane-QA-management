@@ -87,6 +87,22 @@ class TestCaseVersion(ProjectBaseModel):
         ("compliance", "Compliance"),
     )
 
+    # The comparison a quality requirement is judged by. `case_type` already says the
+    # contract is verified by measuring; these say what is measured and what number
+    # decides it.
+    #
+    # Without them a threshold has only ever had free text to live in, so "P95 < 2s"
+    # was a sentence in the description: readable by a person, and unreadable by any
+    # report. Nothing here evaluates a result against the threshold -- recording a
+    # verdict is still the caller's statement -- but the number is now a number, which
+    # is what a trend or an automatic judgement would need first.
+    THRESHOLD_OPERATOR_CHOICES = (
+        ("lt", "Less than"),
+        ("lte", "At most"),
+        ("gt", "Greater than"),
+        ("gte", "At least"),
+    )
+
     test_case = models.ForeignKey(TestCase, on_delete=models.CASCADE, related_name="versions")
     version = models.PositiveIntegerField()
     title = models.CharField(max_length=500)
@@ -94,6 +110,17 @@ class TestCaseVersion(ProjectBaseModel):
     preconditions = models.JSONField(default=dict, blank=True)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="none")
     case_type = models.CharField(max_length=20, choices=CASE_TYPE_CHOICES, default="functional")
+    # What is measured, in the project's own words -- "checkout P95 latency", "monthly
+    # availability". Not a closed vocabulary: the metric names a team uses come from its
+    # own monitoring, and a list compiled into the product would be wrong everywhere.
+    threshold_metric = models.CharField(max_length=255, blank=True)
+    threshold_operator = models.CharField(max_length=8, choices=THRESHOLD_OPERATOR_CHOICES, blank=True)
+    # Decimal rather than float: these are compared and shown, and a threshold that reads
+    # 1.9999999999 in a report is the kind of thing nobody trusts twice.
+    threshold_value = models.DecimalField(max_digits=20, decimal_places=6, null=True, blank=True)
+    # Optional where the other three are not. A ratio or a count is dimensionless, and
+    # forcing a unit on it invites "count" as a unit, which says nothing.
+    threshold_unit = models.CharField(max_length=32, blank=True)
     tags = models.JSONField(default=list, blank=True)
 
     class Meta:
@@ -105,6 +132,24 @@ class TestCaseVersion(ProjectBaseModel):
                 name="unique_test_case_version",
             )
         ]
+
+    def clean(self):
+        # Metric, operator and value stand or fall together. Two of the three is not a
+        # weaker threshold, it is an unreadable one: a number with no comparison cannot
+        # be judged, and a comparison with no number cannot be met. Storing the fragment
+        # would put the report back to guessing, which is the state this field exists to
+        # end. The unit is exempt because a ratio or a count genuinely has none.
+        present = [
+            bool(self.threshold_metric),
+            bool(self.threshold_operator),
+            self.threshold_value is not None,
+        ]
+        if any(present) and not all(present):
+            raise ValidationError(
+                "A threshold needs a metric, an operator and a value together, or none of the three."
+            )
+        if self.threshold_unit and not any(present):
+            raise ValidationError("A threshold unit means nothing without a metric, an operator and a value.")
 
     def save(self, *args, **kwargs):
         # Immutability is about the content of a published version, not its lifetime. A

@@ -21,6 +21,9 @@ Commands:
       list takes the same flag as a filter, comma-separated: --requirement-kind functional,quality
   folder list|get|create|update|delete
   case list|get|create|update|version|archive|link-issue|unlink-issue|attachments|attach|detach
+      create|update also take --case-type functional|performance|security|reliability|compliance
+      and a threshold: --threshold-metric --threshold-operator lt|lte|gt|gte --threshold-value --threshold-unit
+      (metric, operator and value go together; unit is optional; changing any publishes a new version)
   search query --query 'type:test_case priority:high payment' [--scope all|test_cases|work_items]
   export testing --format csv|html|excel --output FILE [--query QUERY] [--scope SCOPE]
   run list|get|create|record-result|create-defect|close

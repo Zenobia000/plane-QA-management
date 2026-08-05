@@ -1,9 +1,39 @@
 # Plane QA 工程守則與專案設定手冊
 
-> 狀態:v1.2 · 2026-08-03 · 基準 commit `f8956b2412`
+> 狀態:v1.3 · 2026-08-05 · 內容基準 commit `f8956b2412`(v1.2)+ B1/B5 的兩處補正
 > Part A 對象:修改這個平台的人與 agent · Part B 對象:用這個平台跑專案的 PM / QA / RD
 
-## 這份手冊在哪一層
+## 我現在要做什麼 → 看哪一節
+
+| 我要…                          | 看                         | 一句話                                               |
+| ------------------------------ | -------------------------- | ---------------------------------------------------- |
+| 開一個新專案                   | [B1](#b1)                  | 先 seed 一個 DEMO 來讀,不要從空白開始                |
+| 決定一條 NFR 放哪裡            | [B3](#b3)                  | 先問「證據從哪來」,不是「它屬於哪一類」              |
+| 寫一個驗收契約                 | [B4](#b4)                  | Given/When/Then 直接對應既有欄位;門檻寫成結構化 JSON |
+| 判斷能不能出貨                 | [B5](#b5)                  | 只看 `release-gate` 的五類 blocker,且它只是必要條件  |
+| 搞清楚 Epic / Story / FR / NFR | [B2](#b2)                  | 兩個維度,不是一條鏈                                  |
+| 看懂整個系統怎麼串             | [B0](#b0)                  | 四個正交的軸 + 四個接合點                            |
+| 知道 agent 不准做什麼          | [B6](#b6)                  | 三條紅線:不繞服務層、不補 passed、不宣告可出貨       |
+| 改這個平台的程式               | [A2](#a2) → [A4](#a4)      | 動工前四確認 → 做完的定義                            |
+| 修完之後要回寫哪些文件         | [A5](#a5)                  | 三處,而且和程式同一個 PR                             |
+| 查指令細節(CLI flag、MCP 參數) | `.agents/skills/plane-qa/` | 本文不重抄                                           |
+
+## 一頁速查
+
+**四個不變量**(服務層強制,非自律):契約版本不可變 · run 釘住版本 · result 只能追加 · defect 只能從 failed/blocked 原子建立。唯一寫入路徑是 `plane.testing.services`。
+
+**五條可追溯性判準**(裁決依據,違反即退回):① 關聯雙向可走 ② 證據完整跨越交接點 ③ 人與 agent 同能力 ④ 深連結是基礎設施 ⑤ 不可變性要看得見。
+
+**DoR**:一個 Story 不算 ready,除非至少連結一個 happy path 與一個 unhappy path 的契約。跳過需要人類明確同意並記錄理由。
+
+**出貨閘門的五類 blocker**:最新一輪的 failed 契約 · blocked 契約 · 未結缺陷 · 未執行的契約 · 已排程但零契約的需求。
+
+**agent 三條紅線**:不繞過服務層寫入 · 不補 passed 結果 · 不宣告可出貨。
+
+**做完的指令**:`pnpm check` · `pnpm check:qa-tools` · `python -m pytest` · `git diff --check`。
+
+<details>
+<summary>這份手冊在整套文件裡的位置(第一次讀再展開)</summary>
 
 `docs/planning/` 已經回答了「要做什麼、為什麼、做到哪了」。它沒有回答「動手時照什麼規矩」。這份文件補的是那一層。
 
@@ -19,6 +49,8 @@
 
 不重複的東西:流程骨架與 human gate 由 `~/.claude/skills/plane-qa/references/sdlc-guideline.md` 定義,那份文件明文排除「平台自己的開發」——本文 Part A 正好補那個空缺,Part B 則只寫**本平台特有的設定與語意**,不重抄流程。精確的 CLI flag 與 MCP 參數查 `.agents/skills/plane-qa/`。
 
+</details>
+
 ---
 
 # 共同基礎
@@ -27,7 +59,7 @@ Part A 與 Part B 都不可違反以下兩組規則。
 
 ## 四個不變量
 
-這四條已經在 `apps/api/plane/testing/services.py` 被強制,不是靠自律:
+**這四條已經在 `apps/api/plane/testing/services.py` 被強制,不是靠自律。**
 
 | 不變量                                | 意思                                                 | 違反的後果                     |
 | ------------------------------------- | ---------------------------------------------------- | ------------------------------ |
@@ -40,21 +72,23 @@ Part A 與 Part B 都不可違反以下兩組規則。
 
 ## 五條可追溯性判準
 
-出自產品定義。它們是**裁決依據**,不是功能清單:任何新設計違反其中一條,退回重想。
+**出自產品定義,是裁決依據而非功能清單:任何新設計違反其中一條,退回重想。**
 
 1. **每一個關聯都要雙向可走** —— 資料層有連結的地方,兩端都要有可點的入口
 2. **證據必須完整跨越交接點** —— QA 記下的東西,RD 或其 agent 要原封不動拿到;交接時剝除資訊的轉換是缺陷,不是取捨
 3. **人與 agent 同能力** —— 人在介面上能做的,MCP 與 CLI 都要能做到同樣完整;agent 寫入的,人要看得懂並能追溯
-4. **深連結是基礎設施** —— 每個實體都要有可定址的網址(已落實,見路由結構)
+4. **深連結是基礎設施** —— 每個實體都要有可定址的網址(已落實,見附錄路由結構)
 5. **不可變性要在介面上被看見** —— 版本歷史、釘住關係、追加時間軸都要可瀏覽
 
 ---
 
 # Part A · 平台開發守則
 
+<a id="a1"></a>
+
 ## A1 · 一個缺口 = 一輪 = 一個分支
 
-產品定義的 backlog 有 19 個編號缺口。**每個缺口各自走完整一輪**,不合併、不搭便車:
+**每個缺口各自走完整一輪,不合併、不搭便車。** 產品定義的 backlog 有 19 個編號缺口。
 
 | 階段 | 產出                               | 進入下一階段的 gate |
 | ---- | ---------------------------------- | ------------------- |
@@ -63,14 +97,20 @@ Part A 與 Part B 都不可違反以下兩組規則。
 | 實作 | 分支上的 commits                   | A4 的 gate 全綠     |
 | 回寫 | backlog 狀態、WBS 列、必要時 ADR   | A5 的三處同步完成   |
 
-分支命名 `<type>/<short-description>`,例:`fix/coverage-rollup`、`feat/result-attachments`。一個分支只做一件事——**修 #14 的分支不要順手改 #17**,即使兩者都碰 `report.py`。
+分支命名 `<type>/<short-description>`,例:`fix/coverage-rollup`、`feat/result-attachments`。
+
+**一個分支只做一件事**——修 #14 的分支不要順手改 #17,即使兩者都碰 `report.py`。
+
+<a id="a2"></a>
 
 ## A2 · 動工前的四個確認
 
 - [ ] **分支**:`git branch --show-current`。保護分支(main)永不直接改碼
 - [ ] **缺口編號**:要做的事在 backlog 上有編號,且「相依」欄列的前置缺口已解除
-- [ ] **判準**:五條逐條過一次。最常被違反的是第 1 條(做了單向連結)與第 3 條(只做了 UI 沒補 MCP/CLI)
-- [ ] **既有元件盤點**:Testing 之所以感覺像外掛,是因為它重新發明了 Plane 已有的原語
+- [ ] **判準**:五條逐條過一次
+- [ ] **既有元件盤點**:先查下表,不要重新發明
+
+**最常被違反的是第 1 條**(做了單向連結)**與第 3 條**(只做了 UI 沒補 MCP/CLI)。
 
 **優先複用既有元件**——這同時是最省工與最能讓 testing 讀起來像原生功能的做法:
 
@@ -83,25 +123,40 @@ Part A 與 Part B 都不可違反以下兩組規則。
 | 版本歷史瀏覽                 | `DescriptionVersionsRoot` 模式                      |
 | 疊層詳情與深連結             | `issues/peek-overview/`                             |
 
+> Testing 之所以曾經感覺像外掛,是因為它重新發明了 Plane 已有的原語。
+
+<a id="a3"></a>
+
 ## A3 · 實作守則
 
-**術語一律只動呈現層。** SDK / CLI / MCP 的工具名稱與輸入結構是**公開契約**:把 `test_run_create` 改成 `test_execution_create` 會打斷所有 agent、CI 腳本與 CLI 使用者。改名需要 major version 加 migration note。要改詞彙就接 i18n(`packages/i18n/src/locales/*/testing.json`),改資料檔而非程式碼。`Cycle` 與 `Module` 屬 Plane 上游核心概念,全面改名會製造大量上游 rebase 衝突,只以 i18n 覆寫顯示名稱。
+**四條規則:**
 
-**先確認欄位是不是已經存在。** `description`、`preconditions`、`action`、`expected_result`、`actual_result`、`configuration` 全部已是 `JSONField`。要放富文本或結構化門檻**不需要 migration**,缺的只是渲染與寫入端。開 migration 前先讀 `apps/api/plane/db/models/testing.py`。
-
-**三處同步(判準第 3 條的落地形式)。** 新增任何介面動作時,同一輪內確認:
-
-```
-UI 動作  ⇒  MCP tool 存在且參數等價  ⇒  CLI 指令存在且參數等價
-```
-
-漏掉任一處就是把 agent 降級成二等使用者,而 agent 路徑正是本系統相對 Jira / TestRail 的差異化能力。
+1. **術語一律只動呈現層。** 要改詞彙就接 i18n(`packages/i18n/src/locales/*/testing.json`),改資料檔而非程式碼。
+2. **開 migration 前先確認欄位是不是已經存在。** `description`、`preconditions`、`action`、`expected_result`、`actual_result`、`configuration` 全部已是 `JSONField`。要放富文本或結構化門檻**不需要 migration**,缺的只是渲染與寫入端。先讀 `apps/api/plane/db/models/testing.py`。
+3. **三處同步**(判準第 3 條的落地形式)。新增任何介面動作時,同一輪內確認:
+   ```
+   UI 動作  ⇒  MCP tool 存在且參數等價  ⇒  CLI 指令存在且參數等價
+   ```
+4. **已知陷阱先讀過一遍**(下方三條)。
 
 **已知實作陷阱:**
 
 - **換掉編輯器會打壞執行工作區的鍵盤流。** P/F/B/S 快捷鍵目前只擋 `HTMLInputElement` 與 `HTMLTextAreaElement`。富文本編輯器是 `contentEditable`,不屬於這兩者——換上去之後在編輯器裡打的每個 p、f、b、s 都會送出一筆結果,而**結果是 append-only,送出就收不回來**。改動時必須同步擴充焦點判斷並補回歸測試
 - **契約的分類欄位是 `TestCaseVersion.case_type`**(functional / performance / security / reliability / compliance),服務層 `create_test_case` 已收這個參數。它在 version 上而不是在 `TestCase` 上,因為改分類等於改契約內容,要發新版本。**不要用 tag 硬撐。** 缺口 #17 剩下的是門檻的結構化與趨勢圖,不是這個欄位
 - **`TestFolder.parent` 有階層,UI 卻渲染成扁平清單**(缺口 #19)。動資料夾相關功能時別假設 UI 已經是樹
+
+<details>
+<summary>為什麼術語只能動呈現層,以及漏掉三處同步的代價</summary>
+
+SDK / CLI / MCP 的工具名稱與輸入結構是**公開契約**:把 `test_run_create` 改成 `test_execution_create` 會打斷所有 agent、CI 腳本與 CLI 使用者。改名需要 major version 加 migration note。
+
+`Cycle` 與 `Module` 屬 Plane 上游核心概念,全面改名會製造大量上游 rebase 衝突,只以 i18n 覆寫顯示名稱。
+
+三處同步漏掉任一處,就是把 agent 降級成二等使用者,而 agent 路徑正是本系統相對 Jira / TestRail 的差異化能力。
+
+</details>
+
+<a id="a4"></a>
 
 ## A4 · 什麼才算做完
 
@@ -114,31 +169,38 @@ UI 動作  ⇒  MCP tool 存在且參數等價  ⇒  CLI 指令存在且參數�
 | 後端全部     | `python -m pytest`                                             |
 | diff 衛生    | `git diff --check`                                             |
 
-測試分層對應:模型不變量進 `tests/unit/`,API 行為與權限進 `tests/contract/`,前端元件與 store 進各套件的 `*.spec.ts`。覆蓋率最低 80%。
+**測試分層:** 模型不變量進 `tests/unit/`,API 行為與權限進 `tests/contract/`,前端元件與 store 進各套件的 `*.spec.ts`。覆蓋率最低 80%。
 
-**E2E 的誠實規則。** 這個 repo **沒有 Playwright 或 Cypress**——已確認不存在任何 e2e 設定檔。因此:
+**E2E 的誠實規則:這個 repo 沒有 Playwright 或 Cypress**——已確認不存在任何 e2e 設定檔。因此:
 
 - 任何文件都**不得**把「E2E acceptance」列為驗證方法。WBS 曾經這樣寫,而那個 gate 從來不可能綁定
 - 實際做的是人工排練,證據放 `docs/operations/rehearsals/`,檔名帶日期
 - 人工排練是「這條路走通過一次」的真實證據,**不是**「它不會壞掉」的 gate。兩者不可互換敘述
 
+<a id="a5"></a>
+
 ## A5 · 狀態誠實性規則
 
-這條規則的存在理由有現行案例:2026-07-28 的稽核發現 WBS 每一列都寫 `DONE`,而其中兩列經不起對照原始碼的檢查。
+**`DONE` = 實作存在,且該列自己列出的驗證證據也存在。兩者缺一即非 DONE。**
 
-**`DONE` 的定義:實作存在,且該列自己列出的驗證證據也存在。** 兩者缺一即非 DONE。
-
-- 不可把不存在的驗證方法寫進「Tests」欄——若證據是一個不存在的 harness,change-control 規則就無從約束
-- `PARTIAL` 必須在同一列直接寫出**缺的是什麼**,不可只降級不說明
-- 降級不是失敗。把 `2.8` 從 DONE 改成 PARTIAL 並寫明「folder 渲染成扁平清單、detail 是第三欄而非 peek 疊層」,比留著一個假的 DONE 有價值得多
-
-**修完一個缺口要回寫三處:**
+**修完一個缺口要回寫三處,而且和程式碼放同一個 PR:**
 
 1. `testing-product-definition.md` 的 backlog 表——標記完成、更新被它解鎖的缺口
 2. 對應的 WBS 列——狀態與證據欄
 3. 若改動觸及**跨容器關係、持久化不變量、公開契約、信任邊界**其中之一 → 先更新 `docs/architecture/` 並新增或修改 ADR,再 merge
 
-**案例(示範這條規則為何存在):** commit `9ed58492d` 修好了 #14(coverage roll-up、型別過濾、指標方向)與 #18(gate 納入覆蓋率),但只動程式與測試,沒回寫文件。在被發現之前,三份文件同時是錯的:
+其餘三條:
+
+- 不可把不存在的驗證方法寫進「Tests」欄——若證據是一個不存在的 harness,change-control 規則就無從約束
+- `PARTIAL` 必須在同一列直接寫出**缺的是什麼**,不可只降級不說明
+- **降級不是失敗。** 把 `2.8` 從 DONE 改成 PARTIAL 並寫明「folder 渲染成扁平清單、detail 是第三欄而非 peek 疊層」,比留著一個假的 DONE 有價值得多
+
+<details>
+<summary>這條規則的來歷:三份文件同時是錯的那一次</summary>
+
+2026-07-28 的稽核發現 WBS 每一列都寫 `DONE`,而其中兩列經不起對照原始碼的檢查。
+
+commit `9ed58492d` 修好了 #14(coverage roll-up、型別過濾、指標方向)與 #18(gate 納入覆蓋率),但只動程式與測試,沒回寫文件。在被發現之前:
 
 | 位置             | 寫的                                 | 實際                                                  |
 | ---------------- | ------------------------------------ | ----------------------------------------------------- |
@@ -146,19 +208,23 @@ UI 動作  ⇒  MCP tool 存在且參數等價  ⇒  CLI 指令存在且參數�
 | WBS `5.5`        | `PARTIAL` / blockers omit coverage   | `report.py` 已把未覆蓋需求列入 blocker                |
 | 產品定義第 5 節  | FR/NFR 分類用 work item **property** | DEMO 實際用 work item **type**「Quality requirement」 |
 
-第三筆特別值得注意:它不是狀態過期,而是**文件描述的設計與落地的設計不同**——這種漂移比狀態漂移更難發現,因為兩邊各自看起來都合理。三筆都不大,但正是這種累積導致了 2026-07-28 那次稽核發現整份 WBS 的 `DONE` 不可信。
+第三筆特別值得注意:它不是狀態過期,而是**文件描述的設計與落地的設計不同**——這種漂移比狀態漂移更難發現,因為兩邊各自看起來都合理。三筆都不大,但正是這種累積導致了那次稽核發現整份 WBS 的 `DONE` 不可信。三處已於 v1.0 同批回寫,而教訓是:**回寫與程式碼放同一個 PR,不留到下次。**
 
-三處已於 v1.0 同批回寫。**下一次:回寫與程式碼放同一個 PR,不留到下次。**
+**後續(2026-08-03):第三筆的兩種寫法都不是最終答案。** 那次回寫把文件改成跟 DEMO 一致(用 type),但 type 同時承載 `level`,所以每多一種需求性質就要在每一層複製一次 type——`type 數量 = 層數 × 性質數`。一個 workspace 因此長到九個 type,其中 level 0 兩個、level 2 四個。現在性質由 `Issue.requirement_kind` 承載,property 與 type 兩種寫法都已移除。詳見 [B2](#b2)。
 
-> **後續(2026-08-03):第三筆的兩種寫法都不是最終答案。** 那次回寫把文件改成跟 DEMO 一致(用 type),但 type 同時承載 `level`,所以每多一種需求性質就要在每一層複製一次 type——`type 數量 = 層數 × 性質數`。一個 workspace 因此長到九個 type,其中 level 0 兩個、level 2 四個。現在性質由 `Issue.requirement_kind` 承載,property 與 type 兩種寫法都已移除。詳見 B2。
->
-> 值得記下的是:**當年那次「回寫」讓文件與程式一致了,卻也把一個設計錯誤寫進了規範**。一致不等於正確。
+值得記下的是:**當年那次「回寫」讓文件與程式一致了,卻也把一個設計錯誤寫進了規範**。一致不等於正確。
+
+</details>
+
+<a id="a6"></a>
 
 ## A6 · Commit 與 PR
 
-Commit message 三段式:WHY(背景動機)/ WHAT(關鍵決策與取捨,不重複 diff)/ IMPACT(影響範圍、破壞性變更、後續動作)。Subject 用祈使句、≤ 72 字元,禁止 `fix` / `update` / `misc` 這種無意義 subject。
+**Commit message 三段式:** WHY(背景動機)/ WHAT(關鍵決策與取捨,不重複 diff)/ IMPACT(影響範圍、破壞性變更、後續動作)。Subject 用祈使句、≤ 72 字元,禁止 `fix` / `update` / `misc` 這種無意義 subject。
 
-PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試全通過、自我 review 過 `git diff main...HEAD`、無殘留 debug code、diff 超過 400 行或 10 個檔考慮拆分。保護分支一律走 PR。
+**PR body 四區段:** Background / Changes / Impact / Test Plan。
+
+建立前:測試全通過、自我 review 過 `git diff main...HEAD`、無殘留 debug code、diff 超過 400 行或 10 個檔考慮拆分。保護分支一律走 PR。
 
 ---
 
@@ -166,13 +232,22 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 
 對象是用這個平台管理專案的人。流程骨架(Intake → Spec → 拆票 → Sprint → DoR → TDD → Review → QA → Defect → Gate → Retro)見 `sdlc-guideline.md`,本節只寫**本平台特有的設定與語意**。
 
+<a id="b0"></a>
+
 ## B0 · 架構全貌:專案管理到測試的階層
 
-後面每一節的設定步驟都座落在這張圖上。先看懂它,B1 的順序與 B5 的數字才有座標系。
+**這不是一棵樹,是四個正交的軸。** 企業敏捷框架(SAFe 尤其明顯)習慣畫一座金字塔 Portfolio → Program → Team,由上而下拆到底;本系統刻意不是那樣,因為壓成一棵樹會遺失資訊。
 
-### 這不是一棵樹,是四個軸
+後面每一節的設定步驟都座落在這張圖上——[B1](#b1) 的順序與 [B5](#b5) 的數字都以它為座標系。
 
-企業敏捷框架(SAFe 尤其明顯)習慣畫一座金字塔:Portfolio → Program → Team,由上而下一路拆到底。**本系統刻意不是那樣**——四件不同的事分成四個正交的軸,因為壓成一棵樹會遺失資訊。
+| 軸         | 回答                     | 載體                                           | 形狀              |
+| ---------- | ------------------------ | ---------------------------------------------- | ----------------- |
+| ① **拆解** | 工作怎麼切、誰負責       | `Issue.parent` + `IssueType.level`             | 樹,可任意深度     |
+| ② **排程** | 什麼時候做、屬於哪個能力 | `CycleIssue`、`ModuleIssue`、`Issue.milestone` | **切面,不是階層** |
+| ③ **驗證** | 憑什麼算完成             | `TestCase` → `TestCaseVersion` → `TestStep`    | 版本鏈            |
+| ④ **證據** | 實際驗了什麼、結果如何   | `TestRun` → `TestRunCase` → `TestResult`       | 僅追加的流水      |
+
+**② 最常被誤讀成階層。** Cycle 與 Module 是 M:N join table,一個 Story 可以同時在 Sprint 12、屬於「查詢能力」模組、掛在 v2.0 里程碑下。它們是同一批 work item 的三種切法,誰也不包含誰。把 Module 當成 Epic 的下層會立刻矛盾——一個 Epic 的 story 往往散在多個 module 裡。
 
 ```
                          Workspace
@@ -211,24 +286,15 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
    ④ 證據軸    TestRun ──> TestRunCase ──> TestResult(僅追加)
         │                                        │
         └──► TestRun.cycle / module              │ ◄── 接合點 C
-             (回排程軸,#10 UI 未接)              ▼
+             (回排程軸)                           ▼
                                           Defect = Issue ──┐
                                                            │
         └──────────────── 回到 ① 拆解軸,閉環 ◄────────────┘
 ```
 
-| 軸         | 回答                     | 載體                                           | 形狀              |
-| ---------- | ------------------------ | ---------------------------------------------- | ----------------- |
-| ① **拆解** | 工作怎麼切、誰負責       | `Issue.parent` + `IssueType.level`             | 樹,可任意深度     |
-| ② **排程** | 什麼時候做、屬於哪個能力 | `CycleIssue`、`ModuleIssue`、`Issue.milestone` | **切面,不是階層** |
-| ③ **驗證** | 憑什麼算完成             | `TestCase` → `TestCaseVersion` → `TestStep`    | 版本鏈            |
-| ④ **證據** | 實際驗了什麼、結果如何   | `TestRun` → `TestRunCase` → `TestResult`       | 僅追加的流水      |
-
-**② 最常被誤讀成階層。** Cycle 與 Module 是 M:N join table,一個 Story 可以同時在 Sprint 12、屬於「查詢能力」模組、掛在 v2.0 里程碑下。它們是同一批 work item 的三種切法,誰也不包含誰。把 Module 當成 Epic 的下層會立刻矛盾——一個 Epic 的 story 往往散在多個 module 裡。
-
 ### 接合點才是承重結構
 
-四個軸本身好懂,真正決定系統行為的是它們相接的四個位置:
+**四個軸本身好懂,真正決定系統行為的是它們相接的四個位置。**
 
 | 接合點                                | 連接        | 為什麼關鍵                                                                 |
 | ------------------------------------- | ----------- | -------------------------------------------------------------------------- |
@@ -237,9 +303,11 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 | **C** `TestResultIssueLink`           | 證據 ↔ 拆解 | 缺陷是**真的 work item**,不是測試系統的內部物件,回到拆解軸走一般流程       |
 | **D** `TestRun.cycle` / `.module`     | 排程 ↔ 證據 | 「這個 sprint 驗了什麼」。run builder 兩個下拉都送出(`run-builder.tsx:94`) |
 
-接合點 C 是整套架構的價值所在:**證據軸的產出回流成拆解軸的輸入**,迴圈閉合。這也是為什麼缺陷必須從 failed / blocked 結果原子建立——那筆交易同時創造了迴流的起點與它的來源憑證。
+**接合點 C 是整套架構的價值所在:證據軸的產出回流成拆解軸的輸入,迴圈閉合。** 這也是為什麼缺陷必須從 failed / blocked 結果原子建立——那筆交易同時創造了迴流的起點與它的來源憑證。
 
 ### 每一層做什麼決策、讀什麼數字
+
+**全系統只有 Story 層在真正量測。** Epic 與 Feature 的每一個數字都是沿 `Issue.parent` roll-up 出來的,沒有獨立來源。
 
 | 層         | 決策                | 數字來源                         |
 | ---------- | ------------------- | -------------------------------- |
@@ -249,15 +317,13 @@ PR body 四區段:Background / Changes / Impact / Test Plan。建立前:測試�
 | **Story**  | **驗收(DoR / DoD)** | **契約 pass / fail —— 直接量測** |
 | Task       | 分工                | —                                |
 | Cycle      | 這個時間箱交付什麼  | run scorecard                    |
-| Release    | 能不能出貨          | gate 五類 blocker(見 B5)         |
+| Release    | 能不能出貨          | gate 五類 blocker(見 [B5](#b5))  |
 
-**全系統只有 Story 層在真正量測。** Epic 與 Feature 的每一個數字都是沿 `Issue.parent` roll-up 出來的,沒有獨立來源。
-
-這解釋了 #14 為什麼曾被評為阻擋級:roll-up 一旦算錯,不是某一格數字錯,而是**中上層全部是假的**——DEMO 上那個底下有 8 個契約的 Epic 顯示 UNCOVERED,而 Epic 正是管理層唯一會看的那一層。roll-up 的三條規則見 B5。
+> 這解釋了 #14 為什麼曾被評為阻擋級:roll-up 一旦算錯,不是某一格數字錯,而是**中上層全部是假的**——DEMO 上那個底下有 8 個契約的 Epic 顯示 UNCOVERED,而 Epic 正是管理層唯一會看的那一層。
 
 ### 在 Work Items 直接讀拆解軸
 
-Work Items 的 list 與 spreadsheet 都能 **group by Story**(顯示篩選的「Story」選項),把 task 依所屬 Story 分堆,每組標題帶該組筆數。等同 sprint 執行板;與 `leaf_only` 併用就只剩可執行的工作。
+**Work Items 的 list 與 spreadsheet 都能 group by Story**(顯示篩選的「Story」選項),把 task 依所屬 Story 分堆,每組標題帶該組筆數。等同 sprint 執行板;與 `leaf_only` 併用就只剩可執行的工作。
 
 | 行為               | 實際規則                                                                            |
 | ------------------ | ----------------------------------------------------------------------------------- |
@@ -268,7 +334,7 @@ Work Items 的 list 與 spreadsheet 都能 **group by Story**(顯示篩選的「
 | 每組筆數來源       | grouped response 既有的 `total_results`,不是前端另外算的                            |
 | 拖拉換組           | **停用**。拖到另一個標題等於改寫 `parent_id`,那是在拆解樹裡搬家,需要循環引用檢查    |
 
-分組欄的名稱由 `work-item-group-options/parent/` 提供,與分頁器共用 `story_grouping_queryset` 一份定義——兩份定義會漂移成「有標題沒群組」或「有群組沒標題」。
+> 分組欄的名稱由 `work-item-group-options/parent/` 提供,與分頁器共用 `story_grouping_queryset` 一份定義——兩份定義會漂移成「有標題沒群組」或「有群組沒標題」。
 
 ### 與 SAFe 詞彙對照
 
@@ -278,38 +344,50 @@ Work Items 的 list 與 spreadsheet 都能 **group by Story**(顯示篩選的「
 | Program Epic / Capability        | **Epic**                               | `IssueType` level 0 + `is_epic`         |
 | Feature                          | **Feature**                            | level 1                                 |
 | Story                            | **Story**                              | level 2 ← 契約掛這裡                    |
-| Enabler / NFR                    | **Story + `requirement_kind=quality`** | 不是獨立型別,見 B2                      |
+| Enabler / NFR                    | **Story + `requirement_kind=quality`** | 不是獨立型別,見 [B2](#b2)               |
 | PI / Release                     | **Milestone**                          | project 層檢查點,`Issue.milestone`      |
 | Iteration / Sprint               | **Cycle**                              | `start_date` / `end_date`               |
 | Value Stream / ART               | **Module**                             | 依產品能力切                            |
 | Team                             | **Project**                            | 無獨立層                                |
 
-### 五個刻意的取捨
+<details>
+<summary>五個刻意的取捨(要挑戰這個設計之前先讀)</summary>
 
 1. **沒有獨立的 Team / ART 層** —— Project 兼任。多團隊靠多專案加 Initiative 串,不是靠加一層
-2. **FR / AC / BDD / TestCase 壓成一個物件** —— test case 就是驗收條件。省掉一整層追蹤,代價是沒有 `FR-XXX-001` 這種獨立識別碼(見 B2)
+2. **FR / AC / BDD / TestCase 壓成一個物件** —— test case 就是驗收條件。省掉一整層追蹤,代價是沒有 `FR-XXX-001` 這種獨立識別碼(見 [B2](#b2))
 3. **NFR 與 Story 同階,不另開子層** —— NFR 橫跨所有層級,做成子層會逼它選一個歸屬,而「Feature 層的效能要求」就無處可放
 4. **排程軸刻意不是階層** —— 保留一個 work item 同時屬於多個切面的能力
 5. **量測只在 Story 層發生** —— 上層一律 roll-up,不允許獨立填報,避免各層數字互相矛盾
 
-### 四個接合點現在都通了
+</details>
 
-四個軸之間不再有斷點。backlog 19 個缺口中 18 個完成,#17 仍是 PARTIAL(見下):
+<details>
+<summary>四個接合點的現況,以及還缺的一塊</summary>
+
+四個軸之間不再有斷點。backlog 19 個缺口中 18 個完成,#17 仍是 PARTIAL:
 
 - **接合點 D** —— run builder 送出 `cycle_id` 與 `module_id`(`run-builder.tsx:94`),兩個下拉都接上了。「這個 sprint 驗了什麼」答得出來(#10)
-- **④ 證據軸收得下測試產不出來的證據** —— `ReleaseEvidence`(`kind` = slo / scan / review / other),出貨閘門把 `failing` 與 `pending` 都列為 blocker。審查簽核與持續 SLO **攔得到**,不再需要靠人工在出貨會議上逐條念(#15)。B3 的四形態表因此全部有歸屬
+- **④ 證據軸收得下測試產不出來的證據** —— `ReleaseEvidence`(`kind` = slo / scan / review / other),出貨閘門把 `failing` 與 `pending` 都列為 blocker。審查簽核與持續 SLO **攔得到**,不再需要靠人工在出貨會議上逐條念(#15)。[B3](#b3) 的四形態表因此全部有歸屬
 
 **仍然缺的一塊:結構化門檻(#17 的後半)。** `TestCaseVersion.case_type` 已經可以區分驗證方式,但 `{metric, operator, threshold, unit}` 在模型與 UI 都不存在,所以形態 1 的 NFR 只能把門檻寫進自由文字,自動判定與趨勢圖都做不到。backlog 一度把 #17 整條標成已完成,2026-08-04 查核後降回 PARTIAL。
 
-> 前兩條都曾經以「缺口」的身分寫在這裡,而且都在程式修好之後才被發現文件沒跟上;#17 則相反,是程式沒做完而文件先標了完成。兩個方向的漂移都出現過,A5 的三處回寫規則存在的理由就是這個。
+> 前兩條都曾經以「缺口」的身分寫在這裡,而且都在程式修好之後才被發現文件沒跟上;#17 則相反,是程式沒做完而文件先標了完成。兩個方向的漂移都出現過,[A5](#a5) 的三處回寫規則存在的理由就是這個。
+
+</details>
+
+<a id="b1"></a>
 
 ## B1 · 開一個新專案的順序
 
-可執行的參考實作是 `python manage.py seed_testing_demo --workspace <slug>`——它建立完整的 Epic → Feature → Story → Task 階層、契約、一輪驗證與一個缺陷迴圈,全程走服務層。**要看「正確設定長什麼樣」,先 seed 一個 DEMO 來讀。**
+**先 seed 一個 DEMO 來讀,不要從空白開始:**
 
-Epic 那一層刻意做了五個而非兩個,因為 `/epics` 頁面就是依 `type__is_epic` 過濾的 work item 清單,它能做的每一件事都必須有互相不同的 epic 才看得出來:依 state 分組、依 priority 分組、gantt 與 calendar 依 `start_date` / `target_date` 排位,以及每個 epic 各自的進度條。五個各自示範一種讀法——一個底下鋪滿五種 state group 且帶一筆逾期、一個尚未開始、一個已取消(取消的工作**留在分母裡**,否則放棄掉的 epic 會顯示成接近完成)、一個完全沒有後代(進度區塊整段不渲染,而不是畫一條歸零的條)。
+```bash
+python manage.py seed_testing_demo --workspace <slug>
+```
 
-> Epic 的進度**永遠**由後代算出,不讀它自己的 state。Epic 的 state 是人手動設的、estimate 通常是空的,拿它回答「這條線做得如何」等於問錯對象——`EpicAnalyticsEndpoint` 因此走到子樹底端,並把 epic 自己排除在計數之外。
+它建立完整的 Epic → Feature → Story → Task 階層、契約、一輪驗證與一個缺陷迴圈,全程走服務層。要看「正確設定長什麼樣」,讀它最快。
+
+**七個步驟:**
 
 | 步驟 | 做什麼                                | 指令                                                              |
 | ---- | ------------------------------------- | ----------------------------------------------------------------- |
@@ -322,38 +400,52 @@ Epic 那一層刻意做了五個而非兩個,因為 `/epics` 頁面就是依 `ty
 | 6    | 每個 Story 連結契約(DoR)              | `plane-qa case create` + `case link-issue`                        |
 | 7    | 建立 run 並綁 cycle                   | `plane-qa run create`                                             |
 
-第 1 步的階層由 `IssueType.level` 與 `is_epic` 表達。DEMO 的定義:
+**第 1 步的階層由 `IssueType.level` 與 `is_epic` 表達:**
 
-| 名稱    | level | is_epic | 意義                                |
-| ------- | ----- | ------- | ----------------------------------- |
-| Epic    | 0     | ✅      | 跨數個 feature 的商業能力           |
-| Feature | 1     | —       | 一組連貫的系統能力                  |
-| Story   | 2     | —       | 一次迭代交付的使用者價值,契約掛這裡 |
-| Bug     | 2     | —       | 缺陷,走一般交付流程                 |
-| Task    | 3     | —       | story 底下的實作或維運工作          |
+| 名稱    | level | is_epic | needs_acceptance | 意義                                |
+| ------- | ----- | ------- | ---------------- | ----------------------------------- |
+| Epic    | 0     | ✅      | ✅               | 跨數個 feature 的商業能力           |
+| Feature | 1     | —       | ✅               | 一組連貫的系統能力                  |
+| Story   | 2     | —       | ✅               | 一次迭代交付的使用者價值,契約掛這裡 |
+| Bug     | 2     | —       | ❌               | 缺陷,走一般交付流程                 |
+| Task    | 3     | —       | ❌               | story 底下的實作或維運工作          |
 
-**只有這四層加 Bug,不要再開型別。** 需求性質(FR / NFR)由 `Issue.requirement_kind` 承載——多開一個「Quality requirement」型別會讓 type 數量變成 `層數 × 性質數`,理由見 B2。
+三條規則:
 
-**Module 依產品能力切,不是依團隊或技術層。**
+- **只有這四層加 Bug,不要再開型別。** 需求性質(FR / NFR)由 `Issue.requirement_kind` 承載——多開一個「Quality requirement」型別會讓 type 數量變成 `層數 × 性質數`,理由見 [B2](#b2)
+- **`needs_acceptance` 預設是 `true`,建 Task / Bug 型別時要關掉。** 這個欄位決定該型別的項目會不會出現在覆蓋率報表裡;用 MCP `create_work_item_type` 建的型別一律帶 `true`,於是實作工作開始被要求驗收契約、整批顯示為未覆蓋。CLI 用 `type create … --body '{"needs_acceptance":false}'`,或事後 `PATCH /api/v1/workspaces/{slug}/work-item-types/{uuid}/`
+- **Module 依產品能力切,不是依團隊或技術層**
+
+<details>
+<summary>為什麼 DEMO 的 Epic 要做五個而不是兩個</summary>
+
+`/epics` 頁面就是依 `type__is_epic` 過濾的 work item 清單,它能做的每一件事都必須有互相不同的 epic 才看得出來:依 state 分組、依 priority 分組、gantt 與 calendar 依 `start_date` / `target_date` 排位,以及每個 epic 各自的進度條。
+
+五個各自示範一種讀法:
+
+- 一個底下鋪滿五種 state group 且帶一筆逾期
+- 一個尚未開始
+- 一個已取消——取消的工作**留在分母裡**,否則放棄掉的 epic 會顯示成接近完成
+- 一個完全沒有後代——進度區塊整段不渲染,而不是畫一條歸零的條
+
+**Epic 的進度永遠由後代算出,不讀它自己的 state。** Epic 的 state 是人手動設的、estimate 通常是空的,拿它回答「這條線做得如何」等於問錯對象——`EpicAnalyticsEndpoint` 因此走到子樹底端,並把 epic 自己排除在計數之外。
+
+</details>
+
+<a id="b2"></a>
 
 ## B2 · 需求分類:兩個維度,不是一條鏈
 
-本節放大 B0 的 ① 拆解軸,回答一個 B0 沒展開的問題:需求的**性質**要掛在哪裡。
+**一句話:Epic / Feature / Story 回答「多寬、怎麼拆」;FR / NFR(`requirement_kind`)回答「什麼性質」。不要把後者塞進前者的下一層。**
 
-常見誤解是把它們串成 `Epic → Feature → Story → FR → NFR → Task`。這是錯的。
+本節放大 [B0](#b0) 的 ① 拆解軸,回答一個 B0 沒展開的問題:需求的**性質**要掛在哪裡。
+
+常見誤解是把它們串成 `Epic → Feature → Story → FR → NFR → Task`。這是錯的:
 
 - **Epic / Feature / Story / Task** 是**工作拆解結構**——工作怎麼拆、怎麼排進開發
 - **FR / NFR** 是**需求性質分類**——系統要做什麼、要做到什麼程度
 
 兩者交叉:FR 與 NFR 橫跨每一個工作層級。
-
-### 白話速記(避免忘記)
-
-| 你可能記成…                       | 正式意思                                          | 校正                                                           |
-| --------------------------------- | ------------------------------------------------- | -------------------------------------------------------------- |
-| Epic ≈ user journey               | 跨數個 Feature 的**商業能力**                     | journey 只是口語近似;一個 journey 可能對一個 Epic,也可能跨多個 |
-| Feature = ?                       | 一組**連貫的系統能力**(Epic 下可獨立交付的價值塊) | 例:Epic「訂單履約」→ Feature「退貨申請」「出貨追蹤」           |
-| Story = requirement,再分 FR / NFR | Story = **一次迭代交付的使用者價值**;契約掛這裡   | FR / NFR **不是** Story 底下的子層,是橫切的性質標籤            |
 
 ```
 拆解軸（上下）                性質軸（橫切）
@@ -362,8 +454,6 @@ Epic                          functional | quality
       └── Story  ←契約掛這    functional | quality
            └── Task           none（實作,不是需求）
 ```
-
-**一句話:** Epic / Feature / Story 回答「多寬、怎麼拆」;FR / NFR(`requirement_kind`)回答「什麼性質」。不要把後者塞進前者的下一層。
 
 ```
 Epic          level 0        ── 拆解軸由 IssueType.level 承載
@@ -375,21 +465,7 @@ Bug           level 2        ── 缺陷是一般 work item,同樣有 type
 每一層都可以帶 requirement_kind = functional | quality | none
 ```
 
-**刻意的結構壓縮**:本模型把 FR / AC / BDD / Test Case 四層壓縮成 **test case 一個物件**。若追蹤重心在 Feature → Story 的價值交付,這個壓縮划算;若需要 `FR-XXX-001` 這種可獨立追蹤的識別碼,FR 就得各自成為 work item,數量會顯著膨脹。**這是取捨,不是缺陷——但要在專案開始時就決定,中途改要重建階層。**
-
-**承載這個分類的是 `Issue.requirement_kind` 欄位**,既不是 type 也不是 property。
-
-這一條改過兩次,兩次都錯,所以理由值得寫清楚:
-
-- **不能用 type**,因為 type 已經透過 `level` 承載「多寬」。再讓它承載「什麼性質」,type 的數量就變成 `層數 × 性質數`——一個 workspace 因此長到九個 type(level 0 兩個、level 2 四個),而「Feature 層的效能要求」還會再逼出第三個。
-- **不能用 property**,因為 property 是**專案層級**的定義。每開一個新專案都要先建它,問題才問得出來;跨專案的報表則根本問不出來。
-- **`none` 不是 null**。Task 是需求的實作、Bug 是缺陷,兩者都不是需求本身,所以帶 `none`。Epic 與 Feature 則是需求,只是比 Story 寬——「通知服務可靠性」整條就是品質要求。null 會被讀成「還沒分類」,那是另一件事。
-
-> **這個 bullet 曾經寫成「Epic 是需求的集合…帶 `none`」,與同一節上方那張圖直接衝突**(圖寫的是「每一層都可以帶 requirement_kind」),兩句話相隔八行。收斂成上面這版的理由:`none` 的意思是「不是需求」,而不是「是容器」。若照容器邏輯,Feature 同樣是容器卻沒人主張它該是 `none`——那個不對稱就是判斷寫錯了的證據。承載欄位之所以在 `Issue` 而不在 `IssueType`,前提正是性質橫跨每一個層級;把 level 0 排除掉會把這個前提削掉一角。
->
-> 順帶澄清一個容易被誤引的證據:`converge_work_item_types.py` 把 `Work Group` / `Scenario` 併進 Epic 時蓋上的是 `none`,那**不是**「Epic 必須是 none」的規則,而是遷移不去**猜**一個沒有記錄過的性質。同理 `KIND_ONLY` 只列 Story,因為未分類的 Story 絕大多數是功能需求、有個站得住的預設值;Epic 沒有這種預設,所以不碰。
-
-> **一致不等於正確。** 2026-07 那次把文件從 property 改成 type,理由是「跟 DEMO 一致」——文件與程式確實一致了,但一致的是一個會讓 type 數量相乘的設計。A5 那張漂移表的第三筆講的就是這件事。
+**承載這個分類的是 `Issue.requirement_kind` 欄位,既不是 type 也不是 property。**
 
 **一個必須記住的區分:**
 
@@ -399,19 +475,45 @@ Bug           level 2        ── 缺陷是一般 work item,同樣有 type
 >
 > 一條功能需求的驗收條件完全可能包含一個效能門檻。**不要用同一個欄位表達兩件事。**
 
+### 白話速記(避免忘記)
+
+| 你可能記成…                       | 正式意思                                          | 校正                                                           |
+| --------------------------------- | ------------------------------------------------- | -------------------------------------------------------------- |
+| Epic ≈ user journey               | 跨數個 Feature 的**商業能力**                     | journey 只是口語近似;一個 journey 可能對一個 Epic,也可能跨多個 |
+| Feature = ?                       | 一組**連貫的系統能力**(Epic 下可獨立交付的價值塊) | 例:Epic「訂單履約」→ Feature「退貨申請」「出貨追蹤」           |
+| Story = requirement,再分 FR / NFR | Story = **一次迭代交付的使用者價值**;契約掛這裡   | FR / NFR **不是** Story 底下的子層,是橫切的性質標籤            |
+
+<details>
+<summary>為什麼不能用 type、也不能用 property(這一條改過兩次,兩次都錯)</summary>
+
+- **不能用 type**,因為 type 已經透過 `level` 承載「多寬」。再讓它承載「什麼性質」,type 的數量就變成 `層數 × 性質數`——一個 workspace 因此長到九個 type(level 0 兩個、level 2 四個),而「Feature 層的效能要求」還會再逼出第三個。
+- **不能用 property**,因為 property 是**專案層級**的定義。每開一個新專案都要先建它,問題才問得出來;跨專案的報表則根本問不出來。
+- **`none` 不是 null**。Task 是需求的實作、Bug 是缺陷,兩者都不是需求本身,所以帶 `none`。Epic 與 Feature 則是需求,只是比 Story 寬——「通知服務可靠性」整條就是品質要求。null 會被讀成「還沒分類」,那是另一件事。
+
+**這個 bullet 曾經寫成「Epic 是需求的集合…帶 `none`」,與上方那張圖直接衝突**(圖寫的是「每一層都可以帶 requirement_kind」),兩句話相隔八行。收斂成上面這版的理由:`none` 的意思是「不是需求」,而不是「是容器」。若照容器邏輯,Feature 同樣是容器卻沒人主張它該是 `none`——那個不對稱就是判斷寫錯了的證據。承載欄位之所以在 `Issue` 而不在 `IssueType`,前提正是性質橫跨每一個層級;把 level 0 排除掉會把這個前提削掉一角。
+
+順帶澄清一個容易被誤引的證據:`converge_work_item_types.py` 把 `Work Group` / `Scenario` 併進 Epic 時蓋上的是 `none`,那**不是**「Epic 必須是 none」的規則,而是遷移不去**猜**一個沒有記錄過的性質。同理 `KIND_ONLY` 只列 Story,因為未分類的 Story 絕大多數是功能需求、有個站得住的預設值;Epic 沒有這種預設,所以不碰。
+
+**一致不等於正確。** 2026-07 那次把文件從 property 改成 type,理由是「跟 DEMO 一致」——文件與程式確實一致了,但一致的是一個會讓 type 數量相乘的設計。[A5](#a5) 那張漂移表的第三筆講的就是這件事。
+
+</details>
+
+<details>
+<summary>刻意的結構壓縮:FR / AC / BDD / TestCase 壓成一個物件</summary>
+
+本模型把這四層壓縮成 **test case 一個物件**。若追蹤重心在 Feature → Story 的價值交付,這個壓縮划算;若需要 `FR-XXX-001` 這種可獨立追蹤的識別碼,FR 就得各自成為 work item,數量會顯著膨脹。
+
+**這是取捨,不是缺陷——但要在專案開始時就決定,中途改要重建階層。**
+
+</details>
+
+<a id="b3"></a>
+
 ## B3 · NFR 的四種形態該放哪
 
-### 先分清楚兩個軸
+**分類 NFR 時先問「這條的證據從哪來?」,不是「它屬於哪一類?」** 前者決定它進不進 case 庫;後者只決定誰負責寫。
 
-企業常見的 NFR 清單(Performance、Availability、Reliability、Security、Scalability、Maintainability、Observability、Usability、Compatibility、Compliance)是**內容軸**——這條需求在約束哪一種品質屬性。本節的四形態是**驗證軸**——它的證據從哪來、多久產一次、進不進 case 庫。
-
-**兩軸正交,不可合併。** 同一個內容類別會依驗收條件怎麼寫而落在不同形態,這正是不能用單一欄位表達的原因(與 B2 的 type ≠ `type` 是同一個錯誤模式)。
-
-分類 NFR 時**先問驗證軸,不是內容軸**:「這條的證據從哪來?」決定它進不進 case 庫;「它屬於哪一類?」只決定誰負責寫。
-
-### 四種形態
-
-NFR 不是「跑一次測試就驗完」。四種形態的節奏與證據來源都不同:
+NFR 不是「跑一次測試就驗完」——四種形態的節奏與證據來源都不同:
 
 | 形態           | 例子                             | 驗證方式               | 節奏               | 放哪                        |
 | -------------- | -------------------------------- | ---------------------- | ------------------ | --------------------------- |
@@ -422,7 +524,9 @@ NFR 不是「跑一次測試就驗完」。四種形態的節奏與證據來源�
 
 **第 4 類在出貨前根本無法「測試」**——可用性是上個月的量測結果,RTO 要靠演練證明。這類 NFR 永遠不該變成 test case;硬做會得到一個每天「執行」卻不代表任何一次測試的假 case。
 
-形態 1 今天就能完整落地:k6 輸出 JUnit XML → `plane-qa automation upload-junit` 帶穩定 `external_id` → 每次執行掛回同一個 NFR case,歷次結果即效能趨勢。
+**形態 1 今天就能完整落地:** k6 輸出 JUnit XML → `plane-qa automation upload-junit` 帶穩定 `external_id` → 每次執行掛回同一個 NFR case,歷次結果即效能趨勢。
+
+**形態 3、4 走 `ReleaseEvidence`:** 一筆一個 `key`(專案內唯一,重複送同一個 key 是更新而不是累積歷史),`status` 為 `passing` / `failing` / `pending`。**出貨閘門把 `failing` 與 `pending` 都列為 blocker**——「還沒有人簽」跟「簽了但沒過」一樣擋得住,這正是形態 3、4 最容易被跳過的地方。寫入方式:`plane-qa` CLI 或 `POST .../testing/release-evidence/`。CI 掃描完直接送 `kind=scan`;可用性從監控系統定期送 `kind=slo`;架構審查簽核後送 `kind=review`。
 
 ### 常見類別落在哪個形態
 
@@ -441,15 +545,22 @@ NFR 不是「跑一次測試就驗完」。四種形態的節奏與證據來源�
 
 **一個類別橫跨兩個形態時要拆成兩條需求**,不要混在一條裡——混寫的結果是其中一半永遠驗不了,而閘門看不出來少了什麼。
 
-**四種形態現在都有歸屬。** 形態 1、2 進 case 庫;形態 3、4 走 `ReleaseEvidence`,一筆一個 `key`(專案內唯一,重覆送同一個 key 是更新而不是累積歷史),`status` 為 `passing` / `failing` / `pending`。**出貨閘門把 `failing` 與 `pending` 都列為 blocker**——所以「還沒有人簽」跟「簽了但沒過」一樣擋得住,這正是形態 3、4 最容易被跳過的地方。
+<details>
+<summary>為什麼內容軸與驗證軸不可合併</summary>
 
-寫入方式:`plane-qa` CLI 或 `POST .../testing/release-evidence/`。CI 掃描完直接送 `kind=scan`;可用性從監控系統定期送 `kind=slo`;架構審查簽核後送 `kind=review`。
+企業常見的 NFR 清單(Performance、Availability、Reliability、Security、Scalability、Maintainability、Observability、Usability、Compatibility、Compliance)是**內容軸**——這條需求在約束哪一種品質屬性。本節的四形態是**驗證軸**——它的證據從哪來、多久產一次、進不進 case 庫。
 
-> **這一段以前寫的是「缺口 #15,閘門攔不到」。** 那是舊的——`ReleaseEvidence` 與閘門的判定早已落地(見 `report.py` 的 blockers 組裝)。文件比程式晚了一個版本,而這正是 A5 那條規則存在的理由。
+**兩軸正交。** 同一個內容類別會依驗收條件怎麼寫而落在不同形態,這正是不能用單一欄位表達的原因(與 [B2](#b2) 的 type ≠ `type` 是同一個錯誤模式)。
+
+> **這一段以前寫的是「缺口 #15,閘門攔不到」。** 那是舊的——`ReleaseEvidence` 與閘門的判定早已落地(見 `report.py` 的 blockers 組裝)。文件比程式晚了一個版本,而這正是 [A5](#a5) 那條規則存在的理由。
+
+</details>
+
+<a id="b4"></a>
 
 ## B4 · 契約撰寫規範
 
-BDD 對應乾淨,直接用既有欄位:
+**BDD 直接對應既有欄位,不需要新結構:**
 
 | BDD         | 系統欄位                                  |
 | ----------- | ----------------------------------------- |
@@ -464,13 +575,15 @@ Test case: NFR-PERF-001 訂單歷程查詢 P95 < 2s
   Then    P95 回應時間 < 2000ms
 ```
 
-門檻要結構化為 `{metric, operator, threshold, unit}`,量測值為 `{measured, unit}`。塞在自由文字裡就畫不出趨勢、也無法自動判定。欄位已是 `JSONField`,寫得進去——但**目前 UI 只當純文字顯示**(缺口 #17),趨勢圖尚未存在。現在就用結構化格式寫,#17 落地時資料直接可用。
+**門檻要結構化為 `{metric, operator, threshold, unit}`,量測值為 `{measured, unit}`。** 塞在自由文字裡就畫不出趨勢、也無法自動判定。欄位已是 `JSONField`,寫得進去——但**目前 UI 只當純文字顯示**(缺口 #17),趨勢圖尚未存在。現在就用結構化格式寫,#17 落地時資料直接可用。
 
 **DoR:一個 Story 不算 ready,除非至少連結一個 happy path 與一個 unhappy path 的契約。** 要跳過需要人類(通常 PM)明確同意並記錄理由,agent 不可自行放行。
 
+<a id="b5"></a>
+
 ## B5 · 覆蓋率與出貨閘門怎麼讀
 
-這一節的語意在 `9ed58492d` 剛改過,舊的理解會誤導決策。
+**這一節的語意改過兩次(`9ed58492d` 的 roll-up,以及後來的「只算葉節點、只算會產生列的型別」),憑印象讀會誤導決策——下面五條是現行規則。**
 
 **兩個百分比不要混:**
 
@@ -479,13 +592,15 @@ Test case: NFR-PERF-001 訂單歷程查詢 P95 < 2s
 | `library.linked_percent`        | 已連結需求的 case 佔全部 case      | 契約庫有多整齊     |
 | `requirements.coverage_percent` | 已被覆蓋的需求佔**應有契約**的需求 | **出貨決策靠這個** |
 
-DEMO 上兩者分別是 100% 與 88.9%——舊版單一數字把這個區別抹平了,於是一個完全連結的契約庫讀起來像是完全驗證過的交付。
+> DEMO 上兩者曾分別是 100% 與 88.9%——舊版單一數字把這個區別抹平了,於是一個完全連結的契約庫讀起來像是完全驗證過的交付。
 
-**覆蓋率的三條計算規則:**
+**覆蓋率的五條計算規則:**
 
 1. **沿階層 roll-up** —— 契約掛在 story(驗收在那裡決定),feature 與 epic 繼承其下所有後代的契約。只讀自己的連結會讓有八個契約的 epic 顯示為未覆蓋
 2. **缺陷不算需求** —— 由失敗結果產生的缺陷是測試產出的證據,不是等待驗證的需求。不排除的話,每一個曾經開過的缺陷都會被報成未測需求
 3. **`backlog` 與 `cancelled` 狀態群組免契約** —— 還沒排程的項目沒人要求它現在有驗收契約,取消的永遠不會出貨。**其餘全部在範圍內**:DoR 要求的是實作開始前就有契約,不是完成後
+4. **只有 `needs_acceptance` 的型別會產生列** —— Task 與 Bug 預設不算:實作工作不是產品做出的承諾,承諾在它上面那條 Story。它們連結的契約仍會 roll-up 上去。沒有型別的項目**保留**,否則沒採用型別的專案會整份報表沉默
+5. **摘要別人的列不計入總數** —— 一個 epic 的覆蓋狀態就是它底下 story 的覆蓋狀態,再算一次等於同一個決定投兩次票。它仍然有自己的列(才看得出缺口在哪),但只有 `counts_toward_coverage` 為真的列進分母
 
 多個契約回答同一個需求時,**最差的狀態勝出**:`failed` > `blocked` > `open` > `skipped` > `passed`。
 
@@ -501,15 +616,19 @@ DEMO 上兩者分別是 100% 與 88.9%——舊版單一數字把這個區別抹
 
 **閘門是必要條件,不是充分條件。** `ready: true` 的意思是「機讀檢查沒有攔截項」,不是「可以出貨」。出貨與否是 PM + QA 的聯合人類決策,**agent 只能列出 blocker,不能宣告可以出**。
 
+<a id="b6"></a>
+
 ## B6 · Agent 邊界
 
-流程層的六個 human gate 見 `sdlc-guideline.md`(需求範圍、拆票優先序、DoR 例外、PR merge、缺陷真偽、出貨決策)。本平台額外三條:
+**本平台的三條紅線:**
 
 - **不繞過服務層寫入。** 直接操作資料庫會產生不受四個不變量保護的資料
 - **不補 passed 結果。** 使用者說「那應該是誤判」不構成追加一筆通過結果的理由;要重新執行過才追加
 - **不宣告可出貨。** 只能報告 `quality release-gate` 的機讀結果與 blocker 清單
 
-agent 可以放手做完所有機械性、可逆的工作:轉錄需求進 Plane、建立契約、記錄結果、上傳 CI 結果、起草文件與 PR 描述。
+**agent 可以放手做完所有機械性、可逆的工作:** 轉錄需求進 Plane、建立契約、記錄結果、上傳 CI 結果、起草文件與 PR 描述。
+
+流程層的六個 human gate 見 `sdlc-guideline.md`(需求範圍、拆票優先序、DoR 例外、PR merge、缺陷真偽、出貨決策)。
 
 ---
 

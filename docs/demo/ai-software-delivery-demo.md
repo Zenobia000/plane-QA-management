@@ -3,6 +3,13 @@
 `seed_ai_software_demo` creates a connected Plane project for demonstrating product management,
 JIRA-style work items, AI-assisted software development, and QA evidence in one project scope.
 
+This is the second of two demo seeds, and the one to reach for when the subject is custom-field
+kinds or evidence attachments. It predates `plane/testing/demo/` and still carries the default
+five-state board, so anything about the delivery process, workflow states, coverage rules or the
+Project Overview belongs to `seed_testing_demo` instead. Both are compared, with `--force`
+semantics and the repair commands, in
+[`.agents/skills/plane-qa/references/demo-data.md`](../../.agents/skills/plane-qa/references/demo-data.md).
+
 ## Create the demo
 
 Run the command inside the API environment against an existing workspace:

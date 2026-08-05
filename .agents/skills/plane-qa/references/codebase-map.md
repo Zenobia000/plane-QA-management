@@ -6,18 +6,20 @@ Layering rule (testing): business logic lives only in `apps/api/plane/testing/` 
 
 ## Backend (Django, `apps/api/`)
 
-| Layer                                                                     | Location                                                     |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Models (all invariants in `save()`/`clean()`)                             | `plane/db/models/testing.py`                                 |
-| Services (cases, versions, runs, results, defects, close)                 | `plane/testing/services.py`                                  |
-| CI ingestion + JUnit parser + idempotency                                 | `plane/testing/automation.py`                                |
-| CSV import/export                                                         | `plane/testing/portability.py`                               |
-| App views (session auth)                                                  | `plane/app/views/testing/{capability,library,run,report}.py` |
-| App URLs                                                                  | `plane/app/urls/testing.py`                                  |
-| Public views (X-API-Key; thin subclasses + error envelope + X-Request-ID) | `plane/api/views/testing.py`                                 |
-| Public URLs                                                               | `plane/api/urls/testing.py`                                  |
-| Ingestion serializers                                                     | `plane/api/serializers/testing.py`                           |
-| Celery artifact task (autoretry ×3)                                       | `plane/bgtasks/testing_artifact_task.py`                     |
+| Layer                                                                     | Location                                                                    |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Models (all invariants in `save()`/`clean()`)                             | `plane/db/models/testing.py`                                                |
+| Services (cases, versions, runs, results, defects, close)                 | `plane/testing/services.py`                                                 |
+| CI ingestion + JUnit parser + idempotency                                 | `plane/testing/automation.py`                                               |
+| CSV import/export                                                         | `plane/testing/portability.py`                                              |
+| App views (session auth)                                                  | `plane/app/views/testing/{capability,library,run,report}.py`                |
+| App URLs                                                                  | `plane/app/urls/testing.py`                                                 |
+| Public views (X-API-Key; thin subclasses + error envelope + X-Request-ID) | `plane/api/views/testing.py`                                                |
+| Public URLs                                                               | `plane/api/urls/testing.py`                                                 |
+| Ingestion serializers                                                     | `plane/api/serializers/testing.py`                                          |
+| Celery artifact task (autoretry ×3)                                       | `plane/bgtasks/testing_artifact_task.py`                                    |
+| Coverage / overview / release-gate computation                            | `plane/app/views/testing/report.py`                                         |
+| Demo seed (composed modules, goes through the service layer)              | `plane/testing/demo/` + `plane/db/management/commands/seed_testing_demo.py` |
 
 Tests (canonical usage examples — read these before changing behavior):
 
@@ -29,17 +31,20 @@ Tests (canonical usage examples — read these before changing behavior):
 
 These have thinner plumbing than testing: model invariants in `save()`/`clean()`, logic in the view. That is deliberate — none of them has a second caller, and a service layer with one consumer is indirection, not architecture. Add one the moment a second tree needs the same logic.
 
-| Surface                                                                    | Backend                                                      | Web                                                              |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------- |
-| Project Overview (progress, activity, links, milestones, updates)          | `plane/app/views/project/overview.py`                        | `.../projects/(detail)/[projectId]/overview/`                    |
-| Noticeboard (`EntityUpdate`, `EntityUpdateLabel`)                          | same file — `EntityUpdateViewSet`                            | `apps/web/core/components/updates/panel.tsx`                     |
-| Customer frontline (intake grouped by a chosen property)                   | same file — `ProjectFrontlineEndpoint`                       | `.../overview/frontline-panel.tsx`                               |
-| Needs attention (overdue + urgent)                                         | same file — `ProjectAttentionEndpoint`                       | `.../overview/attention-panel.tsx`                               |
-| Release readiness on the overview                                          | reads `testing/overview`'s `release_gate`                    | `.../overview/readiness-panel.tsx`                               |
-| Work-item types & properties                                               | `plane/db/models/{issue_type,work_item_property}.py`, `plane/app/views/work_item_property.py` | `apps/web/core/components/work-item-extensions/`   |
-| Milestones                                                                 | `plane/db/models/portfolio.py`; both trees                    | overview milestones panel                                        |
-| Intake ingestion                                                           | `plane/db/models/intake.py`, `plane/app/views/intake/`        | `.../projects/(detail)/[projectId]/intake/`                      |
-| Automations, state transitions, templates                                  | `plane/db/models/automation.py`, `plane/app/urls/project.py`   | project settings                                                 |
+| Surface                                                           | Backend                                                                                       | Web                                              |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Project Overview (progress, activity, links, milestones, updates) | `plane/app/views/project/overview.py`                                                         | `.../projects/(detail)/[projectId]/overview/`    |
+| Noticeboard (`EntityUpdate`, `EntityUpdateLabel`)                 | same file — `EntityUpdateViewSet`                                                             | `apps/web/core/components/updates/panel.tsx`     |
+| Customer frontline (intake grouped by a chosen property)          | same file — `ProjectFrontlineEndpoint`                                                        | `.../overview/frontline-panel.tsx`               |
+| Needs attention (overdue + urgent)                                | same file — `ProjectAttentionEndpoint`                                                        | `.../overview/attention-panel.tsx`               |
+| Release readiness on the overview                                 | reads `testing/overview`'s `release_gate`                                                     | `.../overview/readiness-panel.tsx`               |
+| Work-item types & properties                                      | `plane/db/models/{issue_type,work_item_property}.py`, `plane/app/views/work_item_property.py` | `apps/web/core/components/work-item-extensions/` |
+| Requirement nature (`Issue.requirement_kind`)                     | `plane/db/models/issue.py`; `/api/v1` serializer only                                         | no UI — the app-tree serializer omits the field  |
+| Delivery states (`DEFAULT_STATES`, 14-state `SDLC_STATES`)        | `plane/db/models/state.py`                                                                    | project settings → states                        |
+| Page folders (`Page.is_folder`)                                   | `plane/db/models/page.py`, `plane/app/views/page/base.py`                                     | `apps/web/core/components/pages/list/`           |
+| Milestones                                                        | `plane/db/models/portfolio.py`; both trees                                                    | overview milestones panel                        |
+| Intake ingestion                                                  | `plane/db/models/intake.py`, `plane/app/views/intake/`                                        | `.../projects/(detail)/[projectId]/intake/`      |
+| Automations, state transitions, templates                         | `plane/db/models/automation.py`, `plane/app/urls/project.py`                                  | project settings                                 |
 
 **The Overview surface is app-tree only.** `overview/`, `progress/`, `activity/`, `updates/`, `frontline/`, `attention/` exist under `/api/workspaces/...` (session auth) and have no `/api/v1` equivalent, so no API key reaches them and no MCP tool wraps them. Milestones and links are the exceptions — both trees. Before adding a `/api/v1` mirror, read the app-tree-only note in api-reference.md: an agent can already feed these panels through the entities they read from.
 
@@ -72,7 +77,9 @@ Each has vitest specs beside the source (`client.spec.ts`, `run.spec.ts`, `creat
 - `docs/api/testing-management.md`, `docs/api/testing-automation.md` — API contracts.
 - `docs/planning/testing-product-definition.md` — personas, JTBD map, traceability design principles, the prioritised UX gap backlog, and the interface specs for case detail, execution workspace, and the work-item testing panel.
 - `docs/planning/project-overview-noticeboard.md` — why the Overview became a product war room: the three data classes (derived / triage / first-hand) and the interaction rule each one implies, the layout, and the read/write path per panel. Read this before adding anything to that page; it is the argument for why a computed number never gets an editable field beside it.
-- `docs/architecture/decisions/0001..0005` — ADRs (case aggregate/versioning, immutable execution, automation ingestion, milestones/fork boundaries, project attributes & entity updates). **0005 predates the war-room redesign.** Its `EntityUpdate` and activity-feed decisions still hold, and `Project.priority/start_date/target_date` are still on the model — but the Properties panel that surfaced them was removed, because an editable field beside a computed number produces two truths and no owner. Schema decision stands; presentation decision superseded by the noticeboard spec.
+- `docs/process/plane-qa-guideline.md` — the delivery process this fork models, in Traditional Chinese. §B0 is the diagram the demo seed instantiates; §B1 the four-level vocabulary; §B2 why requirement nature is a field on `Issue` and neither a type nor a property. Read B2 before adding anything that classifies requirements.
+- `docs/demo/ai-software-delivery-demo.md` — the AIDEMO seed. The DEMO seed's usage lives in `.agents/skills/plane-qa/references/demo-data.md`.
+- `docs/architecture/decisions/0001..0007` — ADRs (case aggregate/versioning, immutable execution, automation ingestion, milestones/fork boundaries, project attributes & entity updates, page folders as pages, folders declared not inferred). **0005 predates the war-room redesign.** Its `EntityUpdate` and activity-feed decisions still hold, and `Project.priority/start_date/target_date` are still on the model — but the Properties panel that surfaced them was removed, because an editable field beside a computed number produces two truths and no owner. Schema decision stands; presentation decision superseded by the noticeboard spec.
 - `docs/operations/plane-qa-agent-tooling.md` — runbook, troubleshooting.
 - `.agents/skills/plane-qa/` — cross-agent skill (Codex entry via `agents/openai.yaml`) and the single source of truth for all shared reference docs, including this file.
 - `.claude/skills/operating-plane-qa/` — Claude Code entry point; thin SKILL.md that links into `.agents/skills/plane-qa/references/`.
@@ -97,3 +104,6 @@ Each has vitest specs beside the source (`client.spec.ts`, `run.spec.ts`, `creat
 13. **Derived panels are never editable in place.** Progress, milestones, attention and readiness are computed; the way to change them is to open the source. An editable field beside a computed number produces two truths and no owner — that is why the Properties panel was removed.
 14. **A capped list says what it held back.** `total_overdue`, `total_urgent` and a group's `total` exist so five never reads as all there is.
 15. **Panels with nothing to say render nothing.** No grouping dimension → no frontline panel; nothing overdue → no attention panel. A panel that says "all clear" daily trains people to skip the region where the alarm will appear.
+16. **The two classification axes stay separate.** `IssueType.level` carries breadth; `Issue.requirement_kind` carries nature. Fold either into the other and the number of types becomes their product — this workspace reached nine types that way, and `converge_work_item_types` exists to undo it. Any new classification question gets a field or a property, never a type per combination.
+17. **Coverage counts promises, once each.** Only `needs_acceptance` types produce rows, `backlog`/`cancelled` are out of scope, and a row summarising other counted rows contributes nothing to the totals. Contracts still roll up from children that earn no row of their own — the walk down the hierarchy is independent of who is counted.
+18. **A page folder is declared, not inferred** (`Page.is_folder`, ADR 0007). Inferring it from "has children" makes a page change kind when its last child moves, and gives a folder no way to exist while empty.

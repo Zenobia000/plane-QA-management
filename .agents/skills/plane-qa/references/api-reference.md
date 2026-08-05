@@ -230,26 +230,35 @@ Every ≥400 response uses a stable envelope and echoes `X-Request-ID` (send you
 
 ## Which work items owe a contract
 
-`requirement-coverage/` does not return one row per work item, and reading it as if it did makes
-both the numerator and the denominator wrong. Four rules decide, all in
-`plane/app/views/testing/report.py`:
+`requirement-coverage/` does not return one row per work item, and the rows it does return are not
+all in the totals. Two separate decisions, both in `plane/app/views/testing/report.py`, and each row
+carries the flag that records them — read the flags rather than re-deriving the rules.
 
-1. **Only types with `needs_acceptance` produce a row.** An implementation task is how something
-   gets built, not something the product promises; the story above it carries the promise. The
-   shipped default is `true` for Epic/Feature/Story and `false` for Task/Bug. Their linked cases
-   still roll up — the walk down the hierarchy does not care whether a child earns a row of its own.
+**Which work items get a row**
+
+1. **Only types with `needs_acceptance` produce one.** An implementation task is how something gets
+   built, not something the product promises; the story above it carries the promise. The shipped
+   default is `true` for Epic/Feature/Story and `false` for Task/Bug. Their linked cases still roll
+   up — the walk down the hierarchy does not care whether a child earns a row of its own.
 2. **Work items with no type at all are kept.** A project that never adopted types would otherwise
    report nothing, and silence is the one answer a coverage report must not give.
-3. **`backlog` and `cancelled` state groups are out of scope.** Nobody has scheduled the first and
-   the second will never ship. Definition of Ready asks for the contract when work is scheduled, so
-   the first state that owes one is whatever `unstarted` state the project schedules into.
-4. **A row that summarises other counted rows does not count toward the totals.** An epic is
-   covered exactly when its stories are; counting it again is a second vote for one decision. It
-   still gets a row, and its own directly-linked contracts still count.
+3. **Defects never get one.** A separate rule from #1, and both are needed: the type says what a row
+   is _for_, the link says where it _came from_, and a defect filed under some other type is
+   evidence rather than a promise.
 
-Defects are excluded before any of this. That is a separate rule from #1, and both are needed: the
-type says what a row is _for_, the link says where it _came from_, and a defect filed under some
-other type is evidence rather than a promise.
+**Which rows the totals use** — `counts_toward_coverage && requires_contract`
+
+- `counts_toward_coverage` is `false` for a row that summarises other counted rows, at any depth. An
+  epic is covered exactly when its stories are; counting it again is a second vote for one decision.
+  The row stays in the list so the tree still shows where a gap sits, and its own directly-linked
+  contracts still count.
+- `requires_contract` is `false` in the `backlog` and `cancelled` state groups. Nobody has scheduled
+  the first and the second will never ship. Definition of Ready asks for the contract when work is
+  scheduled, so the first state that owes one is whatever `unstarted` state the project schedules
+  into.
+
+An uncovered requirement worth reporting is therefore a row with both flags true and
+`covered: false` — that set is exactly what the overview counts as in-scope and uncovered.
 
 `needs_acceptance` is a workspace-level field on the type
 (`PATCH /workspaces/{slug}/work-item-types/{uuid}/`, both trees). Flipping it changes what every

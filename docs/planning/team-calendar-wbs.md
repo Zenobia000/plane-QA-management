@@ -31,24 +31,32 @@
 | 0.2 | 產品定義 `team-calendar.md`               | 0.1  | 三個問題、三種時間、四個畫面、分配規則  | 文件審查           | DONE    |
 | 0.3 | 本 WBS                                    | 0.2  | 每個工作包帶驗收與測試 gate             | `git diff --check` | DONE    |
 | 0.4 | API 契約 `docs/api/team-calendar.md`      | 0.1  | 兩棵樹的路由、請求/回應、錯誤碼         | 契約測試對照       | BACKLOG |
-| 0.5 | 回寫 `codebase-map.md`                    | 0.1  | availability 的 layer→file 表與新不變量 | 文件審查           | BACKLOG |
+| 0.5 | 回寫 `codebase-map.md`                    | 0.1  | availability 的 layer→file 表與新不變量 | 文件審查           | DONE    |
 
 ## 1. 架構切片(PR 0)
 
 目標:證明 workspace 層級的接縫乾淨,再讓 migration 把 fork 變貴。比照
 `testing-platform-wbs.md` §1 與 `testing-platform-workflow.md` §12。
 
-| WBS | 工作包            | 相依     | 交付/驗收                                                     | 測試                 | 狀態    |
-| --- | ----------------- | -------- | ------------------------------------------------------------- | -------------------- | ------- |
-| 1.1 | 側邊欄項目        | 0.3      | Team Calendar 出現在 workspace 層級並遵守權限                 | 型別檢查;導覽審查    | BACKLOG |
-| 1.2 | 路由與分頁殼      | 1.1      | `/[workspaceSlug]/calendar/` 在已驗證的 layout 內渲染三個分頁 | web production build | BACKLOG |
-| 1.3 | Plane 原生空狀態  | 1.2      | 說明時段/假期/分配三個方向,無死控制項                         | 人工 smoke           | BACKLOG |
-| 1.4 | Capability 端點   | 0.3      | 已驗證的 workspace 成員取得穩定 payload                       | API 契約測試         | BACKLOG |
-| 1.5 | 未授權隔離        | 1.4      | 匿名、非成員、**GUEST** 皆無法探測                            | API 契約測試         | BACKLOG |
-| 1.6 | 前端 typed client | 1.4      | `@plane/services` 輸出型別與錯誤行為                          | 型別檢查;store spec  | BACKLOG |
-| 1.7 | 切片整合          | 1.2, 1.6 | 頁面載入 capability 並有明確 loading/error/ready 三態         | 驗收 smoke           | BACKLOG |
+| WBS | 工作包             | 相依     | 交付/驗收                                                                   | 測試                           | 狀態    |
+| --- | ------------------ | -------- | --------------------------------------------------------------------------- | ------------------------------ | ------- |
+| 1.1 | 側邊欄項目         | 0.3      | Team Calendar 出現在 workspace 層級,access 限 ADMIN + MEMBER                | `pnpm check` 綠                | DONE    |
+| 1.2 | 路由與分頁殼       | 1.1      | `/[workspaceSlug]/calendar/` 在已驗證的 layout 內渲染三個分頁               | web production build 通過      | DONE    |
+| 1.3 | Plane 原生空狀態   | 1.2      | 三個分頁各自說明將提供什麼,無死控制項                                       | **缺人工 smoke**(見下)         | PARTIAL |
+| 1.4 | Capability 端點    | 0.3      | 已驗證的 workspace 成員取得穩定 payload                                     | `test_availability_capability` | DONE    |
+| 1.5 | 未授權隔離         | 1.4      | 匿名、非成員、**GUEST**、停用成員皆無法探測                                 | 同上,四個 case                 | DONE    |
+| 1.6 | 前端 typed client  | 1.4      | `@plane/services` 輸出型別與錯誤行為                                        | `availability.store.spec.ts`   | DONE    |
+| 1.7 | 切片整合           | 1.2, 1.6 | 頁面載入 capability,loading/error/ready 三態                                | **缺人工排練**(見下)           | PARTIAL |
+| 1.8 | workspace 層 smoke | 1.4      | `test_endpoint_smoke.py` 涵蓋 workspace-scoped GET(原本只有 project-scoped) | 153/265 路由,原 41             | DONE    |
 
-出場 gate:後端契約通過、前端型別與 build 通過、新路由已加進 `test_endpoint_smoke.py`。
+出場 gate:後端契約通過、前端型別與 build 通過、新路由已加進 `test_endpoint_smoke.py`。**已達成,但 1.3 與 1.7 的人工證據尚未取得**——兩者的實作都在,自動化覆蓋也在(空狀態的 gating 由 `helpers.spec.ts` 覆蓋、三態由 store spec 覆蓋),缺的是有人把本機 stack 跑起來、用三種角色點過三個分頁。證據到位前不得標 DONE,依守則 A5。
+
+**1.8 順帶找到兩個既有 500**(不是本分支造成,列在 `KNOWN_WORKSPACE_500`,未修):
+
+- `workspaces/<slug>/file-assets/` — `FileAssetEndpoint.get()` 不接受自己 URL 傳進來的 `slug`
+- `workspaces/<slug>/user-favorite-projects/` — `ProjectFavoritesViewSet` 沒宣告 `serializer_class`
+
+兩個都是上游註冊錯誤,修它們屬於另一個分支(守則 A1:一個分支只做一件事)。
 
 ## 2. 可及時段與共同空檔(PR 1)— 解決問題 1
 

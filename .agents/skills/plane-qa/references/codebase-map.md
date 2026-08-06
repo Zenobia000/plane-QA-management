@@ -48,7 +48,31 @@ These have thinner plumbing than testing: model invariants in `save()`/`clean()`
 
 **The Overview surface is app-tree only.** `overview/`, `progress/`, `activity/`, `updates/`, `frontline/`, `attention/` exist under `/api/workspaces/...` (session auth) and have no `/api/v1` equivalent, so no API key reaches them and no MCP tool wraps them. Milestones and links are the exceptions — both trees. Before adding a `/api/v1` mirror, read the app-tree-only note in api-reference.md: an agent can already feed these panels through the entities they read from.
 
-Tests: `plane/tests/contract/app/test_noticeboard.py` (posting, revising, filing, taking down, permission boundary), `test_frontline_and_attention.py` (grouping, triage folding, caps, ordering), `test_endpoint_smoke.py` (every project-scoped GET asserted not to 5xx — new routes are covered the day they are registered).
+Tests: `plane/tests/contract/app/test_noticeboard.py` (posting, revising, filing, taking down, permission boundary), `test_frontline_and_attention.py` (grouping, triage folding, caps, ordering), `test_endpoint_smoke.py` (every project-scoped **and** workspace-scoped GET asserted not to 5xx — new routes are covered the day they are registered; two upstream 500s are named in `KNOWN_WORKSPACE_500` rather than skipped).
+
+## Availability (team calendar) — the fork's first workspace-scoped aggregate
+
+Everything else in this fork hangs off a project. This does not, and the reason is in ADR 0008: an absence is a fact about a person, so storing it per project would store the same Tuesday N times and let the copies disagree. Read the ADR before adding a field here — several of its decisions are prohibitions, not preferences.
+
+**`User.last_active` is off limits to this module.** Availability is declared, never observed: no presence signal, no per-person history, no balances. `test_availability_capability.py` asserts no response carries the field, so the rule fails a test rather than a review.
+
+| Layer                                         | Location                                                             |
+| --------------------------------------------- | -------------------------------------------------------------------- |
+| Permission (workspace members, guests barred) | `plane/app/views/availability/permissions.py`                        |
+| App views (session auth)                      | `plane/app/views/availability/`                                      |
+| App URLs                                      | `plane/app/urls/availability.py`                                     |
+| Types                                         | `packages/types/src/availability.ts`                                 |
+| HTTP service (app tree)                       | `packages/services/src/availability/availability.service.ts`         |
+| MobX store                                    | `apps/web/core/store/availability.store.ts`                          |
+| Route + tabs (Hours / Time off / Allocation)  | `apps/web/app/(all)/[workspaceSlug]/(projects)/calendar/`            |
+| Sidebar entry (ADMIN + MEMBER only)           | `packages/constants/src/workspace.ts`, `WORKSPACE_SIDEBAR_DYNAMIC_…` |
+| i18n                                          | `packages/i18n/src/locales/*/team-calendar.json`                     |
+
+The capability endpoint reports a false flag per unbuilt slice and the client renders an empty state for each, so the navigation, route and three tabs shipped before any migration existed. Flipping a flag belongs to the slice that earns it — see `docs/planning/team-calendar-wbs.md`.
+
+A service layer (`plane/availability/`) arrives with the first slice that writes: unlike the delivery surfaces, this one has four consumers from the start — app tree, `/api/v1`, MCP and CLI.
+
+Docs: `docs/architecture/decisions/0008-availability-is-a-workspace-fact.md`, `docs/planning/team-calendar.md` (the three questions, the three kinds of "time", the four screens), `docs/planning/team-calendar-wbs.md`.
 
 ## TypeScript tooling
 

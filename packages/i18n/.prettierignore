@@ -8,3 +8,8 @@ node_modules/
 out/
 pnpm-lock.yaml
 storybook-static/
+
+# Written by `generate:types`, gitignored, and never edited by hand. It was being
+# format-checked only when `build` happened to finish before `check:format` in the same
+# turbo run, so `pnpm check` passed or failed on timing rather than on content.
+src/types/keys.generated.ts

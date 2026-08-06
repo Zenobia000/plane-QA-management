@@ -213,6 +213,16 @@ export const WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS: Record<string, IWorkspa
     access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
     highlight: (pathname: string, url: string) => pathname.includes(url),
   },
+  // Guests are excluded deliberately: this is the whole team's working hours and
+  // absences, and a guest is someone let into one project. Mirrors
+  // `WorkspaceAvailabilityPermission` on the server, which is where it is enforced.
+  "team-calendar": {
+    key: "team_calendar",
+    labelTranslationKey: "team_calendar.label",
+    href: `/calendar/`,
+    access: [EUserWorkspaceRoles.ADMIN, EUserWorkspaceRoles.MEMBER],
+    highlight: (pathname: string, url: string) => pathname.includes(url),
+  },
   archives: {
     key: "archives",
     labelTranslationKey: "archives",
@@ -225,6 +235,7 @@ export const WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS: Record<string, IWorkspa
 export const WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS: IWorkspaceSidebarNavigationItem[] = [
   WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["views"],
   WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["analytics"],
+  WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["team-calendar"],
   WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS["archives"],
 ];
 

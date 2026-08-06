@@ -67,6 +67,8 @@ import type { IThemeStore } from "./theme.store";
 import { ThemeStore } from "./theme.store";
 import type { ITestingStore } from "./testing.store";
 import { TestingStore } from "./testing.store";
+import type { IAvailabilityStore } from "./availability.store";
+import { AvailabilityStore } from "./availability.store";
 import type { IUserStore } from "./user";
 import { UserStore } from "./user";
 import type { IWorkItemGroupOptionsStore } from "./work-item-group-options.store";
@@ -107,6 +109,7 @@ export class CoreRootStore {
   workItemGroupOptions: IWorkItemGroupOptionsStore;
   powerK: IPowerKStore;
   testing: ITestingStore;
+  availability: IAvailabilityStore;
 
   constructor() {
     this.router = new RouterStore();
@@ -140,6 +143,7 @@ export class CoreRootStore {
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
     this.testing = new TestingStore();
+    this.availability = new AvailabilityStore();
   }
 
   resetOnSignOut() {
@@ -175,5 +179,6 @@ export class CoreRootStore {
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
     this.testing = new TestingStore();
+    this.availability = new AvailabilityStore();
   }
 }

@@ -25,4 +25,5 @@ export * from "./project-view-publish";
 export * from "./issue-bulk-operations";
 export * from "./enterprise";
 export * from "./testing";
+export * from "./availability";
 export * from "./work-item-extensions";

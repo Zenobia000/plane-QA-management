@@ -56,28 +56,64 @@ SKIP = {
     "testing/test-cases.csv",
 }
 
+# Workspace-scoped GETs that already 500, found the hour the workspace-scoped pass below
+# was added. Both are upstream registration mistakes, not fork code, and fixing them here
+# would put two unrelated changes in a team-calendar branch -- guideline A1 is one branch,
+# one thing.
+#
+#   file-assets/             `FileAssetEndpoint.get()` does not accept the `slug` its own
+#                            URL passes, so GET has never worked on that registration.
+#   user-favorite-projects/  `ProjectFavoritesViewSet` declares no `serializer_class`.
+#
+# Named rather than skipped so a third one fails the build instead of quietly joining
+# them, and printed on every run so "the smoke test passes" cannot be read as "the
+# surface is clean". Fixing one upstream does not break this list.
+KNOWN_WORKSPACE_500 = {
+    "api/workspaces/<str:slug>/file-assets/",
+    "api/workspaces/<str:slug>/user-favorite-projects/",
+}
+
+
+def walk(resolver, prefix=""):
+    """Every registered URL pattern, flattened to its full path string."""
+    for pattern in resolver.url_patterns:
+        path = prefix + str(pattern.pattern)
+        if hasattr(pattern, "url_patterns"):
+            yield from walk(pattern, path)
+        else:
+            yield path
+
+
+def route_params(path):
+    """Path converters are `<converter:name>` or bare `<name>`; re_path uses `(?P<name>...)`.
+
+    Take the name in every form so nothing is misread as fillable.
+    """
+    return set(re.findall(r"<(?:\?P<)?(?:[a-z_]+:)?([a-zA-Z_]+)>", path))
+
 
 def probeable_routes():
     """Every registered app-API route whose GET this fixture set can address."""
-
-    def walk(resolver, prefix=""):
-        for pattern in resolver.url_patterns:
-            path = prefix + str(pattern.pattern)
-            if hasattr(pattern, "url_patterns"):
-                yield from walk(pattern, path)
-            else:
-                yield path
-
     routes = set()
     for path in walk(get_resolver()):
         if not path.startswith("api/workspaces/"):
             continue
-        # Path converters are `<converter:name>` or bare `<name>`; re_path uses
-        # `(?P<name>...)`. Take the name in every form so nothing is misread as fillable.
-        params = set(re.findall(r"<(?:\?P<)?(?:[a-z_]+:)?([a-zA-Z_]+)>", path))
+        params = route_params(path)
         if params <= FILLABLE and "project_id" in params:
             routes.add(path)
     return sorted(routes)
+
+
+def workspace_scoped_routes():
+    """Every registered app-API route addressable with a workspace slug alone.
+
+    `probeable_routes` requires `project_id`, so a surface that hangs off the workspace
+    rather than a project -- availability is the first this fork adds -- would register and
+    never be probed. Discovered separately rather than by relaxing that filter, because
+    each assertion carries its own minimum count and merging them would let a collapse in
+    one be masked by the other.
+    """
+    return sorted(path for path in walk(get_resolver()) if path.startswith("api/workspaces/") and route_params(path) == {"slug"})
 
 
 @pytest.fixture
@@ -161,6 +197,51 @@ def test_no_project_scoped_get_returns_a_server_error(session_client, workspace,
 
 @pytest.mark.contract
 @pytest.mark.django_db
+def test_no_workspace_scoped_get_returns_a_server_error(session_client, workspace, populated_project):
+    """The same assertion for surfaces that hang off the workspace rather than a project.
+
+    A project is created anyway: several workspace endpoints aggregate across projects, and
+    an empty workspace hides the same class of bug an empty project does.
+    """
+    failures = []
+    probed = 0
+
+    for route in workspace_scoped_routes():
+        if any(tail in route for tail in SKIP):
+            continue
+        url = fill(route, workspace, populated_project)
+        probed += 1
+        try:
+            code = session_client.get(url).status_code
+        except Exception as error:
+            failures.append(f"{route} raised {type(error).__name__}: {error}")
+            continue
+        if code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
+            failures.append(f"{route} -> {code}")
+
+    known = [f for f in failures if f.split(" -> ")[0] in KNOWN_WORKSPACE_500]
+    unexpected = [f for f in failures if f not in known]
+
+    if known:
+        print("\npre-existing upstream 500s, still failing:\n  " + "\n  ".join(known))
+
+    assert probed > 10, f"only {probed} workspace routes probed; discovery is likely broken"
+    assert not unexpected, "new server errors:\n  " + "\n  ".join(unexpected)
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+def test_the_availability_surface_is_probed():
+    """The workspace-scoped pass exists because this fork added a workspace-scoped surface.
+
+    Asserted by name so that deleting the discovery filter, or moving availability under a
+    project, fails here rather than quietly dropping it from coverage.
+    """
+    assert any(route.endswith("availability/capabilities/") for route in workspace_scoped_routes())
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
 def test_the_routes_that_motivated_this_file_are_probed():
     """A smoke test that misses the bug it was written for is false confidence.
 
@@ -188,19 +269,10 @@ def test_coverage_is_reported(capsys):
     count keeps the gap visible rather than letting "the smoke test passes" imply more
     coverage than there is.
     """
-
-    def walk(resolver, prefix=""):
-        for pattern in resolver.url_patterns:
-            path = prefix + str(pattern.pattern)
-            if hasattr(pattern, "url_patterns"):
-                yield from walk(pattern, path)
-            else:
-                yield path
-
     app_routes = {p for p in walk(get_resolver()) if p.startswith("api/workspaces/")}
-    probed = set(probeable_routes())
+    probed = set(probeable_routes()) | set(workspace_scoped_routes())
 
     print(f"\nsmoke-probed {len(probed)} of {len(app_routes)} app API routes")
-    print(f"not probed (need an entity id or are workspace-scoped): {len(app_routes) - len(probed)}")
+    print(f"not probed (need an entity id): {len(app_routes) - len(probed)}")
 
     assert probed, "no routes discovered at all"

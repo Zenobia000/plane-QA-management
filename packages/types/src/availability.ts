@@ -118,3 +118,65 @@ export type TMemberWorkProfileInput = Partial<{
   /** `null` means "leave unchanged" for every other field, so withdrawing needs its own flag. */
   clear_core_hours: boolean;
 }>;
+
+/** Which half of a day an absence covers. Granularity stops here — see ADR 0008. */
+export type TDayPart = "full" | "morning" | "afternoon";
+
+export type TLeaveStatus = "pending" | "approved" | "rejected" | "cancelled";
+
+export type TLeaveType = {
+  id: string;
+  name: string;
+  colour: string;
+  /** False for absences that do not remove the person from work, e.g. working remotely. */
+  consumes_capacity: boolean;
+  requires_approval: boolean;
+  is_active: boolean;
+  sort_order: number;
+};
+
+/**
+ * `reason` and `decision_note` are **absent**, not null, for readers not entitled to them.
+ * A present key with a null value still tells a colleague there was a reason.
+ */
+export type TMemberLeave = {
+  id: string;
+  member: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  start_day_part: TDayPart;
+  end_day_part: TDayPart;
+  status: TLeaveStatus;
+  reason?: string;
+  decision_note?: string;
+  decided_by: string | null;
+  decided_at: string | null;
+};
+
+export type TMemberLeaveInput = {
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  start_day_part?: TDayPart;
+  end_day_part?: TDayPart;
+  reason?: string;
+  /** Admins only; defaults to the caller. */
+  member?: string;
+};
+
+export type TTeamEvent = {
+  id: string;
+  project: string | null;
+  title: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  start_day_part: TDayPart;
+  end_day_part: TDayPart;
+  colour: string;
+  consumes_capacity: boolean;
+  /** Declared, not inferred from whether attendees happen to be listed. */
+  audience: "all_members" | "selected_members";
+  attendee_ids: string[];
+};

@@ -150,3 +150,19 @@ export const addDays = (isoDate: string, days: number): string => {
   shifted.setUTCDate(shifted.getUTCDate() + days);
   return shifted.toISOString().slice(0, 10);
 };
+
+/** Every ISO date in a `YYYY-MM` month. */
+export const monthGrid = (month: string): string[] => {
+  const [year, index] = month.split("-").map(Number);
+  const days = new Date(Date.UTC(year, index, 0)).getUTCDate();
+  return Array.from({ length: days }, (_, offset) => `${month}-${String(offset + 1).padStart(2, "0")}`);
+};
+
+export const shiftMonth = (month: string, by: number): string => {
+  const [year, index] = month.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, index - 1 + by, 1));
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}`;
+};
+
+/** Whether `day` falls inside an inclusive ISO date span. String compare is safe for ISO. */
+export const spanCovers = (start: string, end: string, day: string): boolean => day >= start && day <= end;

@@ -38,6 +38,28 @@
       "no_core": "No shared core hours this week.",
       "no_working": "No shared working hours this week.",
       "undeclared": "{{names}} hasn't declared any hours, so no slot can include them."
+    },
+    "wallchart": {
+      "previous_month": "Previous month",
+      "next_month": "Next month",
+      "log": "Log time off",
+      "member": "Member",
+      "events": "Team events",
+      "still_working": "still working"
+    },
+    "form": {
+      "type": "Type",
+      "from": "From",
+      "to": "To",
+      "part": "Part of day",
+      "full_day": "Full day",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "reason": "Reason",
+      "reason_hint": "Optional",
+      "reason_privacy": "Only you, your approver and workspace admins can read this.",
+      "submit": "Log it",
+      "cancel": "Cancel"
     }
   }
 }

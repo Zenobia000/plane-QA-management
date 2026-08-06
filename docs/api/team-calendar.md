@@ -192,6 +192,76 @@ Rejected with `400`:
 A member with no profile reads as `{"member": "…", "declared": false}` with `200`, not a
 `404`. Having declared nothing is a state, not an error.
 
+## `GET | POST …/availability/leave-types/`
+
+List, or create (ADMIN only), a kind of absence. Names are workspace data, not a choice
+enum — compiling "annual leave" into the product would make every workspace inherit one
+organisation's vocabulary.
+
+`consumes_capacity: false` marks an absence that does not remove the person from work
+(working remotely, for instance). It still draws on the wallchart; it does not subtract
+from capacity. `requires_approval: false` makes a logged absence land approved.
+
+## `GET | POST …/availability/leaves/` · `PATCH …/availability/leaves/<id>/`
+
+| Query            | Required | Notes                                           |
+| ---------------- | -------- | ----------------------------------------------- |
+| `from` / `to`    | yes      | `YYYY-MM-DD`                                    |
+| `member_ids`     | no       | Comma-separated                                 |
+| `include_closed` | no       | `true` also returns cancelled and rejected rows |
+
+```json
+{
+  "leave_type": "…",
+  "start_date": "2026-08-03",
+  "end_date": "2026-08-05",
+  "start_day_part": "afternoon",
+  "end_day_part": "full",
+  "reason": "optional",
+  "member": "…"
+}
+```
+
+`member` is admins-only and defaults to the caller — a declaration somebody else made on
+your behalf is not a declaration.
+
+**Half days.** On a single-day request both parts must match (`morning`/`morning` or
+`afternoon`/`afternoon`). On a range, the only partial ends are "starts after lunch"
+(`start_day_part: afternoon`) and "ends at lunch" (`end_day_part: morning`). A multi-day
+leave starting in the _morning_ is rejected: that is a full first day, and allowing two
+spellings of one thing makes the day count depend on which was used.
+
+`PATCH` currently accepts `{"action": "cancel"}` only; approving and rejecting arrive with
+the decision workflow. Cancelling does not delete — the row stays so history is honest, and
+it simply stops counting against availability.
+
+**Reasons are redacted by omission.** A reader not entitled to `reason` or `decision_note`
+gets a payload without those keys, not keys set to null. A present key with a null value
+still tells a colleague there was a reason.
+
+## `GET | POST …/availability/events/`
+
+Team events: training, an offsite, a release day. `audience` is declared
+(`all_members` / `selected_members`) rather than inferred from whether attendees happen to
+be listed — the same reasoning as ADR 0007's "a folder is declared, not inferred".
+`consumes_capacity` is `false` by default, because a release date is something nobody
+attends.
+
+Creating requires ADMIN.
+
+## How absence reaches the rest of the surface
+
+Occupancy is computed as **two booleans per date** — morning taken, afternoon taken —
+combined by union. That is why a half day of leave on the same Wednesday as an all-hands
+removes exactly one day: summing fractions would remove one and a half, and a union cannot
+exceed the day it describes.
+
+Only **approved** absences bind. A pending request has not been decided, and planning
+against a guess is worse than planning against nothing.
+
+`GET …/availability/schedule/` and the overlap endpoint both subtract occupancy, so a
+person cannot be away on the wallchart and reachable in the slot finder.
+
 ## Agent parity
 
 Every action above has an equivalent MCP tool and CLI command, per guideline A3.

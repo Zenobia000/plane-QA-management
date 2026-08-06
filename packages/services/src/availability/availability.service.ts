@@ -12,6 +12,10 @@ import type {
   TMemberWorkProfileInput,
   TOverlapRequest,
   TOverlapResult,
+  TLeaveType,
+  TMemberLeave,
+  TMemberLeaveInput,
+  TTeamEvent,
   TUndeclaredWorkProfile,
   TWorkCalendar,
 } from "@plane/types";
@@ -90,6 +94,46 @@ export class AvailabilityService extends APIService {
     payload: TMemberWorkProfileInput
   ): Promise<TMemberWorkProfile | TUndeclaredWorkProfile> {
     return this.patch(`${this.base(workspaceSlug)}/profiles/${memberId}/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getLeaveTypes(workspaceSlug: string): Promise<TLeaveType[]> {
+    return this.get(`${this.base(workspaceSlug)}/leave-types/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getLeaves(workspaceSlug: string, from: string, to: string): Promise<TMemberLeave[]> {
+    return this.get(`${this.base(workspaceSlug)}/leaves/`, { params: { from, to } })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createLeave(workspaceSlug: string, payload: TMemberLeaveInput): Promise<TMemberLeave> {
+    return this.post(`${this.base(workspaceSlug)}/leaves/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async cancelLeave(workspaceSlug: string, leaveId: string): Promise<TMemberLeave> {
+    return this.patch(`${this.base(workspaceSlug)}/leaves/${leaveId}/`, { action: "cancel" })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getTeamEvents(workspaceSlug: string, from: string, to: string): Promise<TTeamEvent[]> {
+    return this.get(`${this.base(workspaceSlug)}/events/`, { params: { from, to } })
       .then((response) => response.data)
       .catch((error) => {
         throw error?.response?.data;

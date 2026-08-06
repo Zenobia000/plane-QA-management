@@ -122,6 +122,79 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
   );
 
   server.registerTool(
+    "leave_list",
+    {
+      description:
+        "List absences over a date range. Reasons are omitted for anyone the caller is not entitled to read them from — the field is absent rather than null, so its absence carries no information either.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        from: z.string().describe("YYYY-MM-DD"),
+        to: z.string().describe("YYYY-MM-DD"),
+        member_ids: z.array(z.string()).optional(),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, from, to, member_ids }) =>
+      toolResult(await client.listLeaves(workspace, from, to, member_ids))
+    )
+  );
+
+  server.registerTool(
+    "leave_type_list",
+    {
+      description: "List the workspace's absence types. Call before leave_request so the type id is not guessed.",
+      inputSchema: z.object({ workspace: scope.workspace }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace }) => toolResult(await client.listLeaveTypes(workspace)))
+  );
+
+  server.registerTool(
+    "leave_request",
+    {
+      description:
+        "Log an absence. Lands approved when the type needs no approval, otherwise pending. Half days: set both day parts to morning or afternoon on a single-day request; a multi-day range is whole days at both ends.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        leave_type: z.string(),
+        start_date: z.string().describe("YYYY-MM-DD"),
+        end_date: z.string().describe("YYYY-MM-DD"),
+        start_day_part: z.enum(["full", "morning", "afternoon"]).optional(),
+        end_day_part: z.enum(["full", "morning", "afternoon"]).optional(),
+        reason: z.string().optional(),
+        member: z.string().optional().describe("Admins only. Defaults to the key's owner."),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, ...input }) => toolResult(await client.createLeave(workspace, input)))
+  );
+
+  server.registerTool(
+    "leave_cancel",
+    {
+      description:
+        "Withdraw an absence. The row stays so history remains honest; it simply stops counting against availability.",
+      inputSchema: z.object({ workspace: scope.workspace, leave_id: z.string() }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, leave_id }) => toolResult(await client.cancelLeave(workspace, leave_id)))
+  );
+
+  server.registerTool(
+    "team_event_list",
+    {
+      description: "List team events over a date range: training, offsites, release days.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        from: z.string().describe("YYYY-MM-DD"),
+        to: z.string().describe("YYYY-MM-DD"),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, from, to }) => toolResult(await client.listTeamEvents(workspace, from, to)))
+  );
+
+  server.registerTool(
     "work_calendar_list",
     {
       description:

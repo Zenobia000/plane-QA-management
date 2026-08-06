@@ -11,8 +11,19 @@ architecture rather than indirection.
 """
 
 from django.db import transaction
+from django.utils import timezone
 
-from plane.db.models import CalendarDay, MemberWorkProfile, WorkCalendar
+from plane.db.models import (
+    CalendarDay,
+    DayPart,
+    EventAudience,
+    LeaveStatus,
+    MemberLeave,
+    MemberWorkProfile,
+    TeamEvent,
+    TeamEventAttendee,
+    WorkCalendar,
+)
 
 # Plane's audit FKs are nullable in the database but not declared as form fields, so a bare
 # `full_clean()` rejects every unsaved row for a blank `created_by`. Same exclusion, and same
@@ -140,3 +151,96 @@ def upsert_work_profile(
     _validate(profile, ["workspace", "member"])
     profile.save()
     return profile
+
+
+@transaction.atomic
+def create_leave(
+    *,
+    workspace,
+    member,
+    leave_type,
+    start_date,
+    end_date,
+    start_day_part=DayPart.FULL,
+    end_day_part=DayPart.FULL,
+    reason="",
+):
+    """Log an absence.
+
+    A type marked `requires_approval=False` lands approved. Routing an absence nobody has
+    to decide on through a pending state would produce a queue of requests that exist only
+    to be rubber-stamped, and a queue like that stops being read.
+    """
+    leave = MemberLeave(
+        workspace=workspace,
+        member=member,
+        leave_type=leave_type,
+        start_date=start_date,
+        end_date=end_date,
+        start_day_part=start_day_part,
+        end_day_part=end_day_part,
+        reason=reason,
+        status=LeaveStatus.PENDING if leave_type.requires_approval else LeaveStatus.APPROVED,
+    )
+    _validate(leave, ["workspace", "member", "leave_type"])
+    leave.save()
+    return leave
+
+
+@transaction.atomic
+def cancel_leave(*, leave, actor):
+    """Withdraw one's own absence.
+
+    Cancelling is not deleting: the row stays so the wallchart's history remains honest,
+    and `member_occupancy` stops counting it because only approved rows bind.
+    """
+    if leave.status == LeaveStatus.CANCELLED:
+        return leave
+    leave.status = LeaveStatus.CANCELLED
+    leave.decided_by = actor
+    leave.decided_at = timezone.now()
+    _validate(leave, ["workspace", "member", "leave_type"])
+    leave.save()
+    return leave
+
+
+@transaction.atomic
+def create_team_event(
+    *,
+    workspace,
+    title,
+    start_date,
+    end_date,
+    project=None,
+    description="",
+    start_day_part=DayPart.FULL,
+    end_day_part=DayPart.FULL,
+    colour="#334155",
+    consumes_capacity=False,
+    audience=EventAudience.ALL_MEMBERS,
+    member_ids=(),
+):
+    event = TeamEvent(
+        workspace=workspace,
+        project=project,
+        title=title,
+        description=description,
+        start_date=start_date,
+        end_date=end_date,
+        start_day_part=start_day_part,
+        end_day_part=end_day_part,
+        colour=colour,
+        consumes_capacity=consumes_capacity,
+        audience=audience,
+    )
+    _validate(event, ["workspace", "project"])
+    event.save()
+
+    # Attendees are only meaningful for a selected-members event. Storing them for an
+    # all-members one would create a second, contradictory answer to "who is this for".
+    if audience == EventAudience.SELECTED_MEMBERS:
+        for member_id in member_ids:
+            attendee = TeamEventAttendee(event=event, workspace=workspace, member_id=member_id)
+            _validate(attendee, ["workspace", "event", "member"])
+            attendee.save()
+    return event

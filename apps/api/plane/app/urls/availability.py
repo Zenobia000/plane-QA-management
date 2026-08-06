@@ -8,8 +8,12 @@ from plane.app.views.availability import (
     AvailabilityCapabilityEndpoint,
     AvailabilityOverlapEndpoint,
     AvailabilityScheduleEndpoint,
+    LeaveTypeListCreateEndpoint,
+    MemberLeaveDetailEndpoint,
+    MemberLeaveListCreateEndpoint,
     MemberWorkProfileDetailEndpoint,
     MemberWorkProfileListEndpoint,
+    TeamEventListCreateEndpoint,
     WorkCalendarListCreateEndpoint,
 )
 
@@ -43,5 +47,25 @@ urlpatterns = [
         "workspaces/<str:slug>/availability/profiles/<uuid:member_id>/",
         MemberWorkProfileDetailEndpoint.as_view(),
         name="availability-profile-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leave-types/",
+        LeaveTypeListCreateEndpoint.as_view(),
+        name="availability-leave-types",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leaves/",
+        MemberLeaveListCreateEndpoint.as_view(),
+        name="availability-leaves",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leaves/<uuid:leave_id>/",
+        MemberLeaveDetailEndpoint.as_view(),
+        name="availability-leave-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/events/",
+        TeamEventListCreateEndpoint.as_view(),
+        name="availability-events",
     ),
 ]

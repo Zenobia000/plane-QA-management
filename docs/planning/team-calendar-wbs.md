@@ -84,19 +84,19 @@
 
 ## 3. 請假與團隊事件(PR 2)— 解決問題 2
 
-| WBS  | 工作包                            | 相依     | 交付/驗收                                           | 測試                             | 狀態    |
-| ---- | --------------------------------- | -------- | --------------------------------------------------- | -------------------------------- | ------- |
-| 3.1  | `LeaveType` model                 | 2.3      | 可設定假別,`consumes_capacity`、`requires_approval` | 模型測試;名稱是使用者資料非 enum | BACKLOG |
-| 3.2  | `MemberLeave` model               | 3.1      | 日期區間 + 頭尾 `day_part` + 狀態                   | **半天驗證規則**(見 ADR 0008)    | BACKLOG |
-| 3.3  | `TeamEvent` / `TeamEventAttendee` | 2.3      | 明確 audience,不用「空集合代表全體」                | 模型測試                         | BACKLOG |
-| 3.4  | migration `0147_leave_and_events` | 3.1–3.3  | 純新增                                              | 套用/反向                        | BACKLOG |
-| 3.5  | 缺席佔用計算                      | 3.2, 2.4 | 每日占用率,半天 = 0.5,**上限 1.0**                  | **同日請假+事件不得重複扣**      | BACKLOG |
-| 3.6  | 事由可見性                        | 3.2      | 僅本人、核准人、管理員                              | **契約測試:同事讀不到該欄位**    | BACKLOG |
-| 3.7  | 應用服務與兩棵樹 API              | 3.5      | `leaves/`、`events/` CRUD                           | 契約/授權測試                    | BACKLOG |
-| 3.8  | 月曆牆 UI                         | 3.7      | 色塊、半天、補班日標示                              | 元件 spec                        | BACKLOG |
-| 3.9  | 請假登記表單                      | 3.8      | `requires_approval=False` 直接生效                  | 元件 spec                        | BACKLOG |
-| 3.10 | 缺席回饋到週視圖                  | 3.5, 2.9 | 缺席者整列變灰而非消失;半天只挖掉半邊               | 元件 spec                        | BACKLOG |
-| 3.11 | MCP/CLI 第二組                    | 3.7      | `leave_request`、`leave_list`                       | `pnpm check:qa-tools`            | BACKLOG |
+| WBS  | 工作包                            | 相依     | 交付/驗收                                           | 測試                                         | 狀態    |
+| ---- | --------------------------------- | -------- | --------------------------------------------------- | -------------------------------------------- | ------- |
+| 3.1  | `LeaveType` model                 | 2.3      | 可設定假別,`consumes_capacity`、`requires_approval` | 名稱是使用者資料非 enum;契約測試             | DONE    |
+| 3.2  | `MemberLeave` model               | 3.1      | 日期區間 + 頭尾 `day_part` + 狀態                   | 半天四條驗證規則各一例                       | DONE    |
+| 3.3  | `TeamEvent` / `TeamEventAttendee` | 2.3      | 明確 audience,不用「空集合代表全體」                | 全員/指定兩種各一例                          | DONE    |
+| 3.4  | migration `0147_leave_and_events` | 3.1–3.3  | 純新增                                              | 空 DB apply → 反向到 0146 → 再前進,三步皆 OK | DONE    |
+| 3.5  | 缺席佔用計算                      | 3.2, 2.4 | **每日兩個布林(上午/下午)取聯集,不是加總分數**      | **同日半天請假 + 全天事件 = 恰好 1 天**      | DONE    |
+| 3.6  | 事由可見性                        | 3.2      | 僅本人、指定核准人、管理員                          | **同事讀到的是「沒有這個 key」而非 null**    | DONE    |
+| 3.7  | 應用服務與兩棵樹 API              | 3.5      | `leave-types/`、`leaves/`、`events/` CRUD           | 18 例契約測試                                | DONE    |
+| 3.8  | 月曆牆 UI                         | 3.7      | 色塊、半天畫成半格、待審較淡                        | `helpers.spec.ts` 涵蓋月份格線與跨月比較     | PARTIAL |
+| 3.9  | 請假登記表單                      | 3.8      | `requires_approval=False` 直接生效                  | 契約測試涵蓋;**無元件 spec**                 | PARTIAL |
+| 3.10 | 缺席回饋到週視圖                  | 3.5, 2.9 | 缺席者從共同時段消失;上午請假只挖掉上午             | **契約測試:上午請假後窗口變 13:30–18:00**    | DONE    |
+| 3.11 | MCP/CLI 第二組                    | 3.7      | 5 個 MCP tool + 5 個 CLI 動作                       | `pnpm check:qa-tools`                        | DONE    |
 
 出場 gate:跨補班日的兩天半請假天數正確,且該員在週視圖與共同時段計算中同步消失。
 

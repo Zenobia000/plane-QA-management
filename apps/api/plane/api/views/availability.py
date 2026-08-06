@@ -16,8 +16,12 @@ from plane.app.views.availability import (
     AvailabilityCapabilityEndpoint as AppAvailabilityCapabilityEndpoint,
     AvailabilityOverlapEndpoint as AppAvailabilityOverlapEndpoint,
     AvailabilityScheduleEndpoint as AppAvailabilityScheduleEndpoint,
+    LeaveTypeListCreateEndpoint as AppLeaveTypeListCreateEndpoint,
+    MemberLeaveDetailEndpoint as AppMemberLeaveDetailEndpoint,
+    MemberLeaveListCreateEndpoint as AppMemberLeaveListCreateEndpoint,
     MemberWorkProfileDetailEndpoint as AppMemberWorkProfileDetailEndpoint,
     MemberWorkProfileListEndpoint as AppMemberWorkProfileListEndpoint,
+    TeamEventListCreateEndpoint as AppTeamEventListCreateEndpoint,
     WorkCalendarListCreateEndpoint as AppWorkCalendarListCreateEndpoint,
 )
 
@@ -45,4 +49,20 @@ class MemberWorkProfileListAPIEndpoint(APIKeyEndpointMixin, AppMemberWorkProfile
 
 
 class MemberWorkProfileDetailAPIEndpoint(APIKeyEndpointMixin, AppMemberWorkProfileDetailEndpoint):
+    pass
+
+
+class LeaveTypeAPIEndpoint(APIKeyEndpointMixin, AppLeaveTypeListCreateEndpoint):
+    pass
+
+
+class MemberLeaveAPIEndpoint(APIKeyEndpointMixin, AppMemberLeaveListCreateEndpoint):
+    pass
+
+
+class MemberLeaveDetailAPIEndpoint(APIKeyEndpointMixin, AppMemberLeaveDetailEndpoint):
+    pass
+
+
+class TeamEventAPIEndpoint(APIKeyEndpointMixin, AppTeamEventListCreateEndpoint):
     pass

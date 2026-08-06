@@ -210,3 +210,197 @@ class MemberWorkProfile(BaseModel):
                 raise ValidationError("Core hours must start before they end.")
             if self.core_hours_start < self.work_start_time or self.core_hours_end > self.work_end_time:
                 raise ValidationError("Core hours must fall inside the working window.")
+
+
+class DayPart(models.TextChoices):
+    """Which half of a day an absence covers.
+
+    The granularity stops here on purpose. Half a day keeps the arithmetic exact and the
+    calendar drawable; "out 14:00-15:30" would turn a coordination tool into a timesheet,
+    which ADR 0008 rules out.
+    """
+
+    FULL = "full", "Full day"
+    MORNING = "morning", "Morning"
+    AFTERNOON = "afternoon", "Afternoon"
+
+
+class LeaveStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    APPROVED = "approved", "Approved"
+    REJECTED = "rejected", "Rejected"
+    CANCELLED = "cancelled", "Cancelled"
+
+
+class LeaveType(BaseModel):
+    """A kind of absence, as workspace data rather than a choice enum.
+
+    Names are user data. Compiling "annual leave" and "sick leave" into the product would
+    make every workspace inherit one organisation's vocabulary, and the fork already keeps
+    category names out of code (codebase-map invariant 9).
+    """
+
+    workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="leave_types")
+    name = models.CharField(max_length=255)
+    colour = models.CharField(max_length=7, default="#6B7280", help_text="Hex, for the wallchart.")
+    consumes_capacity = models.BooleanField(
+        default=True,
+        help_text="False for absences that do not remove the person from work, e.g. working remotely.",
+    )
+    requires_approval = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.FloatField(default=65535)
+
+    class Meta:
+        verbose_name = "Leave Type"
+        verbose_name_plural = "Leave Types"
+        db_table = "leave_types"
+        ordering = ("sort_order", "name")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["workspace", "name"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_active_leave_type_name",
+            )
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class MemberLeave(BaseModel):
+    """One person, away, for a stretch of days.
+
+    `reason` is treated as sensitive: the serializer shows it only to the member, their
+    resolved approver, and workspace admins. Everyone else sees the type and the dates.
+    """
+
+    workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="member_leaves")
+    member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="leaves")
+    leave_type = models.ForeignKey(LeaveType, on_delete=models.PROTECT, related_name="leaves")
+    start_date = models.DateField()
+    end_date = models.DateField()
+    start_day_part = models.CharField(max_length=16, choices=DayPart.choices, default=DayPart.FULL)
+    end_day_part = models.CharField(max_length=16, choices=DayPart.choices, default=DayPart.FULL)
+    reason = models.TextField(blank=True)
+    status = models.CharField(max_length=16, choices=LeaveStatus.choices, default=LeaveStatus.PENDING)
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="leave_decisions",
+        null=True,
+        blank=True,
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Member Leave"
+        verbose_name_plural = "Member Leaves"
+        db_table = "member_leaves"
+        ordering = ("-start_date",)
+        indexes = [
+            models.Index(fields=["workspace", "start_date", "end_date"], name="leave_range_idx"),
+            models.Index(fields=["member", "start_date"], name="leave_member_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.member_id} {self.start_date}..{self.end_date}"
+
+    def clean(self):
+        if self.leave_type_id and self.leave_type.workspace_id != self.workspace_id:
+            raise ValidationError("A leave type must belong to the same workspace as the leave.")
+        if self.start_date > self.end_date:
+            raise ValidationError("Leave cannot end before it starts.")
+
+        if self.start_date == self.end_date:
+            # One day, one claim. Two different halves of the same day is not a thing
+            # anyone can mean, and letting it through would double-count the day.
+            if self.start_day_part != self.end_day_part:
+                raise ValidationError("A single-day leave must use the same day part at both ends.")
+        else:
+            if self.start_day_part == DayPart.MORNING:
+                raise ValidationError("A multi-day leave starting in the morning is a full first day.")
+            if self.end_day_part == DayPart.AFTERNOON:
+                raise ValidationError("A multi-day leave ending in the afternoon is a full last day.")
+
+
+class EventAudience(models.TextChoices):
+    ALL_MEMBERS = "all_members", "All members"
+    SELECTED_MEMBERS = "selected_members", "Selected members"
+
+
+class TeamEvent(BaseModel):
+    """Something that takes the team, or part of it, away from project work.
+
+    Separate from `MemberLeave` because the two differ in owner, lifecycle and cardinality.
+    One table for both would leave half its columns null for half its rows, and `status =
+    approved` would be meaningless on the half that is never approved.
+    """
+
+    workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="team_events")
+    project = models.ForeignKey(
+        "db.Project",
+        on_delete=models.CASCADE,
+        related_name="team_events",
+        null=True,
+        blank=True,
+        help_text="Narrows what the event is about. Never narrows where an absence lives.",
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    start_day_part = models.CharField(max_length=16, choices=DayPart.choices, default=DayPart.FULL)
+    end_day_part = models.CharField(max_length=16, choices=DayPart.choices, default=DayPart.FULL)
+    colour = models.CharField(max_length=7, default="#334155")
+    consumes_capacity = models.BooleanField(
+        default=False,
+        help_text="True for training or an offsite; false for a release date nobody attends.",
+    )
+    audience = models.CharField(
+        max_length=32,
+        choices=EventAudience.choices,
+        default=EventAudience.ALL_MEMBERS,
+        help_text="Declared, not inferred from whether attendees happen to be listed.",
+    )
+
+    class Meta:
+        verbose_name = "Team Event"
+        verbose_name_plural = "Team Events"
+        db_table = "team_events"
+        ordering = ("-start_date",)
+        indexes = [models.Index(fields=["workspace", "start_date", "end_date"], name="team_event_range_idx")]
+
+    def __str__(self):
+        return f"{self.title} {self.start_date}"
+
+    def clean(self):
+        if self.project_id and self.project.workspace_id != self.workspace_id:
+            raise ValidationError("A team event's project must belong to the same workspace.")
+        if self.start_date > self.end_date:
+            raise ValidationError("An event cannot end before it starts.")
+        if self.start_date == self.end_date and self.start_day_part != self.end_day_part:
+            raise ValidationError("A single-day event must use the same day part at both ends.")
+
+
+class TeamEventAttendee(BaseModel):
+    event = models.ForeignKey(TeamEvent, on_delete=models.CASCADE, related_name="attendees")
+    workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="team_event_attendees")
+    member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="team_events")
+
+    class Meta:
+        verbose_name = "Team Event Attendee"
+        verbose_name_plural = "Team Event Attendees"
+        db_table = "team_event_attendees"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event", "member"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_active_team_event_attendee",
+            )
+        ]
+
+    def clean(self):
+        if self.event_id and self.event.workspace_id != self.workspace_id:
+            raise ValidationError("An attendee must belong to the same workspace as the event.")

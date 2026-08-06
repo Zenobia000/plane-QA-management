@@ -130,7 +130,14 @@ from .testing import (
 from .availability import (
     CalendarDay,
     CalendarDayKind,
+    DayPart,
+    EventAudience,
+    LeaveStatus,
+    LeaveType,
+    MemberLeave,
     MemberWorkProfile,
+    TeamEvent,
+    TeamEventAttendee,
     WorkCalendar,
 )
 

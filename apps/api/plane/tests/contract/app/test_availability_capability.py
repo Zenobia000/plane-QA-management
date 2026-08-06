@@ -42,11 +42,11 @@ class TestAvailabilityCapabilityEndpoint:
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
             "enabled": True,
-            "stage": "reachable-hours",
+            "stage": "leave-and-events",
             "capabilities": {
                 "schedule": True,
                 "overlap": True,
-                "leave": False,
+                "leave": True,
                 "allocation": False,
                 "capacity": False,
             },

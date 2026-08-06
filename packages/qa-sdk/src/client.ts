@@ -2,6 +2,10 @@ import { errorKindForStatus, PlaneQAError } from "./errors";
 import { paginatedSchema, parsePlaneResponse, projectSchema, testingCapabilitiesSchema } from "./schemas";
 import type {
   AvailabilitySchedule,
+  LeaveType,
+  MemberLeave,
+  MemberLeaveInput,
+  TeamEvent,
   MemberWorkProfile,
   OverlapRequest,
   OverlapResult,
@@ -284,6 +288,30 @@ export class PlaneQAClient {
     return this.request("PATCH", this.apiPath(workspace, `/availability/profiles/${encodePath(memberId)}/`), {
       body: input,
     });
+  }
+
+  listLeaveTypes(workspace: string): Promise<LeaveType[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/leave-types/"));
+  }
+
+  listLeaves(workspace: string, from: string, to: string, memberIds?: string[]): Promise<MemberLeave[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/leaves/"), {
+      query: { from, to, ...(memberIds?.length ? { member_ids: memberIds.join(",") } : {}) },
+    });
+  }
+
+  createLeave(workspace: string, input: MemberLeaveInput): Promise<MemberLeave> {
+    return this.request("POST", this.apiPath(workspace, "/availability/leaves/"), { body: input });
+  }
+
+  cancelLeave(workspace: string, leaveId: string): Promise<MemberLeave> {
+    return this.request("PATCH", this.apiPath(workspace, `/availability/leaves/${encodePath(leaveId)}/`), {
+      body: { action: "cancel" },
+    });
+  }
+
+  listTeamEvents(workspace: string, from: string, to: string): Promise<TeamEvent[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/events/"), { query: { from, to } });
   }
 
   listStates(workspace: string, projectId: string): Promise<PaginatedResponse<State> | State[]> {

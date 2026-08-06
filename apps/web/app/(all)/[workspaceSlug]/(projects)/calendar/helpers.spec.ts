@@ -7,6 +7,9 @@ import {
   clockInZone,
   dateInZone,
   isTabReady,
+  monthGrid,
+  shiftMonth,
+  spanCovers,
   startOfDayInZone,
   weekOf,
   zoneOffsetMinutes,
@@ -174,5 +177,58 @@ describe("addDays", () => {
 
   it("steps a whole week", () => {
     expect(addDays("2026-08-03", 7)).toBe("2026-08-10");
+  });
+});
+
+describe("monthGrid", () => {
+  it("covers a 31-day month", () => {
+    const days = monthGrid("2026-08");
+    expect(days).toHaveLength(31);
+    expect(days[0]).toBe("2026-08-01");
+    expect(days[30]).toBe("2026-08-31");
+  });
+
+  it("covers a 30-day month", () => {
+    expect(monthGrid("2026-09")).toHaveLength(30);
+  });
+
+  it("gets February right in a common year", () => {
+    expect(monthGrid("2026-02")).toHaveLength(28);
+  });
+
+  it("gets February right in a leap year", () => {
+    expect(monthGrid("2028-02")).toHaveLength(29);
+  });
+});
+
+describe("shiftMonth", () => {
+  it("steps forward across a year boundary", () => {
+    expect(shiftMonth("2026-12", 1)).toBe("2027-01");
+  });
+
+  it("steps back across a year boundary", () => {
+    expect(shiftMonth("2026-01", -1)).toBe("2025-12");
+  });
+
+  it("keeps the zero-padded form", () => {
+    expect(shiftMonth("2026-08", 1)).toBe("2026-09");
+  });
+});
+
+describe("spanCovers", () => {
+  it("includes both ends", () => {
+    expect(spanCovers("2026-08-03", "2026-08-05", "2026-08-03")).toBe(true);
+    expect(spanCovers("2026-08-03", "2026-08-05", "2026-08-05")).toBe(true);
+  });
+
+  it("excludes days outside", () => {
+    expect(spanCovers("2026-08-03", "2026-08-05", "2026-08-02")).toBe(false);
+    expect(spanCovers("2026-08-03", "2026-08-05", "2026-08-06")).toBe(false);
+  });
+
+  it("compares correctly across a month boundary", () => {
+    // String comparison is only safe because the format is zero-padded ISO.
+    expect(spanCovers("2026-08-30", "2026-09-02", "2026-09-01")).toBe(true);
+    expect(spanCovers("2026-08-30", "2026-09-02", "2026-08-29")).toBe(false);
   });
 });

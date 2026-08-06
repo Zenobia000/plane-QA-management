@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+from .absence import Halves, halves_on, member_occupancy
 from .calendars import (
     calendar_overrides,
     default_calendar,
@@ -20,6 +21,9 @@ from .schedule import (
     workspace_schedule,
 )
 from .services import (
+    cancel_leave,
+    create_leave,
+    create_team_event,
     create_work_calendar,
     set_calendar_days,
     update_work_calendar,
@@ -27,7 +31,13 @@ from .services import (
 )
 
 __all__ = [
+    "Halves",
     "MemberSchedule",
+    "cancel_leave",
+    "create_leave",
+    "create_team_event",
+    "halves_on",
+    "member_occupancy",
     "Window",
     "calendar_overrides",
     "common_windows",

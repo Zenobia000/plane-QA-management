@@ -5,7 +5,12 @@
  */
 
 import { AvailabilitySurface } from "../components/availability-surface";
+import { Wallchart } from "../components/wallchart";
 
 export default function TeamCalendarLeaveRoute() {
-  return <AvailabilitySurface tab="leave" />;
+  return (
+    <AvailabilitySurface tab="leave">
+      <Wallchart />
+    </AvailabilitySurface>
+  );
 }

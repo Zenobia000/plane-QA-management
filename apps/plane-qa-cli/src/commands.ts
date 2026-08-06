@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 
 import {
+  type DayPart,
   type JsonObject,
   type PlaneQAClient,
   type Project,
@@ -118,6 +119,44 @@ export const executeCommand = async (
       });
     }
     if (action === "calendars") return client.listWorkCalendars(config.workspace);
+    if (action === "leave-types") return client.listLeaveTypes(config.workspace);
+    if (action === "leaves") {
+      return client.listLeaves(
+        config.workspace,
+        requiredOption(args.options, "from"),
+        requiredOption(args.options, "to"),
+        optionString(args.options, "members")?.split(",").filter(Boolean)
+      );
+    }
+    if (action === "request-leave") {
+      // Built field by field rather than through `compact`, which widens to
+      // Record<string, unknown> and would need a cast that hides a real mismatch.
+      const startPart = optionString(args.options, "start_part") as DayPart | undefined;
+      const endPart = optionString(args.options, "end_part") as DayPart | undefined;
+      return client.createLeave(config.workspace, {
+        leave_type: requiredOption(args.options, "type"),
+        start_date: requiredOption(args.options, "from"),
+        end_date: requiredOption(args.options, "to"),
+        ...(startPart ? { start_day_part: startPart } : {}),
+        ...(endPart ? { end_day_part: endPart } : {}),
+        ...(optionString(args.options, "reason") ? { reason: optionString(args.options, "reason") } : {}),
+        ...(optionString(args.options, "member") ? { member: optionString(args.options, "member") } : {}),
+      });
+    }
+    if (action === "cancel-leave") {
+      requireConfirmation(args, "leave cancel");
+      const leaveId = requiredOption(args.options, "id");
+      const preview = dryRunReceipt(args, "leave cancel", { id: leaveId });
+      if (preview) return preview;
+      return client.cancelLeave(config.workspace, leaveId);
+    }
+    if (action === "events") {
+      return client.listTeamEvents(
+        config.workspace,
+        requiredOption(args.options, "from"),
+        requiredOption(args.options, "to")
+      );
+    }
     if (action === "profiles") return client.listWorkProfiles(config.workspace);
     if (action === "set-profile") {
       return client.updateWorkProfile(

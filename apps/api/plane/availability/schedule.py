@@ -15,11 +15,13 @@ cost of not building surveillance.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import pytz
 
 from plane.db.models import MemberWorkProfile, WorkspaceMember
+
+from .absence import Halves, member_occupancy
 
 from .calendars import (
     calendar_overrides,
@@ -65,8 +67,35 @@ def _localise(tz, day, clock) -> datetime:
     return tz.localize(datetime.combine(day, clock)).astimezone(pytz.UTC)
 
 
-def member_schedule(*, profile, user, workspace_id, start, end, default_cal=None, overrides_cache=None):
-    """One member's working and core windows across a date range."""
+def _halve(start_clock, end_clock):
+    """The midpoint of a working day, which is where a half-day absence cuts it."""
+    span = (
+        datetime.combine(date.min, end_clock) - datetime.combine(date.min, start_clock)
+    ) / 2
+    return (datetime.combine(date.min, start_clock) + span).time()
+
+
+def _remaining(taken: Halves, start_clock, end_clock):
+    """The part of a working day left after an absence, as (start, end) or None."""
+    if taken.morning and taken.afternoon:
+        return None
+    midpoint = _halve(start_clock, end_clock)
+    if taken.morning:
+        return (midpoint, end_clock)
+    if taken.afternoon:
+        return (start_clock, midpoint)
+    return (start_clock, end_clock)
+
+
+def member_schedule(
+    *, profile, user, workspace_id, start, end, default_cal=None, overrides_cache=None, occupancy=None
+):
+    """One member's working and core windows across a date range.
+
+    `occupancy` removes the halves the member is away for. Absence reaches the week view
+    and the slot finder through this one place, so a person on leave cannot be reachable on
+    one screen and away on another.
+    """
     calendar = resolve_calendar(profile, workspace_id, default=default_cal)
     tzname = resolve_timezone(profile, calendar, user)
     tz = pytz.timezone(tzname)
@@ -87,13 +116,24 @@ def member_schedule(*, profile, user, workspace_id, start, end, default_cal=None
     # Without a profile there is nothing declared, so there is nothing to draw. Returning
     # empty is honest; inventing 09:00-18:00 would put a claim on screen that the person
     # never made and that others would then plan around.
+    away = (occupancy or {}).get(str(profile.member_id) if profile else str(getattr(user, "id", "")), {})
+
     working: list[Window] = []
     core: list[Window] = []
     if work_start and work_end:
         for day in working_days(calendar, start, end, overrides):
-            working.append(Window(_localise(tz, day, work_start), _localise(tz, day, work_end)))
+            remaining = _remaining(away.get(day, Halves()), work_start, work_end)
+            if remaining is None:
+                continue
+            day_start, day_end = remaining
+            working.append(Window(_localise(tz, day, day_start), _localise(tz, day, day_end)))
             if core_start and core_end:
-                core.append(Window(_localise(tz, day, core_start), _localise(tz, day, core_end)))
+                # Core hours are clipped to what is left of the day, so a morning off does
+                # not leave a core window standing in a half nobody is present for.
+                clipped_start = max(core_start, day_start)
+                clipped_end = min(core_end, day_end)
+                if clipped_start < clipped_end:
+                    core.append(Window(_localise(tz, day, clipped_start), _localise(tz, day, clipped_end)))
 
     return MemberSchedule(
         member_id=str(profile.member_id) if profile else str(user.id),
@@ -105,7 +145,7 @@ def member_schedule(*, profile, user, workspace_id, start, end, default_cal=None
     )
 
 
-def workspace_schedule(*, workspace, start, end, member_ids=None):
+def workspace_schedule(*, workspace, start, end, member_ids=None, include_absence=True):
     """Every active member's windows, in one pass.
 
     One query for the roster, one for the profiles and one per distinct calendar, rather
@@ -124,6 +164,11 @@ def workspace_schedule(*, workspace, start, end, member_ids=None):
 
     default_cal = default_calendar(workspace.id)
     overrides_cache: dict = {}
+    occupancy = (
+        member_occupancy(workspace=workspace, start=start, end=end, member_ids=member_ids, capacity_only=True)
+        if include_absence
+        else {}
+    )
 
     return [
         member_schedule(
@@ -134,6 +179,7 @@ def workspace_schedule(*, workspace, start, end, member_ids=None):
             end=end,
             default_cal=default_cal,
             overrides_cache=overrides_cache,
+            occupancy=occupancy,
         )
         for membership in members
     ]

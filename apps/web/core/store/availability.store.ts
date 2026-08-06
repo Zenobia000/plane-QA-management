@@ -13,6 +13,10 @@ import type {
   TMemberWorkProfileInput,
   TOverlapRequest,
   TOverlapResult,
+  TLeaveType,
+  TMemberLeave,
+  TMemberLeaveInput,
+  TTeamEvent,
   TWorkCalendar,
 } from "@plane/types";
 
@@ -40,6 +44,12 @@ export interface IAvailabilityStore {
   fetchSchedule: (workspaceSlug: string, from: string, to: string) => Promise<void>;
   findOverlap: (workspaceSlug: string, payload: TOverlapRequest) => Promise<void>;
   clearOverlap: () => void;
+  leaveTypes: TLeaveType[];
+  leaves: TMemberLeave[];
+  events: TTeamEvent[];
+  fetchMonth: (workspaceSlug: string, from: string, to: string) => Promise<void>;
+  createLeave: (workspaceSlug: string, payload: TMemberLeaveInput) => Promise<void>;
+  cancelLeave: (workspaceSlug: string, leaveId: string) => Promise<void>;
   fetchSettings: (workspaceSlug: string) => Promise<void>;
   updateProfile: (
     workspaceSlug: string,
@@ -53,6 +63,9 @@ export class AvailabilityStore implements IAvailabilityStore {
   schedule: TAvailabilitySchedule | null = null;
   overlap: TOverlapResult | null = null;
   calendars: TWorkCalendar[] = [];
+  leaveTypes: TLeaveType[] = [];
+  leaves: TMemberLeave[] = [];
+  events: TTeamEvent[] = [];
   profiles: Record<string, TMemberWorkProfile> = {};
   loading = false;
   scheduleLoading = false;
@@ -75,6 +88,9 @@ export class AvailabilityStore implements IAvailabilityStore {
       schedule: observable.ref,
       overlap: observable.ref,
       calendars: observable.ref,
+      leaveTypes: observable.ref,
+      leaves: observable.ref,
+      events: observable.ref,
       profiles: observable,
       loading: observable,
       scheduleLoading: observable,
@@ -84,6 +100,9 @@ export class AvailabilityStore implements IAvailabilityStore {
       fetchSchedule: action,
       findOverlap: action,
       clearOverlap: action,
+      fetchMonth: action,
+      createLeave: action,
+      cancelLeave: action,
       fetchSettings: action,
       updateProfile: action,
     });
@@ -169,6 +188,48 @@ export class AvailabilityStore implements IAvailabilityStore {
 
   clearOverlap = (): void => {
     this.overlap = null;
+  };
+
+  private monthKey: string | null = null;
+
+  fetchMonth = async (workspaceSlug: string, from: string, to: string): Promise<void> => {
+    const key = `${workspaceSlug}:${from}:${to}`;
+    if (this.monthKey === key) return;
+    try {
+      const [leaveTypes, leaves, events] = await Promise.all([
+        this.service.getLeaveTypes(workspaceSlug),
+        this.service.getLeaves(workspaceSlug, from, to),
+        this.service.getTeamEvents(workspaceSlug, from, to),
+      ]);
+      runInAction(() => {
+        this.leaveTypes = leaveTypes;
+        this.leaves = leaves;
+        this.events = events;
+        this.monthKey = key;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.monthKey = null;
+        this.error = message(error, "Could not load time off.");
+      });
+    }
+  };
+
+  createLeave = async (workspaceSlug: string, payload: TMemberLeaveInput): Promise<void> => {
+    const created = await this.service.createLeave(workspaceSlug, payload);
+    runInAction(() => {
+      this.leaves = [...this.leaves, created];
+      // An absence changes who is reachable, so the drawn week is stale.
+      this.scheduleKey = null;
+    });
+  };
+
+  cancelLeave = async (workspaceSlug: string, leaveId: string): Promise<void> => {
+    await this.service.cancelLeave(workspaceSlug, leaveId);
+    runInAction(() => {
+      this.leaves = this.leaves.filter((leave) => leave.id !== leaveId);
+      this.scheduleKey = null;
+    });
   };
 
   fetchSettings = async (workspaceSlug: string): Promise<void> => {

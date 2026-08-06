@@ -378,3 +378,56 @@ export interface MemberWorkProfile {
   hours_per_day: string;
   approver: string | null;
 }
+
+export type DayPart = "full" | "morning" | "afternoon";
+
+export interface LeaveType {
+  id: string;
+  name: string;
+  colour: string;
+  consumes_capacity: boolean;
+  requires_approval: boolean;
+  is_active: boolean;
+  sort_order: number;
+}
+
+/** `reason` is absent, not null, for readers not entitled to it. */
+export interface MemberLeave {
+  id: string;
+  member: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  start_day_part: DayPart;
+  end_day_part: DayPart;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  reason?: string;
+  decision_note?: string;
+  decided_by: string | null;
+  decided_at: string | null;
+}
+
+export interface MemberLeaveInput {
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  start_day_part?: DayPart;
+  end_day_part?: DayPart;
+  reason?: string;
+  member?: string;
+}
+
+export interface TeamEvent {
+  id: string;
+  project: string | null;
+  title: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  start_day_part: DayPart;
+  end_day_part: DayPart;
+  colour: string;
+  consumes_capacity: boolean;
+  audience: "all_members" | "selected_members";
+  attendee_ids: string[];
+}

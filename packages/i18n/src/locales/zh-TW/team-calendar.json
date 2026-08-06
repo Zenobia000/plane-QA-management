@@ -38,6 +38,28 @@
       "no_core": "這週沒有共同的核心時段。",
       "no_working": "這週沒有共同的工作時段。",
       "undeclared": "{{names}} 尚未設定工作時段,因此任何空檔都無法包含他們。"
+    },
+    "wallchart": {
+      "previous_month": "上個月",
+      "next_month": "下個月",
+      "log": "登記請假",
+      "member": "成員",
+      "events": "團隊事件",
+      "still_working": "仍在工作"
+    },
+    "form": {
+      "type": "假別",
+      "from": "起始日",
+      "to": "結束日",
+      "part": "時段",
+      "full_day": "整天",
+      "morning": "上午",
+      "afternoon": "下午",
+      "reason": "事由",
+      "reason_hint": "選填",
+      "reason_privacy": "只有你本人、你的核准人與工作區管理員看得到。",
+      "submit": "送出",
+      "cancel": "取消"
     }
   }
 }

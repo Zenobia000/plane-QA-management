@@ -11,7 +11,16 @@ would slip in, since a `fields = "__all__"` on a user relation is all it would t
 
 from rest_framework import serializers
 
-from plane.db.models import CalendarDay, MemberWorkProfile, WorkCalendar
+from plane.db.models import (
+    CalendarDay,
+    DayPart,
+    EventAudience,
+    LeaveType,
+    MemberLeave,
+    MemberWorkProfile,
+    TeamEvent,
+    WorkCalendar,
+)
 
 from .base import BaseSerializer
 
@@ -82,3 +91,105 @@ class OverlapRequestSerializer(serializers.Serializer):
     date_from = serializers.DateField()
     date_to = serializers.DateField()
     duration_minutes = serializers.IntegerField(min_value=1, max_value=24 * 60, default=30)
+
+
+class LeaveTypeSerializer(BaseSerializer):
+    class Meta:
+        model = LeaveType
+        fields = ["id", "name", "colour", "consumes_capacity", "requires_approval", "is_active", "sort_order"]
+        read_only_fields = ["id"]
+
+
+class LeaveTypeWriteSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+    colour = serializers.CharField(max_length=7, required=False)
+    consumes_capacity = serializers.BooleanField(required=False, default=True)
+    requires_approval = serializers.BooleanField(required=False, default=True)
+    is_active = serializers.BooleanField(required=False, default=True)
+    sort_order = serializers.FloatField(required=False)
+
+
+class MemberLeaveSerializer(BaseSerializer):
+    """A leave, with `reason` shown only to those entitled to it.
+
+    ADR 0008 treats an absence reason as sensitive -- it is medical often enough that
+    workspace-wide readability is not a defensible default. The rule lives here rather than
+    in a component because a field the API returns is public no matter which client decides
+    not to draw it.
+
+    `visible_reason_for` is a set of member ids passed in by the view; empty means nobody.
+    """
+
+    class Meta:
+        model = MemberLeave
+        fields = [
+            "id",
+            "member",
+            "leave_type",
+            "start_date",
+            "end_date",
+            "start_day_part",
+            "end_day_part",
+            "status",
+            "reason",
+            "decision_note",
+            "decided_by",
+            "decided_at",
+        ]
+        read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if not self.context.get("may_read_reason", lambda _: False)(instance):
+            data.pop("reason", None)
+            data.pop("decision_note", None)
+        return data
+
+
+class MemberLeaveWriteSerializer(serializers.Serializer):
+    leave_type = serializers.UUIDField()
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+    start_day_part = serializers.ChoiceField(choices=DayPart.choices, required=False, default=DayPart.FULL)
+    end_day_part = serializers.ChoiceField(choices=DayPart.choices, required=False, default=DayPart.FULL)
+    reason = serializers.CharField(required=False, allow_blank=True, default="")
+    member = serializers.UUIDField(required=False, help_text="Admins only; defaults to the caller.")
+
+
+class TeamEventSerializer(BaseSerializer):
+    attendee_ids = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeamEvent
+        fields = [
+            "id",
+            "project",
+            "title",
+            "description",
+            "start_date",
+            "end_date",
+            "start_day_part",
+            "end_day_part",
+            "colour",
+            "consumes_capacity",
+            "audience",
+            "attendee_ids",
+        ]
+        read_only_fields = ["id", "attendee_ids"]
+
+    def get_attendee_ids(self, instance):
+        return [str(attendee.member_id) for attendee in instance.attendees.all()]
+
+
+class TeamEventWriteSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=255)
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+    project = serializers.UUIDField(required=False, allow_null=True)
+    description = serializers.CharField(required=False, allow_blank=True, default="")
+    start_day_part = serializers.ChoiceField(choices=DayPart.choices, required=False, default=DayPart.FULL)
+    end_day_part = serializers.ChoiceField(choices=DayPart.choices, required=False, default=DayPart.FULL)
+    colour = serializers.CharField(max_length=7, required=False, default="#334155")
+    consumes_capacity = serializers.BooleanField(required=False, default=False)
+    audience = serializers.ChoiceField(choices=EventAudience.choices, required=False, default=EventAudience.ALL_MEMBERS)
+    member_ids = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)

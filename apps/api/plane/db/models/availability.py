@@ -404,3 +404,60 @@ class TeamEventAttendee(BaseModel):
     def clean(self):
         if self.event_id and self.event.workspace_id != self.workspace_id:
             raise ValidationError("An attendee must belong to the same workspace as the event.")
+
+
+class MemberProjectAllocation(BaseModel):
+    """What share of one person's time a project has been promised.
+
+    Percent rather than hours because the invariant people need enforced is "this person is
+    not promised twice", and that is a statement about proportions. Hours are derived from
+    `MemberWorkProfile.hours_per_day` for display.
+
+    **Not effective-dated in this round.** Re-allocating changes what closed cycles compute.
+    The alternative -- `effective_from`/`effective_to` with overlap validation -- is real
+    work whose only payoff is retrospective accuracy, and these numbers are a planning
+    input. Recorded in ADR 0008 as a known limitation with an obvious upgrade path.
+    """
+
+    workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="member_allocations")
+    member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="project_allocations")
+    project = models.ForeignKey("db.Project", on_delete=models.CASCADE, related_name="member_allocations")
+    allocation_percent = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Member Project Allocation"
+        verbose_name_plural = "Member Project Allocations"
+        db_table = "member_project_allocations"
+        ordering = ("-allocation_percent",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=["workspace", "member", "project"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_active_member_project_allocation",
+            )
+        ]
+        indexes = [models.Index(fields=["project", "member"], name="allocation_project_idx")]
+
+    def __str__(self):
+        return f"{self.member_id} {self.allocation_percent}% of {self.project_id}"
+
+    def clean(self):
+        if self.project_id and self.project.workspace_id != self.workspace_id:
+            raise ValidationError("An allocation's project must belong to the same workspace.")
+        if self.allocation_percent > 100:
+            raise ValidationError("A single allocation cannot exceed 100%.")
+
+        # Blocked at the write, not flagged in the UI. An over-allocated person is not a
+        # warning to look at later -- it is two plans that cannot both be true, and the
+        # cheapest moment to find that out is while someone is still deciding.
+        others = (
+            MemberProjectAllocation.objects.filter(workspace_id=self.workspace_id, member_id=self.member_id)
+            .exclude(pk=self.pk)
+            .aggregate(total=models.Sum("allocation_percent"))["total"]
+            or 0
+        )
+        if others + self.allocation_percent > 100:
+            raise ValidationError(
+                f"That would allocate this member {others + self.allocation_percent}%. "
+                "One person's allocations must total 100% or less."
+            )

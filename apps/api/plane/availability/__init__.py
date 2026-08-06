@@ -3,6 +3,7 @@
 # See the LICENSE file for details.
 
 from .absence import Halves, halves_on, member_occupancy
+from .capacity import cycle_capacity
 from .calendars import (
     calendar_overrides,
     default_calendar,
@@ -29,6 +30,7 @@ from .services import (
     create_leave,
     create_team_event,
     create_work_calendar,
+    set_allocation,
     set_calendar_days,
     update_work_calendar,
     upsert_work_profile,
@@ -49,6 +51,7 @@ __all__ = [
     "Window",
     "calendar_overrides",
     "common_windows",
+    "cycle_capacity",
     "create_work_calendar",
     "default_calendar",
     "intersect",
@@ -56,6 +59,7 @@ __all__ = [
     "member_schedule",
     "resolve_calendar",
     "resolve_timezone",
+    "set_allocation",
     "set_calendar_days",
     "update_work_calendar",
     "upsert_work_profile",

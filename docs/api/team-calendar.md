@@ -282,6 +282,79 @@ against a guess is worse than planning against nothing.
 `GET …/availability/schedule/` and the overlap endpoint both subtract occupancy, so a
 person cannot be away on the wallchart and reachable in the slot finder.
 
+## `GET | PUT …/availability/allocations/`
+
+How each member's week is split across projects. Reading is open to the workspace; writing
+is ADMIN only — an allocation is a promise made _about_ somebody's time by whoever runs the
+plan, the opposite of the work profile, which only the member may set.
+
+```json
+{ "member_id": "…", "project_id": "…", "allocation_percent": 50 }
+```
+
+**A member's allocations must total 100% or less, and the write is refused otherwise** —
+400, with the offending total in the message. Not a warning badge: two projects each
+planning around the same person's full week is two plans that cannot both be true, and the
+cheapest moment to learn that is while somebody is still deciding.
+
+`0` deletes the row rather than storing a zero. "Not on this project" and "on it for none of
+the week" are the same fact, and keeping both spellings would put a column in the matrix
+nobody meant to fill in.
+
+Reading returns `totals` per member alongside the rows, so the matrix does not have to sum
+them and disagree with the server.
+
+## `GET …/workspaces/<slug>/projects/<id>/cycles/<id>/capacity/`
+
+Available hours per member for one cycle. Project-scoped and authorised with
+`ProjectEntityPermission`, unlike the rest of this module — a cycle belongs to a project,
+and the question is what _this_ project has left after everyone's other commitments.
+
+```
+available = Σ_d (1 − occupancy[d]) × hours_per_day × allocation%
+            for d in that member's working days inside the cycle
+```
+
+```json
+{
+  "ready": true,
+  "members": [
+    {
+      "member_id": "…",
+      "allocation_percent": 50,
+      "working_days": 5,
+      "hours_per_day": 8.0,
+      "gross_hours": 20.0,
+      "absence_hours": 4.0,
+      "available_hours": 16.0,
+      "declared": true
+    }
+  ],
+  "available_hours": 16.0,
+  "allocation_is_assumed": false,
+  "undeclared_members": [],
+  "committed_comparable": false,
+  "committed_hours": null
+}
+```
+
+A day of leave costs a 50/50 member **half a day here and half a day on their other
+project**. People do not take leave from a project.
+
+`allocation_is_assumed: true` means nobody has been allocated yet, so every project member
+is counted at 100%. An empty panel on the day the feature ships would look broken.
+
+`undeclared_members` names anyone who has never set working hours; their capacity reads
+zero, and without the list that would look like a bug rather than a blank form.
+
+**`committed_hours` is null and `committed_comparable` false unless the project's estimate
+system is `TIME`.** Story points and hours are not commensurate, and a ratio built from two
+units reads like a fact while meaning nothing. A cycle with no dates returns
+`ready: false, reason: "cycle_has_no_dates"` rather than guessing a range.
+
+Nothing here reports hours _worked_, and nothing accumulates across cycles. The number
+answers "does this fit", once.
+
 ## Agent parity
 
 Every action above has an equivalent MCP tool and CLI command, per guideline A3.

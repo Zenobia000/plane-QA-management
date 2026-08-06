@@ -431,3 +431,28 @@ export interface TeamEvent {
   audience: "all_members" | "selected_members";
   attendee_ids: string[];
 }
+
+export interface AllocationMatrix {
+  allocations: { member_id: string; project_id: string; allocation_percent: number }[];
+  totals: Record<string, number>;
+}
+
+export interface CycleCapacity {
+  ready: boolean;
+  reason?: string;
+  members: {
+    member_id: string;
+    allocation_percent: number;
+    working_days: number;
+    hours_per_day: number;
+    gross_hours: number;
+    absence_hours: number;
+    available_hours: number;
+    declared: boolean;
+  }[];
+  available_hours?: number;
+  allocation_is_assumed?: boolean;
+  undeclared_members?: string[];
+  committed_comparable?: boolean;
+  committed_hours?: number | null;
+}

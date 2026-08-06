@@ -118,17 +118,19 @@
 
 ## 5. 分配與 Cycle 產能(PR 4)— 解決問題 3
 
-| WBS | 工作包                          | 相依     | 交付/驗收                                                   | 測試                                     | 狀態    |
-| --- | ------------------------------- | -------- | ----------------------------------------------------------- | ---------------------------------------- | ------- |
-| 5.1 | `MemberProjectAllocation` model | 2.3      | 每 (member, project) 一列,百分比                            | **合計 > 100 於 `clean()` 拒絕**         | BACKLOG |
-| 5.2 | migration `0148_allocations`    | 5.1      | 純新增                                                      | 套用/反向                                | BACKLOG |
-| 5.3 | 分配矩陣 API                    | 5.1      | 讀全 workspace,寫需 ADMIN                                   | 契約/授權測試                            | BACKLOG |
-| 5.4 | 分配矩陣 UI                     | 5.3      | 人 × 專案,合計欄,未分配可見                                 | 元件 spec                                | BACKLOG |
-| 5.5 | `capacity()` 服務               | 5.1, 3.5 | 工作日 × 每日工時 × 分配 − 占用                             | **占用上限、分配比例、跨行事曆天數不同** | BACKLOG |
-| 5.6 | Cycle 產能端點                  | 5.5      | `GET .../cycles/<id>/capacity/`                             | 契約測試                                 | BACKLOG |
-| 5.7 | Cycle 產能面板                  | 5.6      | 每人可用工時、扣除明細、超載警示                            | 元件 spec                                | BACKLOG |
-| 5.8 | 已承諾比較                      | 5.7      | **僅在專案估點制度為 `TIME` 時顯示**;否則顯示可用人日與原因 | 契約測試涵蓋兩種制度                     | BACKLOG |
-| 5.9 | MCP/CLI 第四組                  | 5.6      | `allocation_set`、`cycle_capacity`                          | `pnpm check:qa-tools`                    | BACKLOG |
+| WBS | 工作包                              | 相依     | 交付/驗收                                                           | 測試                                                 | 狀態    |
+| --- | ----------------------------------- | -------- | ------------------------------------------------------------------- | ---------------------------------------------------- | ------- |
+| 5.1 | `MemberProjectAllocation` model     | 2.3      | 每 (member, project) 一列,百分比                                    | **合計 > 100 於 `clean()` 拒絕;改既有列只算其他列**  | DONE    |
+| 5.2 | migration `0148_member_allocations` | 5.1      | 純新增                                                              | 空 DB apply → 反向 → 再前進                          | DONE    |
+| 5.3 | 分配矩陣 API                        | 5.1      | 讀全 workspace,寫需 ADMIN;0% 刪列而非存 0                           | 6 例契約測試                                         | DONE    |
+| 5.4 | 分配矩陣 UI                         | 5.3      | 人 × 專案,合計欄,**未分配者仍顯示**                                 | 型別檢查;**無元件 spec**                             | PARTIAL |
+| 5.5 | `capacity()` 服務                   | 5.1, 3.5 | 工作日 × 每日工時 × 分配 − 占用                                     | **請假按比例扣、假日減工作日、未宣告者記 0**         | DONE    |
+| 5.6 | Cycle 產能端點                      | 5.5      | `GET .../cycles/<id>/capacity/`(專案層權限)                         | 8 例契約測試                                         | DONE    |
+| 5.7 | Cycle 產能面板                      | 5.6      | 每人可用工時、扣除明細、超載警示                                    | **未實作**——API 與 SDK/CLI/MCP 已具備,無畫面         | BACKLOG |
+| 5.8 | 已承諾比較                          | 5.7      | **僅在專案估點制度為 `TIME` 時顯示**                                | 契約測試:points 專案回 `committed_comparable: false` | DONE    |
+| 5.9 | MCP/CLI 第四組                      | 5.6      | `allocation_list`/`allocation_set`/`cycle_capacity` + 3 個 CLI 動作 | `pnpm check:qa-tools`                                | DONE    |
+
+出場 gate:**部分達成。** 分配與產能的計算、API 與 agent 介面都完成且已測——契約測試斷言「五五分的人請一天假,在 Alpha 少 4 小時而不是 8 小時」。缺的是 5.7 的 Cycle 頁面板:數字算得出來、CLI 與 MCP 拿得到,但專案頁上還沒有畫面。
 
 ## 6. 驗證與收尾
 

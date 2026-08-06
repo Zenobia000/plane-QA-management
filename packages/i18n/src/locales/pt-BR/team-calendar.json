@@ -68,6 +68,14 @@
       "note": "Note (optional)",
       "empty": "Nothing is waiting on you.",
       "requested": "asked for"
+    },
+    "allocation": {
+      "member": "Member",
+      "total": "Total",
+      "unallocated": "Not on any project",
+      "over": "Over-allocated",
+      "admin_only": "Only workspace admins can change these.",
+      "hint": "How each person's week is split. The total cannot exceed 100% — the server refuses it."
     }
   }
 }

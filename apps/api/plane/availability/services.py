@@ -20,6 +20,7 @@ from plane.db.models import (
     EventAudience,
     LeaveStatus,
     MemberLeave,
+    MemberProjectAllocation,
     MemberWorkProfile,
     TeamEvent,
     TeamEventAttendee,
@@ -325,3 +326,24 @@ def pending_for(*, workspace, actor):
         )
     )
     return pending.filter(models.Q(member_id__in=named) | ~models.Q(member_id__in=with_approver))
+
+
+@transaction.atomic
+def set_allocation(*, workspace, member, project, percent):
+    """Promise a share of one person's time to a project.
+
+    Zero removes the row rather than storing a zero: "not on this project" and "on this
+    project for none of the week" are the same fact, and keeping both spellings would make
+    the matrix show a column nobody meant to fill in.
+    """
+    if percent <= 0:
+        MemberProjectAllocation.objects.filter(workspace=workspace, member=member, project=project).delete()
+        return None
+
+    allocation, _ = MemberProjectAllocation.objects.get_or_create(
+        workspace=workspace, member=member, project=project
+    )
+    allocation.allocation_percent = percent
+    _validate(allocation, ["workspace", "member", "project"])
+    allocation.save()
+    return allocation

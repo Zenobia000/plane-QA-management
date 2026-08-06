@@ -151,6 +151,19 @@ export const executeCommand = async (
       return client.cancelLeave(config.workspace, leaveId);
     }
     if (action === "pending-leaves") return client.listPendingLeaves(config.workspace);
+    if (action === "allocations") return client.getAllocations(config.workspace);
+    if (action === "set-allocation") {
+      return client.setAllocation(
+        config.workspace,
+        requiredOption(args.options, "member"),
+        requiredOption(args.options, "project_id"),
+        Number(requiredOption(args.options, "percent"))
+      );
+    }
+    if (action === "capacity") {
+      const project = await projectFor(client, config);
+      return client.getCycleCapacity(config.workspace, project.id, requiredOption(args.options, "cycle"));
+    }
     if (action === "decide-leave") {
       const decision = enumOption(args.options, "decision", ["approve", "reject"] as const);
       if (!decision) throw new Error("--decision approve|reject is required.");

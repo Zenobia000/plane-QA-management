@@ -17,6 +17,7 @@ import type {
   TMemberLeave,
   TMemberLeaveInput,
   TTeamEvent,
+  TAllocationMatrix,
   TWorkCalendar,
 } from "@plane/types";
 
@@ -48,6 +49,9 @@ export interface IAvailabilityStore {
   leaves: TMemberLeave[];
   events: TTeamEvent[];
   pendingLeaves: TMemberLeave[];
+  allocations: TAllocationMatrix | null;
+  fetchAllocations: (workspaceSlug: string) => Promise<void>;
+  setAllocation: (workspaceSlug: string, memberId: string, projectId: string, percent: number) => Promise<void>;
   fetchPending: (workspaceSlug: string) => Promise<void>;
   decideLeave: (workspaceSlug: string, leaveId: string, decision: "approve" | "reject", note?: string) => Promise<void>;
   fetchMonth: (workspaceSlug: string, from: string, to: string) => Promise<void>;
@@ -69,6 +73,7 @@ export class AvailabilityStore implements IAvailabilityStore {
   leaveTypes: TLeaveType[] = [];
   leaves: TMemberLeave[] = [];
   pendingLeaves: TMemberLeave[] = [];
+  allocations: TAllocationMatrix | null = null;
   events: TTeamEvent[] = [];
   profiles: Record<string, TMemberWorkProfile> = {};
   loading = false;
@@ -95,6 +100,7 @@ export class AvailabilityStore implements IAvailabilityStore {
       leaveTypes: observable.ref,
       leaves: observable.ref,
       pendingLeaves: observable.ref,
+      allocations: observable.ref,
       events: observable.ref,
       profiles: observable,
       loading: observable,
@@ -107,6 +113,8 @@ export class AvailabilityStore implements IAvailabilityStore {
       clearOverlap: action,
       fetchMonth: action,
       fetchPending: action,
+      fetchAllocations: action,
+      setAllocation: action,
       decideLeave: action,
       createLeave: action,
       cancelLeave: action,
@@ -198,6 +206,40 @@ export class AvailabilityStore implements IAvailabilityStore {
   };
 
   private monthKey: string | null = null;
+
+  fetchAllocations = async (workspaceSlug: string): Promise<void> => {
+    try {
+      const matrix = await this.service.getAllocations(workspaceSlug);
+      runInAction(() => {
+        this.allocations = matrix;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.error = message(error, "Could not load allocations.");
+      });
+    }
+  };
+
+  setAllocation = async (
+    workspaceSlug: string,
+    memberId: string,
+    projectId: string,
+    percent: number
+  ): Promise<void> => {
+    try {
+      await this.service.setAllocation(workspaceSlug, memberId, projectId, percent);
+      runInAction(() => {
+        this.error = null;
+      });
+      // Refetched rather than patched locally: the server owns the sum-to-100 rule, and a
+      // local edit that assumed it succeeded would show a total the server rejected.
+      await this.fetchAllocations(workspaceSlug);
+    } catch (error) {
+      runInAction(() => {
+        this.error = message(error, "Could not save that allocation.");
+      });
+    }
+  };
 
   fetchPending = async (workspaceSlug: string): Promise<void> => {
     try {

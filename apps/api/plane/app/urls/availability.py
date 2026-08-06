@@ -5,7 +5,9 @@
 from django.urls import path
 
 from plane.app.views.availability import (
+    AllocationMatrixEndpoint,
     AvailabilityCapabilityEndpoint,
+    CycleCapacityEndpoint,
     AvailabilityOverlapEndpoint,
     AvailabilityScheduleEndpoint,
     LeaveTypeListCreateEndpoint,
@@ -73,5 +75,15 @@ urlpatterns = [
         "workspaces/<str:slug>/availability/leaves/pending/",
         PendingLeaveEndpoint.as_view(),
         name="availability-pending-leaves",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/allocations/",
+        AllocationMatrixEndpoint.as_view(),
+        name="availability-allocations",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/cycles/<uuid:cycle_id>/capacity/",
+        CycleCapacityEndpoint.as_view(),
+        name="availability-cycle-capacity",
     ),
 ]

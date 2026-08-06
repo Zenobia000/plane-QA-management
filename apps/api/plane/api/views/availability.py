@@ -13,7 +13,9 @@ error envelope is how two envelopes drift apart.
 """
 
 from plane.app.views.availability import (
+    AllocationMatrixEndpoint as AppAllocationMatrixEndpoint,
     AvailabilityCapabilityEndpoint as AppAvailabilityCapabilityEndpoint,
+    CycleCapacityEndpoint as AppCycleCapacityEndpoint,
     AvailabilityOverlapEndpoint as AppAvailabilityOverlapEndpoint,
     AvailabilityScheduleEndpoint as AppAvailabilityScheduleEndpoint,
     LeaveTypeListCreateEndpoint as AppLeaveTypeListCreateEndpoint,
@@ -70,4 +72,12 @@ class TeamEventAPIEndpoint(APIKeyEndpointMixin, AppTeamEventListCreateEndpoint):
 
 
 class PendingLeaveAPIEndpoint(APIKeyEndpointMixin, AppPendingLeaveEndpoint):
+    pass
+
+
+class AllocationMatrixAPIEndpoint(APIKeyEndpointMixin, AppAllocationMatrixEndpoint):
+    pass
+
+
+class CycleCapacityAPIEndpoint(APIKeyEndpointMixin, AppCycleCapacityEndpoint):
     pass

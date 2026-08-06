@@ -180,3 +180,37 @@ export type TTeamEvent = {
   audience: "all_members" | "selected_members";
   attendee_ids: string[];
 };
+
+export type TAllocationMatrix = {
+  allocations: { member_id: string; project_id: string; allocation_percent: number }[];
+  /** Per-member sum. Over 100 is impossible — the server refuses the write. */
+  totals: Record<string, number>;
+};
+
+export type TCycleCapacityMember = {
+  member_id: string;
+  allocation_percent: number;
+  working_days: number;
+  hours_per_day: number;
+  gross_hours: number;
+  absence_hours: number;
+  available_hours: number;
+  /** False when this member has never declared working hours, so their capacity reads zero. */
+  declared: boolean;
+};
+
+export type TCycleCapacity = {
+  ready: boolean;
+  reason?: string;
+  start_date?: string;
+  end_date?: string;
+  members: TCycleCapacityMember[];
+  available_hours?: number;
+  /** True when nobody has been allocated, so everyone is counted at 100%. */
+  allocation_is_assumed?: boolean;
+  undeclared_members?: string[];
+  /** False unless the project estimates in time — points and hours are not commensurate. */
+  committed_comparable?: boolean;
+  committed_hours?: number | null;
+  estimate_type?: string | null;
+};

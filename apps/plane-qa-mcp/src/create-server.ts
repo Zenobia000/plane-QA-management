@@ -224,6 +224,53 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
   );
 
   server.registerTool(
+    "allocation_list",
+    {
+      description:
+        "Read how each member's time is split across projects, with per-member totals. A total over 100 is impossible — the server refuses the write that would cause it.",
+      inputSchema: z.object({ workspace: scope.workspace }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace }) => toolResult(await client.getAllocations(workspace)))
+  );
+
+  server.registerTool(
+    "allocation_set",
+    {
+      description:
+        "Promise a share of one member's time to a project, as a percentage. Admins only. Zero removes the allocation. Rejected with 400 if the member's allocations would then exceed 100% — that is two plans that cannot both be true, not a warning.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        member_id: z.string(),
+        project_id: z.string(),
+        allocation_percent: z.number().int().min(0).max(100),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, member_id, project_id, allocation_percent }) =>
+      toolResult(await client.setAllocation(workspace, member_id, project_id, allocation_percent))
+    )
+  );
+
+  server.registerTool(
+    "cycle_capacity",
+    {
+      description:
+        "Available hours per member for a cycle, after their working calendar, approved absences and project allocation. Forward-looking planning input only — this never reports hours worked. `committed_hours` is present only when the project estimates in time; points and hours are not comparable.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        project: scope.project,
+        cycle_id: z.string(),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, project: reference, cycle_id }) => {
+      const project = await resolveProject(client, workspace, reference);
+      return toolResult(await client.getCycleCapacity(workspace, project.id, cycle_id));
+    })
+  );
+
+  server.registerTool(
     "work_calendar_list",
     {
       description:

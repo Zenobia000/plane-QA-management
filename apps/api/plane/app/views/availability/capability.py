@@ -30,7 +30,7 @@ class AvailabilityCapabilityEndpoint(BaseAPIView):
         return Response(
             {
                 "enabled": True,
-                "stage": "leave-and-events",
+                "stage": "allocation-and-capacity",
                 "capabilities": {
                     # WBS 2 -- reachable hours and the common-slot finder
                     "schedule": True,
@@ -38,8 +38,8 @@ class AvailabilityCapabilityEndpoint(BaseAPIView):
                     # WBS 3 -- leave and team events
                     "leave": True,
                     # WBS 5 -- allocation matrix and cycle capacity
-                    "allocation": False,
-                    "capacity": False,
+                    "allocation": True,
+                    "capacity": True,
                 },
             }
         )

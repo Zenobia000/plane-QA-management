@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+from .allocation import AllocationMatrixEndpoint, CycleCapacityEndpoint
 from .capability import AvailabilityCapabilityEndpoint
 from .leave import (
     LeaveTypeListCreateEndpoint,
@@ -19,7 +20,9 @@ from .settings import (
 )
 
 __all__ = [
+    "AllocationMatrixEndpoint",
     "AvailabilityCapabilityEndpoint",
+    "CycleCapacityEndpoint",
     "AvailabilityOverlapEndpoint",
     "AvailabilityScheduleEndpoint",
     "LeaveTypeListCreateEndpoint",

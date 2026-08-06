@@ -31,7 +31,7 @@ Commands:
   automation upload-junit|upload-results
   availability schedule|overlap|calendars|profiles|set-profile
       |leave-types|leaves|request-leave|cancel-leave|events
-      |pending-leaves|decide-leave
+      |pending-leaves|decide-leave|allocations|set-allocation|capacity
       schedule --from 2026-08-03 --to 2026-08-09 [--members ID,ID]
       overlap --members ID,ID --from DATE --to DATE [--duration 60]
       (returns 'core' — everyone said they may be interrupted — separately from 'working')
@@ -44,6 +44,9 @@ Commands:
       (reasons are hidden from anyone but the member, their approver and admins)
       decide-leave --id ID --decision approve|reject [--note TEXT]
       (nobody may decide their own request, admins included)
+      set-allocation --member ID --project_id ID --percent 50
+      (a member's allocations must total 100% or less; the server refuses otherwise)
+      capacity --cycle ID   available hours for a cycle, after calendar, leave and allocation
 
 All successful commands print JSON to stdout. Destructive commands require --yes or TTY confirmation.
 Use --dry-run to preview destructive operations without writing.

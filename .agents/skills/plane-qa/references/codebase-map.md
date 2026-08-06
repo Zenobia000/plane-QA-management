@@ -31,8 +31,9 @@ Two rules that are easy to break by accident:
 
 1. **Everything is UTC across the wire.** Local wall-clock times exist only on a member's own profile. `"Tuesday 09:00"` is not comparable across cities, and comparing across cities is what this surface is for. Zone resolves profile → calendar → `User.user_timezone`.
 2. **Only approved absences bind.** A pending request has not been decided; planning against it is planning against a guess. Cancelling and rejecting keep the row so history stays honest.
-3. **Reasons are redacted by omission**, not by nulling the field — a present key still says there was a reason. Enforced in the serializer, never in a component.
-4. **A make-up workday counts however the weekday mask reads.** Taiwan works some Saturdays to bridge long weekends; a weekday-mask-plus-holiday-list model cannot express that day, and every span containing one silently comes out short. The seed command deliberately ships no lunar or make-up dates — they are announced yearly, and a guessed date is worse than none.
+3. **A member's allocations total 100% or less**, refused at the write rather than flagged. Leave reduces every project in proportion — nobody takes leave _from a project_.
+4. **Reasons are redacted by omission**, not by nulling the field — a present key still says there was a reason. Enforced in the serializer, never in a component.
+5. **A make-up workday counts however the weekday mask reads.** Taiwan works some Saturdays to bridge long weekends; a weekday-mask-plus-holiday-list model cannot express that day, and every span containing one silently comes out short. The seed command deliberately ships no lunar or make-up dates — they are announced yearly, and a guessed date is worse than none.
 
 Tests: `plane/tests/unit/availability/` (working days, cross-zone overlap, DST), `plane/tests/contract/app/test_availability_{capability,schedule}.py`, `plane/tests/contract/api/test_availability.py`, `plane/tests/unit/management/test_seed_work_calendars.py`.
 

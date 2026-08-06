@@ -1,7 +1,9 @@
 import { errorKindForStatus, PlaneQAError } from "./errors";
 import { paginatedSchema, parsePlaneResponse, projectSchema, testingCapabilitiesSchema } from "./schemas";
 import type {
+  AllocationMatrix,
   AvailabilitySchedule,
+  CycleCapacity,
   LeaveType,
   MemberLeave,
   MemberLeaveInput,
@@ -322,6 +324,25 @@ export class PlaneQAClient {
     return this.request("PATCH", this.apiPath(workspace, `/availability/leaves/${encodePath(leaveId)}/`), {
       body: { action, note },
     });
+  }
+
+  getAllocations(workspace: string): Promise<AllocationMatrix> {
+    return this.request("GET", this.apiPath(workspace, "/availability/allocations/"));
+  }
+
+  setAllocation(
+    workspace: string,
+    memberId: string,
+    projectId: string,
+    percent: number
+  ): Promise<{ member_id: string; project_id: string; allocation_percent: number }> {
+    return this.request("PUT", this.apiPath(workspace, "/availability/allocations/"), {
+      body: { member_id: memberId, project_id: projectId, allocation_percent: percent },
+    });
+  }
+
+  getCycleCapacity(workspace: string, projectId: string, cycleId: string): Promise<CycleCapacity> {
+    return this.request("GET", this.projectPath(workspace, projectId, `/cycles/${encodePath(cycleId)}/capacity/`));
   }
 
   listStates(workspace: string, projectId: string): Promise<PaginatedResponse<State> | State[]> {

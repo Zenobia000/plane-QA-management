@@ -135,6 +135,7 @@ from .availability import (
     LeaveStatus,
     LeaveType,
     MemberLeave,
+    MemberProjectAllocation,
     MemberWorkProfile,
     TeamEvent,
     TeamEventAttendee,

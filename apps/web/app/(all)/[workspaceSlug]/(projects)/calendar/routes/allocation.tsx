@@ -4,8 +4,13 @@
  * See the LICENSE file for details.
  */
 
+import { AllocationMatrix } from "../components/allocation-matrix";
 import { AvailabilitySurface } from "../components/availability-surface";
 
 export default function TeamCalendarAllocationRoute() {
-  return <AvailabilitySurface tab="allocation" />;
+  return (
+    <AvailabilitySurface tab="allocation">
+      <AllocationMatrix />
+    </AvailabilitySurface>
+  );
 }

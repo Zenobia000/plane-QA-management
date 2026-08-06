@@ -6,7 +6,9 @@
 
 import { API_BASE_URL } from "@plane/constants";
 import type {
+  TAllocationMatrix,
   TAvailabilityCapabilities,
+  TCycleCapacity,
   TAvailabilitySchedule,
   TMemberWorkProfile,
   TMemberWorkProfileInput,
@@ -155,6 +157,39 @@ export class AvailabilityService extends APIService {
     note = ""
   ): Promise<TMemberLeave> {
     return this.patch(`${this.base(workspaceSlug)}/leaves/${leaveId}/`, { action, note })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getAllocations(workspaceSlug: string): Promise<TAllocationMatrix> {
+    return this.get(`${this.base(workspaceSlug)}/allocations/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async setAllocation(
+    workspaceSlug: string,
+    memberId: string,
+    projectId: string,
+    percent: number
+  ): Promise<{ member_id: string; project_id: string; allocation_percent: number }> {
+    return this.put(`${this.base(workspaceSlug)}/allocations/`, {
+      member_id: memberId,
+      project_id: projectId,
+      allocation_percent: percent,
+    })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getCycleCapacity(workspaceSlug: string, projectId: string, cycleId: string): Promise<TCycleCapacity> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/${cycleId}/capacity/`)
       .then((response) => response.data)
       .catch((error) => {
         throw error?.response?.data;

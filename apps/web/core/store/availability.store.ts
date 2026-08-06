@@ -47,6 +47,9 @@ export interface IAvailabilityStore {
   leaveTypes: TLeaveType[];
   leaves: TMemberLeave[];
   events: TTeamEvent[];
+  pendingLeaves: TMemberLeave[];
+  fetchPending: (workspaceSlug: string) => Promise<void>;
+  decideLeave: (workspaceSlug: string, leaveId: string, decision: "approve" | "reject", note?: string) => Promise<void>;
   fetchMonth: (workspaceSlug: string, from: string, to: string) => Promise<void>;
   createLeave: (workspaceSlug: string, payload: TMemberLeaveInput) => Promise<void>;
   cancelLeave: (workspaceSlug: string, leaveId: string) => Promise<void>;
@@ -65,6 +68,7 @@ export class AvailabilityStore implements IAvailabilityStore {
   calendars: TWorkCalendar[] = [];
   leaveTypes: TLeaveType[] = [];
   leaves: TMemberLeave[] = [];
+  pendingLeaves: TMemberLeave[] = [];
   events: TTeamEvent[] = [];
   profiles: Record<string, TMemberWorkProfile> = {};
   loading = false;
@@ -90,6 +94,7 @@ export class AvailabilityStore implements IAvailabilityStore {
       calendars: observable.ref,
       leaveTypes: observable.ref,
       leaves: observable.ref,
+      pendingLeaves: observable.ref,
       events: observable.ref,
       profiles: observable,
       loading: observable,
@@ -101,6 +106,8 @@ export class AvailabilityStore implements IAvailabilityStore {
       findOverlap: action,
       clearOverlap: action,
       fetchMonth: action,
+      fetchPending: action,
+      decideLeave: action,
       createLeave: action,
       cancelLeave: action,
       fetchSettings: action,
@@ -191,6 +198,41 @@ export class AvailabilityStore implements IAvailabilityStore {
   };
 
   private monthKey: string | null = null;
+
+  fetchPending = async (workspaceSlug: string): Promise<void> => {
+    try {
+      const queue = await this.service.getPendingLeaves(workspaceSlug);
+      runInAction(() => {
+        this.pendingLeaves = queue;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.error = message(error, "Could not load requests waiting on you.");
+      });
+    }
+  };
+
+  decideLeave = async (
+    workspaceSlug: string,
+    leaveId: string,
+    decision: "approve" | "reject",
+    note = ""
+  ): Promise<void> => {
+    try {
+      const decided = await this.service.decideLeave(workspaceSlug, leaveId, decision, note);
+      runInAction(() => {
+        this.pendingLeaves = this.pendingLeaves.filter((leave) => leave.id !== leaveId);
+        this.leaves = this.leaves.map((leave) => (leave.id === leaveId ? decided : leave));
+        // A decision changes who is actually away, so the drawn week is stale.
+        this.scheduleKey = null;
+        this.monthKey = null;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.error = message(error, "Could not record that decision.");
+      });
+    }
+  };
 
   fetchMonth = async (workspaceSlug: string, from: string, to: string): Promise<void> => {
     const key = `${workspaceSlug}:${from}:${to}`;

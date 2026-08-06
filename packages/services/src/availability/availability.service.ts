@@ -139,4 +139,25 @@ export class AvailabilityService extends APIService {
         throw error?.response?.data;
       });
   }
+
+  async getPendingLeaves(workspaceSlug: string): Promise<TMemberLeave[]> {
+    return this.get(`${this.base(workspaceSlug)}/leaves/pending/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async decideLeave(
+    workspaceSlug: string,
+    leaveId: string,
+    action: "approve" | "reject",
+    note = ""
+  ): Promise<TMemberLeave> {
+    return this.patch(`${this.base(workspaceSlug)}/leaves/${leaveId}/`, { action, note })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
 }

@@ -26,9 +26,12 @@ from plane.app.serializers import (
 )
 from plane.app.views.base import BaseAPIView
 from plane.availability import (
+    NotTheApprover,
     cancel_leave,
     create_leave,
     create_team_event,
+    decide_leave,
+    pending_for,
     validate_range,
 )
 from plane.db.models import (
@@ -164,24 +167,63 @@ class MemberLeaveListCreateEndpoint(BaseAPIView):
 class MemberLeaveDetailEndpoint(BaseAPIView):
     permission_classes = [WorkspaceAvailabilityPermission]
 
+    ACTIONS = {"cancel", "approve", "reject"}
+
     def patch(self, request, slug, leave_id):
-        """Cancel. Approving and rejecting arrive with the decision workflow."""
         leave = get_object_or_404(MemberLeave, workspace__slug=slug, id=leave_id)
         action = request.data.get("action")
 
-        if action != "cancel":
+        if action not in self.ACTIONS:
             return Response(
-                {"error": "Only 'cancel' is supported here."}, status=status.HTTP_400_BAD_REQUEST
-            )
-        if leave.member_id != request.user.id and not _is_admin(request.user, slug):
-            return Response(
-                {"error": "Only this member or a workspace admin can cancel it."},
-                status=status.HTTP_403_FORBIDDEN,
+                {"error": f"action must be one of: {', '.join(sorted(self.ACTIONS))}."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        leave = cancel_leave(leave=leave, actor=request.user)
+        if action == "cancel":
+            if leave.member_id != request.user.id and not _is_admin(request.user, slug):
+                return Response(
+                    {"error": "Only this member or a workspace admin can cancel it."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            leave = cancel_leave(leave=leave, actor=request.user)
+        else:
+            try:
+                leave = decide_leave(
+                    leave_id=leave.id,
+                    actor=request.user,
+                    approve=action == "approve",
+                    note=request.data.get("note", ""),
+                )
+            except NotTheApprover:
+                return Response(
+                    {"error": "You are not the approver for this request."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            except ValidationError as error:
+                return Response({"error": error.messages}, status=status.HTTP_409_CONFLICT)
+
         return Response(
             MemberLeaveSerializer(leave, context={"may_read_reason": reason_visibility(request.user, slug)}).data
+        )
+
+
+class PendingLeaveEndpoint(BaseAPIView):
+    """What is waiting on the caller.
+
+    Its own endpoint rather than a filter on the list, because "requests I must decide" is
+    a different question from "who is away in August" and answering it needs the approver
+    resolution the list has no reason to run.
+    """
+
+    permission_classes = [WorkspaceAvailabilityPermission]
+
+    def get(self, request, slug):
+        workspace = get_object_or_404(Workspace, slug=slug)
+        queue = pending_for(workspace=workspace, actor=request.user).select_related("leave_type")
+        return Response(
+            MemberLeaveSerializer(
+                queue, many=True, context={"may_read_reason": reason_visibility(request.user, slug)}
+            ).data
         )
 
 

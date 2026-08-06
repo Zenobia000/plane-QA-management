@@ -31,6 +31,7 @@ Commands:
   automation upload-junit|upload-results
   availability schedule|overlap|calendars|profiles|set-profile
       |leave-types|leaves|request-leave|cancel-leave|events
+      |pending-leaves|decide-leave
       schedule --from 2026-08-03 --to 2026-08-09 [--members ID,ID]
       overlap --members ID,ID --from DATE --to DATE [--duration 60]
       (returns 'core' — everyone said they may be interrupted — separately from 'working')
@@ -41,6 +42,8 @@ Commands:
       request-leave --type ID --from DATE --to DATE
       [--start_part full|morning|afternoon] [--end_part ...] [--reason TEXT] [--member ID]
       (reasons are hidden from anyone but the member, their approver and admins)
+      decide-leave --id ID --decision approve|reject [--note TEXT]
+      (nobody may decide their own request, admins included)
 
 All successful commands print JSON to stdout. Destructive commands require --yes or TTY confirmation.
 Use --dry-run to preview destructive operations without writing.

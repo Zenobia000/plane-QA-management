@@ -11,6 +11,7 @@ from plane.api.views.availability import (
     LeaveTypeAPIEndpoint,
     MemberLeaveAPIEndpoint,
     MemberLeaveDetailAPIEndpoint,
+    PendingLeaveAPIEndpoint,
     MemberWorkProfileDetailAPIEndpoint,
     MemberWorkProfileListAPIEndpoint,
     TeamEventAPIEndpoint,
@@ -67,5 +68,10 @@ urlpatterns = [
         "workspaces/<str:slug>/availability/events/",
         TeamEventAPIEndpoint.as_view(),
         name="api-availability-events",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leaves/pending/",
+        PendingLeaveAPIEndpoint.as_view(),
+        name="api-availability-pending-leaves",
     ),
 ]

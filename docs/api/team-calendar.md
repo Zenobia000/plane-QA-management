@@ -231,9 +231,29 @@ your behalf is not a declaration.
 leave starting in the _morning_ is rejected: that is a full first day, and allowing two
 spellings of one thing makes the day count depend on which was used.
 
-`PATCH` currently accepts `{"action": "cancel"}` only; approving and rejecting arrive with
-the decision workflow. Cancelling does not delete — the row stays so history is honest, and
-it simply stops counting against availability.
+`PATCH` accepts `{"action": "cancel" | "approve" | "reject", "note": "…"}`.
+
+Cancelling does not delete — the row stays so history is honest, and it simply stops
+counting against availability.
+
+**Who may decide.** The member's `MemberWorkProfile.approver` if they named one, otherwise
+any workspace ADMIN. Plane has no reporting line, so a pointer per member is how "my
+manager decides" is expressed without inventing a second model of the organisation.
+
+**Nobody decides their own request, admins included.** Self-approval is not approval.
+
+Deciding an already-decided request returns **409**, not a silent overwrite: the row is
+re-read under `select_for_update`, so two approvers clicking at once cannot have the second
+quietly win.
+
+## `GET …/availability/leaves/pending/`
+
+Requests waiting on the caller. Its own endpoint rather than a filter, because "what must I
+decide" needs the approver resolution that listing absences has no reason to run.
+
+An ADMIN sees requests pointed at them **plus** every request whose member named no
+approver — without the second half, a workspace where nobody configured one would have a
+queue nobody could see. Nobody ever sees their own request here.
 
 **Reasons are redacted by omission.** A reader not entitled to `reason` or `decision_note`
 gets a payload without those keys, not keys set to null. A present key with a null value

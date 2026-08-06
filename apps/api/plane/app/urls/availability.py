@@ -13,6 +13,7 @@ from plane.app.views.availability import (
     MemberLeaveListCreateEndpoint,
     MemberWorkProfileDetailEndpoint,
     MemberWorkProfileListEndpoint,
+    PendingLeaveEndpoint,
     TeamEventListCreateEndpoint,
     WorkCalendarListCreateEndpoint,
 )
@@ -67,5 +68,10 @@ urlpatterns = [
         "workspaces/<str:slug>/availability/events/",
         TeamEventListCreateEndpoint.as_view(),
         name="availability-events",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leaves/pending/",
+        PendingLeaveEndpoint.as_view(),
+        name="availability-pending-leaves",
     ),
 ]

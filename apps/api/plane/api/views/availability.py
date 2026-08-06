@@ -19,6 +19,7 @@ from plane.app.views.availability import (
     LeaveTypeListCreateEndpoint as AppLeaveTypeListCreateEndpoint,
     MemberLeaveDetailEndpoint as AppMemberLeaveDetailEndpoint,
     MemberLeaveListCreateEndpoint as AppMemberLeaveListCreateEndpoint,
+    PendingLeaveEndpoint as AppPendingLeaveEndpoint,
     MemberWorkProfileDetailEndpoint as AppMemberWorkProfileDetailEndpoint,
     MemberWorkProfileListEndpoint as AppMemberWorkProfileListEndpoint,
     TeamEventListCreateEndpoint as AppTeamEventListCreateEndpoint,
@@ -65,4 +66,8 @@ class MemberLeaveDetailAPIEndpoint(APIKeyEndpointMixin, AppMemberLeaveDetailEndp
 
 
 class TeamEventAPIEndpoint(APIKeyEndpointMixin, AppTeamEventListCreateEndpoint):
+    pass
+
+
+class PendingLeaveAPIEndpoint(APIKeyEndpointMixin, AppPendingLeaveEndpoint):
     pass

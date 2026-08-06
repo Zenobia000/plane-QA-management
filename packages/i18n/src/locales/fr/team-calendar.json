@@ -60,6 +60,14 @@
       "reason_privacy": "Only you, your approver and workspace admins can read this.",
       "submit": "Log it",
       "cancel": "Cancel"
+    },
+    "approvals": {
+      "title": "Waiting on you",
+      "approve": "Approve",
+      "reject": "Reject",
+      "note": "Note (optional)",
+      "empty": "Nothing is waiting on you.",
+      "requested": "asked for"
     }
   }
 }

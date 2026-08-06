@@ -10,7 +10,8 @@ app API, `/api/v1`, MCP and CLI -- which is the second consumer that makes a ser
 architecture rather than indirection.
 """
 
-from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 from django.utils import timezone
 
 from plane.db.models import (
@@ -23,6 +24,7 @@ from plane.db.models import (
     TeamEvent,
     TeamEventAttendee,
     WorkCalendar,
+    WorkspaceMember,
 )
 
 # Plane's audit FKs are nullable in the database but not declared as form fields, so a bare
@@ -244,3 +246,82 @@ def create_team_event(
             _validate(attendee, ["workspace", "event", "member"])
             attendee.save()
     return event
+
+
+class NotTheApprover(Exception):
+    """Raised when someone who cannot decide this request tries to."""
+
+
+def may_decide(*, leave, actor):
+    """Who is allowed to approve or reject a request.
+
+    `MemberWorkProfile.approver` if the member named one, otherwise any workspace admin.
+    Plane has no reporting line -- `WorkspaceMember.role` is flat -- so a pointer per member
+    is how "my manager decides" is expressed without inventing a second, unowned model of
+    the organisation next to the one Plane already has.
+
+    A member may never decide their own request, even when they are an admin. Self-approval
+    is not approval, and an admin who genuinely needs it can say so in the decision note of
+    a colleague's decision.
+    """
+    if leave.member_id == actor.id:
+        return False
+
+    profile = MemberWorkProfile.objects.filter(workspace_id=leave.workspace_id, member_id=leave.member_id).first()
+    if profile and profile.approver_id:
+        return profile.approver_id == actor.id
+
+    return WorkspaceMember.objects.filter(
+        workspace_id=leave.workspace_id, member=actor, role=20, is_active=True
+    ).exists()
+
+
+@transaction.atomic
+def decide_leave(*, leave_id, actor, approve, note=""):
+    """Approve or reject a pending request.
+
+    Re-read under `select_for_update` rather than trusting the instance the view fetched:
+    two approvers clicking at once would otherwise both see PENDING and both write, and the
+    second decision would silently overwrite the first.
+    """
+    leave = MemberLeave.objects.select_for_update().get(id=leave_id)
+
+    if leave.status != LeaveStatus.PENDING:
+        raise ValidationError(f"This request is already {leave.get_status_display().lower()}.")
+    if not may_decide(leave=leave, actor=actor):
+        raise NotTheApprover()
+
+    leave.status = LeaveStatus.APPROVED if approve else LeaveStatus.REJECTED
+    leave.decided_by = actor
+    leave.decided_at = timezone.now()
+    leave.decision_note = note
+    _validate(leave, ["workspace", "member", "leave_type"])
+    leave.save()
+    return leave
+
+
+def pending_for(*, workspace, actor):
+    """Requests this person is on the hook for.
+
+    Admins see every request that has no named approver, plus the ones pointed at them.
+    Without the first half, a workspace where nobody set an approver would have a queue no
+    one could see.
+    """
+    pending = MemberLeave.objects.filter(workspace=workspace, status=LeaveStatus.PENDING).exclude(member=actor)
+
+    named = set(
+        MemberWorkProfile.objects.filter(workspace=workspace, approver=actor).values_list("member_id", flat=True)
+    )
+    is_admin = WorkspaceMember.objects.filter(
+        workspace=workspace, member=actor, role=20, is_active=True
+    ).exists()
+
+    if not is_admin:
+        return pending.filter(member_id__in=named)
+
+    with_approver = set(
+        MemberWorkProfile.objects.filter(workspace=workspace, approver__isnull=False).values_list(
+            "member_id", flat=True
+        )
+    )
+    return pending.filter(models.Q(member_id__in=named) | ~models.Q(member_id__in=with_approver))

@@ -7,6 +7,7 @@ from .leave import (
     LeaveTypeListCreateEndpoint,
     MemberLeaveDetailEndpoint,
     MemberLeaveListCreateEndpoint,
+    PendingLeaveEndpoint,
     TeamEventListCreateEndpoint,
 )
 from .permissions import WorkspaceAvailabilityPermission
@@ -26,6 +27,7 @@ __all__ = [
     "MemberLeaveListCreateEndpoint",
     "MemberWorkProfileDetailEndpoint",
     "MemberWorkProfileListEndpoint",
+    "PendingLeaveEndpoint",
     "TeamEventListCreateEndpoint",
     "WorkCalendarListCreateEndpoint",
     "WorkspaceAvailabilityPermission",

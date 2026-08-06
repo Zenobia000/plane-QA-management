@@ -150,6 +150,16 @@ export const executeCommand = async (
       if (preview) return preview;
       return client.cancelLeave(config.workspace, leaveId);
     }
+    if (action === "pending-leaves") return client.listPendingLeaves(config.workspace);
+    if (action === "decide-leave") {
+      const decision = enumOption(args.options, "decision", ["approve", "reject"] as const);
+      if (!decision) throw new Error("--decision approve|reject is required.");
+      requireConfirmation(args, `leave ${decision}`);
+      const leaveId = requiredOption(args.options, "id");
+      const preview = dryRunReceipt(args, `leave ${decision}`, { id: leaveId, decision });
+      if (preview) return preview;
+      return client.decideLeave(config.workspace, leaveId, decision, optionString(args.options, "note") ?? "");
+    }
     if (action === "events") {
       return client.listTeamEvents(
         config.workspace,

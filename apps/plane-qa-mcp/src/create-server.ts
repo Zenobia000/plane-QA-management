@@ -181,6 +181,35 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
   );
 
   server.registerTool(
+    "leave_pending",
+    {
+      description:
+        "List absence requests waiting on the authenticated principal to decide. Resolves the approver the same way the UI does: the member's named approver, or any workspace admin when nobody was named. Never includes one's own requests.",
+      inputSchema: z.object({ workspace: scope.workspace }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace }) => toolResult(await client.listPendingLeaves(workspace)))
+  );
+
+  server.registerTool(
+    "leave_approve",
+    {
+      description:
+        "Approve or reject a pending absence. Nobody may decide their own request, including admins. Deciding an already-decided request returns a conflict rather than overwriting the first decision.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        leave_id: z.string(),
+        decision: z.enum(["approve", "reject"]),
+        note: z.string().optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, leave_id, decision, note }) =>
+      toolResult(await client.decideLeave(workspace, leave_id, decision, note ?? ""))
+    )
+  );
+
+  server.registerTool(
     "team_event_list",
     {
       description: "List team events over a date range: training, offsites, release days.",

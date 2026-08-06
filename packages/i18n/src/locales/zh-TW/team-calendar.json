@@ -60,6 +60,14 @@
       "reason_privacy": "只有你本人、你的核准人與工作區管理員看得到。",
       "submit": "送出",
       "cancel": "取消"
+    },
+    "approvals": {
+      "title": "等你決定",
+      "approve": "核准",
+      "reject": "駁回",
+      "note": "附註(選填)",
+      "empty": "目前沒有需要你決定的事。",
+      "requested": "申請"
     }
   }
 }

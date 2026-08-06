@@ -314,6 +314,16 @@ export class PlaneQAClient {
     return this.request("GET", this.apiPath(workspace, "/availability/events/"), { query: { from, to } });
   }
 
+  listPendingLeaves(workspace: string): Promise<MemberLeave[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/leaves/pending/"));
+  }
+
+  decideLeave(workspace: string, leaveId: string, action: "approve" | "reject", note = ""): Promise<MemberLeave> {
+    return this.request("PATCH", this.apiPath(workspace, `/availability/leaves/${encodePath(leaveId)}/`), {
+      body: { action, note },
+    });
+  }
+
   listStates(workspace: string, projectId: string): Promise<PaginatedResponse<State> | State[]> {
     return this.request("GET", this.projectPath(workspace, projectId, "/states/"), { query: { per_page: 100 } });
   }

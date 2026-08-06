@@ -13,6 +13,7 @@ import type { TMemberLeave, TTeamEvent } from "@plane/types";
 import { useAvailability } from "@/hooks/store/use-availability";
 import { useMember } from "@/hooks/store/use-member";
 import { monthGrid, shiftMonth, spanCovers } from "../helpers";
+import { ApprovalQueue } from "./approval-queue";
 import { LeaveForm } from "./leave-form";
 
 const HALF = new Set(["morning", "afternoon"]);
@@ -93,6 +94,8 @@ export const Wallchart = observer(function Wallchart() {
           {t("team_calendar.wallchart.log")}
         </button>
       </header>
+
+      <ApprovalQueue />
 
       {composing && <LeaveForm onDone={() => setComposing(false)} />}
 

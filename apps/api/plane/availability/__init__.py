@@ -21,7 +21,11 @@ from .schedule import (
     workspace_schedule,
 )
 from .services import (
+    NotTheApprover,
     cancel_leave,
+    decide_leave,
+    may_decide,
+    pending_for,
     create_leave,
     create_team_event,
     create_work_calendar,
@@ -32,6 +36,10 @@ from .services import (
 
 __all__ = [
     "Halves",
+    "NotTheApprover",
+    "decide_leave",
+    "may_decide",
+    "pending_for",
     "MemberSchedule",
     "cancel_leave",
     "create_leave",

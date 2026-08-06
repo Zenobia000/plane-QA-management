@@ -90,7 +90,10 @@ class LeaveTypeListCreateEndpoint(BaseAPIView):
         workspace = get_object_or_404(Workspace, slug=slug)
         leave_type = LeaveType(workspace=workspace, **payload.validated_data)
         try:
-            leave_type.full_clean(exclude=["workspace", "created_by", "updated_by"])
+            # `workspace` stays in: excluding it also drops the (workspace, name) constraint
+            # from validation, which left a duplicate name to be caught by the database
+            # instead -- a generic error on a poisoned transaction rather than a named field.
+            leave_type.full_clean(exclude=["created_by", "updated_by"])
         except ValidationError as error:
             return Response({"error": error.messages}, status=status.HTTP_400_BAD_REQUEST)
         leave_type.save()
@@ -122,7 +125,7 @@ class LeaveTypeDetailEndpoint(BaseAPIView):
         for field, value in payload.validated_data.items():
             setattr(leave_type, field, value)
         try:
-            leave_type.full_clean(exclude=["workspace", "created_by", "updated_by"])
+            leave_type.full_clean(exclude=["created_by", "updated_by"])
         except ValidationError as error:
             return Response({"error": error.messages}, status=status.HTTP_400_BAD_REQUEST)
         leave_type.save()

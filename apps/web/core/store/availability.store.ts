@@ -55,21 +55,26 @@ export interface IAvailabilityStore {
   pendingLeaves: TMemberLeave[];
   allocations: TAllocationMatrix | null;
   calendarDays: Record<string, TCalendarDay[]>;
-  createCalendar: (workspaceSlug: string, payload: TWorkCalendarInput) => Promise<void>;
-  updateCalendar: (workspaceSlug: string, calendarId: string, payload: TWorkCalendarInput) => Promise<void>;
-  deleteCalendar: (workspaceSlug: string, calendarId: string) => Promise<void>;
-  fetchCalendarDays: (workspaceSlug: string, calendarId: string) => Promise<void>;
-  addCalendarDays: (workspaceSlug: string, calendarId: string, days: TCalendarDayInput[]) => Promise<void>;
-  removeCalendarDay: (workspaceSlug: string, calendarId: string, dayId: string) => Promise<void>;
-  createLeaveType: (workspaceSlug: string, payload: TLeaveTypeInput) => Promise<void>;
-  updateLeaveType: (workspaceSlug: string, typeId: string, payload: TLeaveTypeInput) => Promise<void>;
+  createCalendar: (workspaceSlug: string, payload: TWorkCalendarInput) => Promise<boolean>;
+  updateCalendar: (workspaceSlug: string, calendarId: string, payload: TWorkCalendarInput) => Promise<boolean>;
+  deleteCalendar: (workspaceSlug: string, calendarId: string) => Promise<boolean>;
+  fetchCalendarDays: (workspaceSlug: string, calendarId: string) => Promise<boolean>;
+  addCalendarDays: (workspaceSlug: string, calendarId: string, days: TCalendarDayInput[]) => Promise<boolean>;
+  removeCalendarDay: (workspaceSlug: string, calendarId: string, dayId: string) => Promise<boolean>;
+  createLeaveType: (workspaceSlug: string, payload: TLeaveTypeInput) => Promise<boolean>;
+  updateLeaveType: (workspaceSlug: string, typeId: string, payload: TLeaveTypeInput) => Promise<boolean>;
   fetchAllocations: (workspaceSlug: string) => Promise<void>;
-  setAllocation: (workspaceSlug: string, memberId: string, projectId: string, percent: number) => Promise<void>;
+  setAllocation: (workspaceSlug: string, memberId: string, projectId: string, percent: number) => Promise<boolean>;
   fetchPending: (workspaceSlug: string) => Promise<void>;
-  decideLeave: (workspaceSlug: string, leaveId: string, decision: "approve" | "reject", note?: string) => Promise<void>;
+  decideLeave: (
+    workspaceSlug: string,
+    leaveId: string,
+    decision: "approve" | "reject",
+    note?: string
+  ) => Promise<boolean>;
   fetchMonth: (workspaceSlug: string, from: string, to: string) => Promise<void>;
-  createLeave: (workspaceSlug: string, payload: TMemberLeaveInput) => Promise<void>;
-  cancelLeave: (workspaceSlug: string, leaveId: string) => Promise<void>;
+  createLeave: (workspaceSlug: string, payload: TMemberLeaveInput) => Promise<boolean>;
+  cancelLeave: (workspaceSlug: string, leaveId: string) => Promise<boolean>;
   fetchSettings: (workspaceSlug: string) => Promise<void>;
   updateProfile: (
     workspaceSlug: string,
@@ -241,41 +246,51 @@ export class AvailabilityStore implements IAvailabilityStore {
     this.monthKey = null;
   }
 
-  private async guard(work: () => Promise<void>, fallback: string): Promise<void> {
+  /**
+   * Runs a write and reports whether it took.
+   *
+   * The boolean is the point. A caller that cannot tell a refused write from an accepted
+   * one has to guess, and every one of them guessed the same way: close the form, clear
+   * the draft. That throws away what somebody just typed at the exact moment the server
+   * has told them it was wrong.
+   */
+  private async guard(work: () => Promise<void>, fallback: string): Promise<boolean> {
     try {
       await work();
       runInAction(() => {
         this.error = null;
       });
+      return true;
     } catch (error) {
       runInAction(() => {
         this.error = message(error, fallback);
       });
+      return false;
     }
   }
 
-  createCalendar = async (workspaceSlug: string, payload: TWorkCalendarInput): Promise<void> =>
+  createCalendar = async (workspaceSlug: string, payload: TWorkCalendarInput): Promise<boolean> =>
     this.guard(async () => {
       await this.service.createCalendar(workspaceSlug, payload);
       runInAction(() => this.invalidateDerived());
       await this.fetchSettings(workspaceSlug);
     }, "Could not create that calendar.");
 
-  updateCalendar = async (workspaceSlug: string, calendarId: string, payload: TWorkCalendarInput): Promise<void> =>
+  updateCalendar = async (workspaceSlug: string, calendarId: string, payload: TWorkCalendarInput): Promise<boolean> =>
     this.guard(async () => {
       await this.service.updateCalendar(workspaceSlug, calendarId, payload);
       runInAction(() => this.invalidateDerived());
       await this.fetchSettings(workspaceSlug);
     }, "Could not save that calendar.");
 
-  deleteCalendar = async (workspaceSlug: string, calendarId: string): Promise<void> =>
+  deleteCalendar = async (workspaceSlug: string, calendarId: string): Promise<boolean> =>
     this.guard(async () => {
       await this.service.deleteCalendar(workspaceSlug, calendarId);
       runInAction(() => this.invalidateDerived());
       await this.fetchSettings(workspaceSlug);
     }, "Could not delete that calendar.");
 
-  fetchCalendarDays = async (workspaceSlug: string, calendarId: string): Promise<void> =>
+  fetchCalendarDays = async (workspaceSlug: string, calendarId: string): Promise<boolean> =>
     this.guard(async () => {
       const days = await this.service.getCalendarDays(workspaceSlug, calendarId);
       runInAction(() => {
@@ -283,28 +298,28 @@ export class AvailabilityStore implements IAvailabilityStore {
       });
     }, "Could not load holidays.");
 
-  addCalendarDays = async (workspaceSlug: string, calendarId: string, days: TCalendarDayInput[]): Promise<void> =>
+  addCalendarDays = async (workspaceSlug: string, calendarId: string, days: TCalendarDayInput[]): Promise<boolean> =>
     this.guard(async () => {
       await this.service.setCalendarDays(workspaceSlug, calendarId, days);
       runInAction(() => this.invalidateDerived());
       await this.fetchCalendarDays(workspaceSlug, calendarId);
     }, "Could not save that day.");
 
-  removeCalendarDay = async (workspaceSlug: string, calendarId: string, dayId: string): Promise<void> =>
+  removeCalendarDay = async (workspaceSlug: string, calendarId: string, dayId: string): Promise<boolean> =>
     this.guard(async () => {
       await this.service.deleteCalendarDay(workspaceSlug, calendarId, dayId);
       runInAction(() => this.invalidateDerived());
       await this.fetchCalendarDays(workspaceSlug, calendarId);
     }, "Could not remove that day.");
 
-  createLeaveType = async (workspaceSlug: string, payload: TLeaveTypeInput): Promise<void> =>
+  createLeaveType = async (workspaceSlug: string, payload: TLeaveTypeInput): Promise<boolean> =>
     this.guard(async () => {
       await this.service.createLeaveType(workspaceSlug, payload);
       runInAction(() => this.invalidateDerived());
       await this.fetchSettings(workspaceSlug);
     }, "Could not create that leave type.");
 
-  updateLeaveType = async (workspaceSlug: string, typeId: string, payload: TLeaveTypeInput): Promise<void> =>
+  updateLeaveType = async (workspaceSlug: string, typeId: string, payload: TLeaveTypeInput): Promise<boolean> =>
     this.guard(async () => {
       await this.service.updateLeaveType(workspaceSlug, typeId, payload);
       runInAction(() => this.invalidateDerived());
@@ -329,21 +344,13 @@ export class AvailabilityStore implements IAvailabilityStore {
     memberId: string,
     projectId: string,
     percent: number
-  ): Promise<void> => {
-    try {
+  ): Promise<boolean> =>
+    this.guard(async () => {
       await this.service.setAllocation(workspaceSlug, memberId, projectId, percent);
-      runInAction(() => {
-        this.error = null;
-      });
       // Refetched rather than patched locally: the server owns the sum-to-100 rule, and a
       // local edit that assumed it succeeded would show a total the server rejected.
       await this.fetchAllocations(workspaceSlug);
-    } catch (error) {
-      runInAction(() => {
-        this.error = message(error, "Could not save that allocation.");
-      });
-    }
-  };
+    }, "Could not save that allocation.");
 
   fetchPending = async (workspaceSlug: string): Promise<void> => {
     try {
@@ -363,8 +370,8 @@ export class AvailabilityStore implements IAvailabilityStore {
     leaveId: string,
     decision: "approve" | "reject",
     note = ""
-  ): Promise<void> => {
-    try {
+  ): Promise<boolean> =>
+    this.guard(async () => {
       const decided = await this.service.decideLeave(workspaceSlug, leaveId, decision, note);
       runInAction(() => {
         this.pendingLeaves = this.pendingLeaves.filter((leave) => leave.id !== leaveId);
@@ -373,12 +380,7 @@ export class AvailabilityStore implements IAvailabilityStore {
         this.scheduleKey = null;
         this.monthKey = null;
       });
-    } catch (error) {
-      runInAction(() => {
-        this.error = message(error, "Could not record that decision.");
-      });
-    }
-  };
+    }, "Could not record that decision.");
 
   fetchMonth = async (workspaceSlug: string, from: string, to: string): Promise<void> => {
     const key = `${workspaceSlug}:${from}:${to}`;
@@ -403,22 +405,24 @@ export class AvailabilityStore implements IAvailabilityStore {
     }
   };
 
-  createLeave = async (workspaceSlug: string, payload: TMemberLeaveInput): Promise<void> => {
-    const created = await this.service.createLeave(workspaceSlug, payload);
-    runInAction(() => {
-      this.leaves = [...this.leaves, created];
-      // An absence changes who is reachable, so the drawn week is stale.
-      this.scheduleKey = null;
-    });
-  };
+  createLeave = async (workspaceSlug: string, payload: TMemberLeaveInput): Promise<boolean> =>
+    this.guard(async () => {
+      const created = await this.service.createLeave(workspaceSlug, payload);
+      runInAction(() => {
+        this.leaves = [...this.leaves, created];
+        // An absence changes who is reachable, so the drawn week is stale.
+        this.scheduleKey = null;
+      });
+    }, "Could not record that absence.");
 
-  cancelLeave = async (workspaceSlug: string, leaveId: string): Promise<void> => {
-    await this.service.cancelLeave(workspaceSlug, leaveId);
-    runInAction(() => {
-      this.leaves = this.leaves.filter((leave) => leave.id !== leaveId);
-      this.scheduleKey = null;
-    });
-  };
+  cancelLeave = async (workspaceSlug: string, leaveId: string): Promise<boolean> =>
+    this.guard(async () => {
+      await this.service.cancelLeave(workspaceSlug, leaveId);
+      runInAction(() => {
+        this.leaves = this.leaves.filter((leave) => leave.id !== leaveId);
+        this.scheduleKey = null;
+      });
+    }, "Could not cancel that absence.");
 
   fetchSettings = async (workspaceSlug: string): Promise<void> => {
     try {

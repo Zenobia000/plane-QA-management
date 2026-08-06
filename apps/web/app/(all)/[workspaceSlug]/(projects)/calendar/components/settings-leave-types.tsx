@@ -134,7 +134,9 @@ export const LeaveTypeSettings = observer(function LeaveTypeSettings({ canEdit }
               type="button"
               onClick={async () => {
                 if (!draft.name) return;
-                await createLeaveType(slug, draft);
+                // A duplicate name is refused by the server; closing the panel anyway would
+                // report that refusal as a success.
+                if (!(await createLeaveType(slug, draft))) return;
                 setDraft({ name: "", colour: "#6B7280", consumes_capacity: true, requires_approval: true });
                 setCreating(false);
               }}

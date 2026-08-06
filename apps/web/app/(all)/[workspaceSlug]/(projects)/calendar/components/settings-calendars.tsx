@@ -53,8 +53,9 @@ export const CalendarSettings = observer(function CalendarSettings({ canEdit }: 
 
   const submitDay = async (calendarId: string) => {
     if (!day.date || !day.name) return;
-    await addCalendarDays(slug, calendarId, [day]);
-    setDay({ date: "", name: "", kind: "holiday" });
+    // Cleared only once the day is actually on the calendar; a refused write that also
+    // wipes the fields leaves nothing to correct.
+    if (await addCalendarDays(slug, calendarId, [day])) setDay({ date: "", name: "", kind: "holiday" });
   };
 
   return (
@@ -215,7 +216,7 @@ export const CalendarSettings = observer(function CalendarSettings({ canEdit }: 
               type="button"
               onClick={async () => {
                 if (!draft.name) return;
-                await createCalendar(slug, { ...draft, is_default: calendars.length === 0 });
+                if (!(await createCalendar(slug, { ...draft, is_default: calendars.length === 0 }))) return;
                 setDraft({ name: "", timezone: "Asia/Taipei" });
                 setCreating(false);
               }}

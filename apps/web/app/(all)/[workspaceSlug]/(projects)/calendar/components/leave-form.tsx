@@ -41,7 +41,7 @@ export const LeaveForm = observer(function LeaveForm({ onDone }: Props) {
     if (!typeId) return;
     setSaving(true);
     try {
-      await createLeave(slug, {
+      const recorded = await createLeave(slug, {
         leave_type: typeId,
         start_date: from,
         end_date: to,
@@ -50,7 +50,9 @@ export const LeaveForm = observer(function LeaveForm({ onDone }: Props) {
         end_day_part: single ? part : "full",
         reason,
       });
-      onDone();
+      // Left open on a refusal. The dates are still on screen next to what the server said
+      // about them, which is the only place the correction can be made.
+      if (recorded) onDone();
     } finally {
       setSaving(false);
     }

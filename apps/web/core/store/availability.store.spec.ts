@@ -64,4 +64,40 @@ describe("AvailabilityStore", () => {
     await store.fetchCapabilities("acme");
     expect(service.getCapabilities).toHaveBeenCalledTimes(2);
   });
+
+  it("tells the caller a refused write was refused", async () => {
+    // Without this the form has no way to distinguish the two, and the only safe guess —
+    // close and clear — deletes what somebody just typed the moment it was rejected.
+    const service = serviceMock({
+      createLeave: vi.fn().mockRejectedValue({ error: "Leave overlaps an existing request" }),
+    });
+    const store = new AvailabilityStore(service);
+
+    const recorded = await store.createLeave("acme", {
+      leave_type: "type-annual",
+      start_date: "2026-08-12",
+      end_date: "2026-08-12",
+    });
+
+    expect(recorded).toBe(false);
+    expect(store.error).toBe("Leave overlaps an existing request");
+    expect(store.leaves).toEqual([]);
+  });
+
+  it("clears a previous complaint once a write goes through", async () => {
+    const leave = { id: "leave-1", member: "ana" };
+    const service = serviceMock({
+      createLeave: vi.fn().mockRejectedValueOnce(new Error("nope")).mockResolvedValueOnce(leave),
+    });
+    const store = new AvailabilityStore(service);
+    const payload = { leave_type: "type-annual", start_date: "2026-08-12", end_date: "2026-08-12" };
+
+    await store.createLeave("acme", payload);
+    expect(store.error).toBe("nope");
+
+    // A stale error next to a successful save reads as a second failure.
+    expect(await store.createLeave("acme", payload)).toBe(true);
+    expect(store.error).toBeNull();
+    expect(store.leaves).toHaveLength(1);
+  });
 });

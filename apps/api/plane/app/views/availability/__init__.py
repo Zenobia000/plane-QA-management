@@ -4,8 +4,19 @@
 
 from .capability import AvailabilityCapabilityEndpoint
 from .permissions import WorkspaceAvailabilityPermission
+from .schedule import AvailabilityOverlapEndpoint, AvailabilityScheduleEndpoint
+from .settings import (
+    MemberWorkProfileDetailEndpoint,
+    MemberWorkProfileListEndpoint,
+    WorkCalendarListCreateEndpoint,
+)
 
 __all__ = [
     "AvailabilityCapabilityEndpoint",
+    "AvailabilityOverlapEndpoint",
+    "AvailabilityScheduleEndpoint",
+    "MemberWorkProfileDetailEndpoint",
+    "MemberWorkProfileListEndpoint",
+    "WorkCalendarListCreateEndpoint",
     "WorkspaceAvailabilityPermission",
 ]

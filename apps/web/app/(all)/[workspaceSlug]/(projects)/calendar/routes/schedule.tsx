@@ -5,7 +5,12 @@
  */
 
 import { AvailabilitySurface } from "../components/availability-surface";
+import { WeekView } from "../components/week-view";
 
 export default function TeamCalendarScheduleRoute() {
-  return <AvailabilitySurface tab="schedule" />;
+  return (
+    <AvailabilitySurface tab="schedule">
+      <WeekView />
+    </AvailabilitySurface>
+  );
 }

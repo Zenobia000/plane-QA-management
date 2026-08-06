@@ -1,6 +1,11 @@
 import { errorKindForStatus, PlaneQAError } from "./errors";
 import { paginatedSchema, parsePlaneResponse, projectSchema, testingCapabilitiesSchema } from "./schemas";
 import type {
+  AvailabilitySchedule,
+  MemberWorkProfile,
+  OverlapRequest,
+  OverlapResult,
+  WorkCalendar,
   SavedView,
   SavedViewInput,
   JsonObject,
@@ -236,6 +241,49 @@ export class PlaneQAClient {
       throw new PlaneQAError({ kind: "not_found", status: 404, message: `Project ${projectReference} was not found.` });
     }
     return project;
+  }
+
+  /**
+   * Team availability.
+   *
+   * Workspace-scoped, unlike everything above it: an absence is a fact about a person, not
+   * about a project. See ADR 0008.
+   */
+  getAvailabilitySchedule(
+    workspace: string,
+    from: string,
+    to: string,
+    memberIds?: string[]
+  ): Promise<AvailabilitySchedule> {
+    return this.request("GET", this.apiPath(workspace, "/availability/schedule/"), {
+      query: { from, to, ...(memberIds?.length ? { member_ids: memberIds.join(",") } : {}) },
+    });
+  }
+
+  /** POST for a read: the member list is the request, and it can be long. Nothing is written. */
+  findAvailabilityOverlap(workspace: string, input: OverlapRequest): Promise<OverlapResult> {
+    return this.request("POST", this.apiPath(workspace, "/availability/overlap/"), {
+      body: input,
+      idempotent: true,
+    });
+  }
+
+  listWorkCalendars(workspace: string): Promise<WorkCalendar[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/calendars/"));
+  }
+
+  listWorkProfiles(workspace: string): Promise<MemberWorkProfile[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/profiles/"));
+  }
+
+  updateWorkProfile(
+    workspace: string,
+    memberId: string,
+    input: Partial<MemberWorkProfile> & { clear_core_hours?: boolean }
+  ): Promise<MemberWorkProfile> {
+    return this.request("PATCH", this.apiPath(workspace, `/availability/profiles/${encodePath(memberId)}/`), {
+      body: input,
+    });
   }
 
   listStates(workspace: string, projectId: string): Promise<PaginatedResponse<State> | State[]> {

@@ -20,6 +20,24 @@
         "title": "Nobody is allocated to a project yet",
         "description": "How each person's time is split across projects, so the same person is never counted as full-time by two of them at once."
       }
+    },
+    "schedule": {
+      "timezone": "Shown in",
+      "previous_week": "Previous week",
+      "next_week": "Next week",
+      "pick_day": "Pick a day",
+      "not_declared": "No hours declared"
+    },
+    "slot_finder": {
+      "title": "Find a time everyone is free",
+      "duration": "For",
+      "search": "Find slots",
+      "clear": "Clear",
+      "core": "Core hours — everyone has said you may interrupt them",
+      "working": "Working hours — everyone is at work",
+      "no_core": "No shared core hours this week.",
+      "no_working": "No shared working hours this week.",
+      "undeclared": "{{names}} hasn't declared any hours, so no slot can include them."
     }
   }
 }

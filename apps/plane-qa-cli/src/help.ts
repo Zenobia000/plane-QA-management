@@ -29,6 +29,13 @@ Commands:
   run list|get|create|record-result|create-defect|close
   quality overview|coverage|release-gate|open-defects
   automation upload-junit|upload-results
+  availability schedule|overlap|calendars|profiles|set-profile
+      schedule --from 2026-08-03 --to 2026-08-09 [--members ID,ID]
+      overlap --members ID,ID --from DATE --to DATE [--duration 60]
+      (returns 'core' — everyone said they may be interrupted — separately from 'working')
+      set-profile --member ID [--calendar ID] [--timezone Asia/Taipei]
+      [--start 09:00] [--end 18:00] [--core_start 14:00] [--core_end 17:00]
+      [--hours 8] [--approver ID] [--clear_core_hours]
 
 All successful commands print JSON to stdout. Destructive commands require --yes or TTY confirmation.
 Use --dry-run to preview destructive operations without writing.

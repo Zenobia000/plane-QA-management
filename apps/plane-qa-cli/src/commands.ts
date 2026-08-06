@@ -99,6 +99,45 @@ export const executeCommand = async (
     }
   }
 
+  // Availability is workspace-scoped, so none of these resolve a project first.
+  if (group === "availability") {
+    if (action === "schedule") {
+      return client.getAvailabilitySchedule(
+        config.workspace,
+        requiredOption(args.options, "from"),
+        requiredOption(args.options, "to"),
+        optionString(args.options, "members")?.split(",").filter(Boolean)
+      );
+    }
+    if (action === "overlap") {
+      return client.findAvailabilityOverlap(config.workspace, {
+        member_ids: requiredOption(args.options, "members").split(",").filter(Boolean),
+        date_from: requiredOption(args.options, "from"),
+        date_to: requiredOption(args.options, "to"),
+        duration_minutes: Number(optionString(args.options, "duration") ?? 30),
+      });
+    }
+    if (action === "calendars") return client.listWorkCalendars(config.workspace);
+    if (action === "profiles") return client.listWorkProfiles(config.workspace);
+    if (action === "set-profile") {
+      return client.updateWorkProfile(
+        config.workspace,
+        requiredOption(args.options, "member"),
+        compact({
+          work_calendar: optionString(args.options, "calendar"),
+          timezone: optionString(args.options, "timezone"),
+          work_start_time: optionString(args.options, "start"),
+          work_end_time: optionString(args.options, "end"),
+          core_hours_start: optionString(args.options, "core_start"),
+          core_hours_end: optionString(args.options, "core_end"),
+          hours_per_day: optionString(args.options, "hours"),
+          approver: optionString(args.options, "approver"),
+          clear_core_hours: args.options.clear_core_hours === true ? true : undefined,
+        })
+      );
+    }
+  }
+
   if (group === "initiative") {
     if (action === "list") return client.listInitiatives(config.workspace);
     if (action === "create") {

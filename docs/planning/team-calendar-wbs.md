@@ -62,23 +62,25 @@
 
 **這一輪結束時系統還不知道「請假」是什麼,而它已經有用了。**
 
-| WBS  | 工作包                               | 相依     | 交付/驗收                                           | 測試                                  | 狀態    |
-| ---- | ------------------------------------ | -------- | --------------------------------------------------- | ------------------------------------- | ------- |
-| 2.1  | `WorkCalendar` / `CalendarDay` model | 1.7      | 每週工作日遮罩 + 假日/補班日覆寫,workspace 唯一預設 | 模型約束;跨 workspace 隔離            | BACKLOG |
-| 2.2  | `MemberWorkProfile` model            | 2.1      | 工作時段、核心時段、時區、每日工時、核准人          | 模型/單元測試                         | BACKLOG |
-| 2.3  | migration `0146_team_calendar`       | 2.1–2.2  | 純新增,無資料轉換,可反向                            | 空 DB 與代表性 DB 各套用一次          | BACKLOG |
-| 2.4  | `working_days()`                     | 2.1      | 補班日算工作日、假日不算、其餘看遮罩                | **補班日、跨月、跨年、單日**          | BACKLOG |
-| 2.5  | 時區解析                             | 2.2      | profile → calendar → `User.user_timezone` 三段回退  | 單元測試含 DST 轉換                   | BACKLOG |
-| 2.6  | `overlap()` 服務                     | 2.4, 2.5 | 多人多時區交集,回傳 ≥ 指定時長的窗口                | **跨時區、DST、無交集、核心時段優先** | BACKLOG |
-| 2.7  | 應用服務與 app API                   | 2.4–2.6  | `schedule/`、`overlap/`、`profiles/`                | 契約/授權測試                         | BACKLOG |
-| 2.8  | `/api/v1` 薄子類別                   | 2.7      | 零邏輯重複,僅加 auth/throttle/錯誤信封              | 金鑰路徑契約測試                      | BACKLOG |
-| 2.9  | 週視圖 UI                            | 2.7      | 共用時間軸、核心時段深色、時區切換                  | store/元件 spec                       | BACKLOG |
-| 2.10 | 「找共同時段」                       | 2.9      | 參與者 + 時長 → 候選窗口,依觀看者時區               | 元件 spec                             | BACKLOG |
-| 2.11 | seed `seed_work_calendars`           | 2.3      | 台灣(含補班日)/日本/美國預設                        | 指令冪等性測試                        | BACKLOG |
-| 2.12 | MCP/CLI 第一組                       | 2.8      | `availability_schedule`、`availability_overlap`     | `pnpm check:qa-tools`                 | BACKLOG |
-| 2.13 | **反監控斷言**                       | 2.7      | 任何 availability 回應皆不含 `last_active`          | 契約測試                              | BACKLOG |
+| WBS  | 工作包                               | 相依     | 交付/驗收                                           | 測試                                                                                              | 狀態    |
+| ---- | ------------------------------------ | -------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------- |
+| 2.1  | `WorkCalendar` / `CalendarDay` model | 1.7      | 每週工作日遮罩 + 假日/補班日覆寫,workspace 唯一預設 | 模型約束;跨 workspace 隔離                                                                        | DONE    |
+| 2.2  | `MemberWorkProfile` model            | 2.1      | 工作時段、核心時段、時區、每日工時、核准人          | 契約測試涵蓋六條 `clean()` 規則                                                                   | DONE    |
+| 2.3  | migration `0146_team_calendar`       | 2.1–2.2  | 純新增,無資料轉換,可反向                            | 空 DB `migrate` → 反向到 0145 → 再前進,三步皆 OK(pytest 走 `--nomigrations`,所以這一列必須另外跑) | DONE    |
+| 2.4  | `working_days()`                     | 2.1      | 補班日算工作日、假日不算、其餘看遮罩                | 13 例:補班、跨月、跨年、單日、六日工作制                                                          | DONE    |
+| 2.5  | 時區解析                             | 2.2      | profile → calendar → `User.user_timezone` 三段回退  | 含 DST 兩側斷言                                                                                   | DONE    |
+| 2.6  | `overlap()` 服務                     | 2.4, 2.5 | 多人多時區交集,回傳 ≥ 指定時長的窗口                | 19 例:跨時區、DST、無交集、核心時段優先                                                           | DONE    |
+| 2.7  | 應用服務與 app API                   | 2.4–2.6  | `schedule/`、`overlap/`、`profiles/`、`calendars/`  | `test_availability_schedule.py` 20 例                                                             | DONE    |
+| 2.8  | `/api/v1` 薄子類別                   | 2.7      | 零邏輯重複,僅加 auth/throttle/錯誤信封              | `contract/api/test_availability.py`                                                               | DONE    |
+| 2.9  | 週視圖 UI                            | 2.7      | 共用時間軸、核心時段獨立色塊、時區切換              | `helpers.spec.ts` + `week-view.spec.tsx`                                                          | DONE    |
+| 2.10 | 「找共同時段」                       | 2.9      | 參與者 + 時長 → 候選窗口,依觀看者時區               | 元件 spec 覆蓋 capability gating;結果渲染僅由後端契約保證                                         | PARTIAL |
+| 2.11 | seed `seed_work_calendars`           | 2.3      | 台灣/日本/美國預設,**僅固定日期假日**               | 冪等性 + 「未涵蓋什麼」的輸出斷言                                                                 | DONE    |
+| 2.12 | MCP/CLI 第一組                       | 2.8      | 4 個 MCP tool + 5 個 CLI 動作,參數等價              | `pnpm check:qa-tools`                                                                             | DONE    |
+| 2.13 | **反監控斷言**                       | 2.7      | 任何 availability 回應皆不含 `last_active`          | 三處契約測試(capability/app/api)                                                                  | DONE    |
 
-出場 gate:兩個時區的成員能看到彼此的可及時段,且「找共同時段」回傳的窗口與手算一致。
+出場 gate:兩個時區的成員能看到彼此的可及時段,且「找共同時段」回傳的窗口與手算一致。**自動化部分已達成**——契約測試斷言台北 09:00–18:00 與柏林 09:00–18:00 在 2026-08-03 共有 07:00–10:00 UTC 三小時,與手算相同。人工排練仍待進行(見 §6.2)。
+
+**2.11 刻意不做的事:** 農曆假日(春節、端午、中秋)與台灣補班日**不預載**。它們每年由行政院公告、無法推算,而猜一個日期比不給更糟——錯一天會讓所有跨越它的請假天數默默算錯,且看數字的人無從察覺。正式匯入路徑是 `set_calendar_days()`,API / CLI / MCP 皆可達。
 
 ## 3. 請假與團隊事件(PR 2)— 解決問題 2
 

@@ -127,4 +127,11 @@ from .testing import (
     TestStep,
 )
 
+from .availability import (
+    CalendarDay,
+    CalendarDayKind,
+    MemberWorkProfile,
+    WorkCalendar,
+)
+
 from .description import Description, DescriptionVersion

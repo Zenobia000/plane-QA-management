@@ -313,3 +313,68 @@ export interface RequestOptions {
   signal?: AbortSignal;
   responseType?: "array_buffer";
 }
+
+/**
+ * Team availability. Instants are absolute UTC ISO-8601 strings, never local wall clocks --
+ * "Tuesday 09:00" is not comparable across two cities, and comparing across cities is the
+ * entire point of this surface.
+ */
+export interface AvailabilityWindow {
+  start: string;
+  end: string;
+  minutes: number;
+}
+
+export interface MemberSchedule {
+  member_id: string;
+  timezone: string;
+  calendar_id: string | null;
+  hours_per_day: number;
+  working: AvailabilityWindow[];
+  /** Narrower than `working`, and only where the member committed to one. */
+  core: AvailabilityWindow[];
+}
+
+export interface AvailabilitySchedule {
+  from: string;
+  to: string;
+  members: MemberSchedule[];
+}
+
+export interface OverlapRequest {
+  member_ids: string[];
+  date_from: string;
+  date_to: string;
+  duration_minutes?: number;
+}
+
+export interface OverlapResult {
+  duration_minutes: number;
+  core: AvailabilityWindow[];
+  working: AvailabilityWindow[];
+  unknown_members: string[];
+  /** Declared nothing, so no slot can include them. Named rather than silently emptying the answer. */
+  members_without_hours: string[];
+}
+
+export interface WorkCalendar {
+  id: string;
+  name: string;
+  timezone: string;
+  /** ISO weekday numbers, Monday = 1. */
+  working_weekdays: number[];
+  is_default: boolean;
+}
+
+export interface MemberWorkProfile {
+  id: string;
+  member: string;
+  work_calendar: string | null;
+  timezone: string | null;
+  work_start_time: string;
+  work_end_time: string;
+  core_hours_start: string | null;
+  core_hours_end: string | null;
+  hours_per_day: string;
+  approver: string | null;
+}

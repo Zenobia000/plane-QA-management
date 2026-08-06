@@ -31,3 +31,90 @@ export type TAvailabilityCapabilities = {
  * absence belongs to a person, allocation belongs to the person-project pair.
  */
 export type TAvailabilityTab = "schedule" | "leave" | "allocation";
+
+/**
+ * One reachable stretch, as absolute UTC instants.
+ *
+ * Never a local wall-clock time: "Tuesday 09:00" is not comparable across two cities, and
+ * the whole point of this surface is comparing across cities. The viewer's zone is applied
+ * at render, once.
+ */
+export type TAvailabilityWindow = {
+  start: string;
+  end: string;
+  minutes: number;
+};
+
+export type TMemberSchedule = {
+  member_id: string;
+  timezone: string;
+  calendar_id: string | null;
+  hours_per_day: number;
+  working: TAvailabilityWindow[];
+  /** Narrower than `working`, and only where the member committed to one. */
+  core: TAvailabilityWindow[];
+};
+
+export type TAvailabilitySchedule = {
+  from: string;
+  to: string;
+  members: TMemberSchedule[];
+};
+
+export type TOverlapRequest = {
+  member_ids: string[];
+  date_from: string;
+  date_to: string;
+  duration_minutes?: number;
+};
+
+export type TOverlapResult = {
+  duration_minutes: number;
+  core: TAvailabilityWindow[];
+  working: TAvailabilityWindow[];
+  /** Requested but not members of this workspace. */
+  unknown_members: string[];
+  /** Members who have declared no hours, so they cannot be part of any answer. */
+  members_without_hours: string[];
+};
+
+export type TWorkCalendar = {
+  id: string;
+  name: string;
+  timezone: string;
+  /** ISO weekday numbers, Monday = 1. */
+  working_weekdays: number[];
+  is_default: boolean;
+};
+
+export type TMemberWorkProfile = {
+  id: string;
+  member: string;
+  work_calendar: string | null;
+  timezone: string | null;
+  work_start_time: string;
+  work_end_time: string;
+  core_hours_start: string | null;
+  core_hours_end: string | null;
+  hours_per_day: string;
+  approver: string | null;
+};
+
+/** A member who has declared nothing reads as this rather than as a 404. */
+export type TUndeclaredWorkProfile = {
+  member: string;
+  declared: false;
+};
+
+export type TMemberWorkProfileInput = Partial<{
+  work_calendar: string | null;
+  timezone: string | null;
+  work_start_time: string;
+  work_end_time: string;
+  core_hours_start: string | null;
+  core_hours_end: string | null;
+  hours_per_day: string;
+  approver: string | null;
+  /** `null` means "leave unchanged" for every other field, so withdrawing needs its own flag. */
+  clear_core_hours: boolean;
+}>;

@@ -20,6 +20,24 @@
         "title": "還沒有人被分配到專案",
         "description": "每個人的時間怎麼切給各個專案,讓同一個人不會被兩個專案同時當成全職。"
       }
+    },
+    "schedule": {
+      "timezone": "顯示時區",
+      "previous_week": "上一週",
+      "next_week": "下一週",
+      "pick_day": "選擇日期",
+      "not_declared": "尚未設定時段"
+    },
+    "slot_finder": {
+      "title": "找出大家都有空的時間",
+      "duration": "需要",
+      "search": "尋找空檔",
+      "clear": "清除",
+      "core": "核心時段——所有人都表示這段可以被打擾",
+      "working": "工作時段——所有人都在上班",
+      "no_core": "這週沒有共同的核心時段。",
+      "no_working": "這週沒有共同的工作時段。",
+      "undeclared": "{{names}} 尚未設定工作時段,因此任何空檔都無法包含他們。"
     }
   }
 }

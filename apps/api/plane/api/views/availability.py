@@ -1,0 +1,48 @@
+# Copyright (c) 2023-present Plane Software, Inc. and contributors
+# SPDX-License-Identifier: AGPL-3.0-only
+
+"""The API-key mirror of the team calendar.
+
+Thin subclasses only. Every handler is the app-tree one; this layer adds authentication,
+throttling and the error envelope and nothing else, so there is exactly one implementation
+of "when is this person reachable" no matter which door the question arrives through.
+
+The mixin is imported rather than copied. Its name says Testing for historical reasons --
+it predates this module -- but it carries no Testing-specific behaviour, and duplicating an
+error envelope is how two envelopes drift apart.
+"""
+
+from plane.app.views.availability import (
+    AvailabilityCapabilityEndpoint as AppAvailabilityCapabilityEndpoint,
+    AvailabilityOverlapEndpoint as AppAvailabilityOverlapEndpoint,
+    AvailabilityScheduleEndpoint as AppAvailabilityScheduleEndpoint,
+    MemberWorkProfileDetailEndpoint as AppMemberWorkProfileDetailEndpoint,
+    MemberWorkProfileListEndpoint as AppMemberWorkProfileListEndpoint,
+    WorkCalendarListCreateEndpoint as AppWorkCalendarListCreateEndpoint,
+)
+
+from .testing import APIKeyTestingEndpointMixin as APIKeyEndpointMixin
+
+
+class AvailabilityCapabilityAPIEndpoint(APIKeyEndpointMixin, AppAvailabilityCapabilityEndpoint):
+    pass
+
+
+class AvailabilityScheduleAPIEndpoint(APIKeyEndpointMixin, AppAvailabilityScheduleEndpoint):
+    pass
+
+
+class AvailabilityOverlapAPIEndpoint(APIKeyEndpointMixin, AppAvailabilityOverlapEndpoint):
+    pass
+
+
+class WorkCalendarAPIEndpoint(APIKeyEndpointMixin, AppWorkCalendarListCreateEndpoint):
+    pass
+
+
+class MemberWorkProfileListAPIEndpoint(APIKeyEndpointMixin, AppMemberWorkProfileListEndpoint):
+    pass
+
+
+class MemberWorkProfileDetailAPIEndpoint(APIKeyEndpointMixin, AppMemberWorkProfileDetailEndpoint):
+    pass

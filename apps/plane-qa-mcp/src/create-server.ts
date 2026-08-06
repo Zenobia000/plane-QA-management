@@ -81,6 +81,82 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
     safely(async ({ workspace, per_page }) => toolResult(await client.listProjects(workspace, { per_page })))
   );
 
+  // --- Team availability -------------------------------------------------------------
+  // Workspace-scoped, so these take no project. "Find two hours next week when these three
+  // people are all free" is the question this surface exists for, and it should be one
+  // sentence to an agent rather than a scheduling thread.
+
+  server.registerTool(
+    "availability_schedule",
+    {
+      description:
+        "Read declared working hours for a workspace over a date range. Returns absolute UTC windows per member, plus the narrower core-hours windows where a member committed to one. Declared availability only -- this never reports observed activity.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        from: z.string().describe("Start date, YYYY-MM-DD."),
+        to: z.string().describe("End date, YYYY-MM-DD. At most 366 days after 'from'."),
+        member_ids: z.array(z.string()).optional().describe("Omit for the whole workspace."),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, from, to, member_ids }) =>
+      toolResult(await client.getAvailabilitySchedule(workspace, from, to, member_ids))
+    )
+  );
+
+  server.registerTool(
+    "availability_overlap",
+    {
+      description:
+        "Find windows when every named member is reachable at once, across time zones. Returns 'core' (everyone said they may be interrupted) separately from 'working' (everyone is merely at work) -- prefer core. Members who have declared no hours are named in members_without_hours rather than silently emptying the result.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        member_ids: z.array(z.string()).min(1),
+        date_from: z.string().describe("Start date, YYYY-MM-DD."),
+        date_to: z.string().describe("End date, YYYY-MM-DD."),
+        duration_minutes: z.number().int().min(1).max(1440).default(30),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, ...input }) => toolResult(await client.findAvailabilityOverlap(workspace, input)))
+  );
+
+  server.registerTool(
+    "work_calendar_list",
+    {
+      description:
+        "List the workspace's regional work calendars: working weekdays, time zone, and which is the default. Use before assigning a member to one.",
+      inputSchema: z.object({ workspace: scope.workspace }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace }) => toolResult(await client.listWorkCalendars(workspace)))
+  );
+
+  server.registerTool(
+    "work_profile_set",
+    {
+      description:
+        "Set one member's declared working hours, time zone, calendar, or leave approver. Only that member or a workspace admin may. Pass clear_core_hours to withdraw a core-hours commitment, since omitting a field leaves it unchanged.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        member_id: z.string(),
+        work_calendar: z.string().nullable().optional(),
+        timezone: z.string().nullable().optional(),
+        work_start_time: z.string().optional().describe("HH:MM, in the member's own zone."),
+        work_end_time: z.string().optional().describe("HH:MM, in the member's own zone."),
+        core_hours_start: z.string().nullable().optional(),
+        core_hours_end: z.string().nullable().optional(),
+        hours_per_day: z.string().optional(),
+        approver: z.string().nullable().optional(),
+        clear_core_hours: z.boolean().optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, member_id, ...input }) =>
+      toolResult(await client.updateWorkProfile(workspace, member_id, input))
+    )
+  );
+
   server.registerTool(
     "project_get_context",
     {

@@ -2,6 +2,8 @@ import { errorKindForStatus, PlaneQAError } from "./errors";
 import { paginatedSchema, parsePlaneResponse, projectSchema, testingCapabilitiesSchema } from "./schemas";
 import type {
   AllocationMatrix,
+  CalendarDay,
+  CalendarDayInput,
   AvailabilitySchedule,
   CycleCapacity,
   LeaveType,
@@ -343,6 +345,36 @@ export class PlaneQAClient {
 
   getCycleCapacity(workspace: string, projectId: string, cycleId: string): Promise<CycleCapacity> {
     return this.request("GET", this.projectPath(workspace, projectId, `/cycles/${encodePath(cycleId)}/capacity/`));
+  }
+
+  listCalendarDays(workspace: string, calendarId: string, year?: number): Promise<CalendarDay[]> {
+    return this.request("GET", this.apiPath(workspace, `/availability/calendars/${encodePath(calendarId)}/days/`), {
+      query: year ? { year } : {},
+    });
+  }
+
+  /** The path a published national calendar arrives through, once a year. */
+  setCalendarDays(
+    workspace: string,
+    calendarId: string,
+    days: CalendarDayInput[],
+    replaceYear?: number
+  ): Promise<CalendarDay[]> {
+    return this.request("POST", this.apiPath(workspace, `/availability/calendars/${encodePath(calendarId)}/days/`), {
+      body: { days, ...(replaceYear ? { replace_year: replaceYear } : {}) },
+    });
+  }
+
+  updateWorkCalendar(workspace: string, calendarId: string, input: Partial<WorkCalendar>): Promise<WorkCalendar> {
+    return this.request("PATCH", this.apiPath(workspace, `/availability/calendars/${encodePath(calendarId)}/`), {
+      body: input,
+    });
+  }
+
+  updateLeaveType(workspace: string, typeId: string, input: Partial<LeaveType>): Promise<LeaveType> {
+    return this.request("PATCH", this.apiPath(workspace, `/availability/leave-types/${encodePath(typeId)}/`), {
+      body: input,
+    });
   }
 
   listStates(workspace: string, projectId: string): Promise<PaginatedResponse<State> | State[]> {

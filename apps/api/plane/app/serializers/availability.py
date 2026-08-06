@@ -13,6 +13,7 @@ from rest_framework import serializers
 
 from plane.db.models import (
     CalendarDay,
+    CalendarDayKind,
     DayPart,
     EventAudience,
     LeaveType,
@@ -193,3 +194,42 @@ class TeamEventWriteSerializer(serializers.Serializer):
     consumes_capacity = serializers.BooleanField(required=False, default=False)
     audience = serializers.ChoiceField(choices=EventAudience.choices, required=False, default=EventAudience.ALL_MEMBERS)
     member_ids = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)
+
+
+class WorkCalendarPatchSerializer(serializers.Serializer):
+    """Every field optional; an omitted one is left alone."""
+
+    name = serializers.CharField(max_length=255, required=False)
+    timezone = serializers.CharField(max_length=255, required=False)
+    working_weekdays = serializers.ListField(
+        child=serializers.IntegerField(min_value=1, max_value=7),
+        required=False,
+        allow_empty=False,
+    )
+    is_default = serializers.BooleanField(required=False)
+
+
+class CalendarDayWriteSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    name = serializers.CharField(max_length=255)
+    kind = serializers.ChoiceField(choices=CalendarDayKind.choices, default=CalendarDayKind.HOLIDAY)
+
+
+class CalendarDayBulkSerializer(serializers.Serializer):
+    """A year's published calendar arrives as a list, not one row at a time.
+
+    `replace_year` clears that year first, which is what re-importing an official list after
+    the government revises it actually means.
+    """
+
+    days = CalendarDayWriteSerializer(many=True)
+    replace_year = serializers.IntegerField(required=False, min_value=1970, max_value=2200)
+
+
+class LeaveTypePatchSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255, required=False)
+    colour = serializers.CharField(max_length=7, required=False)
+    consumes_capacity = serializers.BooleanField(required=False)
+    requires_approval = serializers.BooleanField(required=False)
+    is_active = serializers.BooleanField(required=False)
+    sort_order = serializers.FloatField(required=False)

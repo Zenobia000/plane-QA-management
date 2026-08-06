@@ -57,6 +57,13 @@ describe("isTabReady", () => {
     expect(isTabReady(disabled, "leave")).toBe(false);
   });
 
+  it("never gates the settings tab", () => {
+    // Settings is where calendars, leave types and hours get created. Gating it on that
+    // data existing would leave a fresh workspace unable to configure anything.
+    expect(isTabReady(null, "settings")).toBe(true);
+    expect(isTabReady({ ...capability(), enabled: false }, "settings")).toBe(true);
+  });
+
   it("does not let the overlap flag stand in for the schedule view", () => {
     // The week view and the common-slot finder inside it ship in that order, so a build
     // where only `overlap` were true must still render the schedule empty state.

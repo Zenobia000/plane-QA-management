@@ -6,7 +6,7 @@
 
 import type { ReactNode } from "react";
 import { observer } from "mobx-react";
-import { CalendarClock, CalendarOff, PieChart } from "lucide-react";
+import { CalendarClock, CalendarOff, PieChart, Settings } from "lucide-react";
 import { useTranslation } from "@plane/i18n";
 import type { TAvailabilityTab } from "@plane/types";
 import { useAvailability } from "@/hooks/store/use-availability";
@@ -16,6 +16,9 @@ const ICONS: Record<TAvailabilityTab, typeof CalendarClock> = {
   schedule: CalendarClock,
   leave: CalendarOff,
   allocation: PieChart,
+  // Never rendered — the settings route does not gate on a capability — but the map is
+  // exhaustive so a new tab cannot be added without deciding what its empty state says.
+  settings: Settings,
 };
 
 type Props = {

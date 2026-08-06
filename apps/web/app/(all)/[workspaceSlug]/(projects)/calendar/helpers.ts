@@ -6,7 +6,7 @@
 
 import type { TAvailabilityCapabilities, TAvailabilityTab, TAvailabilityWindow } from "@plane/types";
 
-export const AVAILABILITY_TABS: TAvailabilityTab[] = ["schedule", "leave", "allocation"];
+export const AVAILABILITY_TABS: TAvailabilityTab[] = ["schedule", "leave", "allocation", "settings"];
 
 type TAvailabilityPath = {
   workspaceSlug: string;
@@ -22,14 +22,20 @@ export const availabilityPath = ({ workspaceSlug, tab }: TAvailabilityPath) =>
  * The schedule tab needs `schedule`; the common-slot finder inside it is gated separately
  * by `overlap` so the week view can ship before the finder does.
  */
-const TAB_CAPABILITY: Record<TAvailabilityTab, keyof TAvailabilityCapabilities["capabilities"]> = {
+const TAB_CAPABILITY: Record<TAvailabilityTab, keyof TAvailabilityCapabilities["capabilities"] | null> = {
   schedule: "schedule",
   leave: "leave",
   allocation: "allocation",
+  // Settings is where the data gets created, so it can never be gated on that data
+  // existing — a workspace with nothing configured would be unable to configure anything.
+  settings: null,
 };
 
-export const isTabReady = (capability: TAvailabilityCapabilities | null, tab: TAvailabilityTab): boolean =>
-  Boolean(capability?.enabled && capability.capabilities[TAB_CAPABILITY[tab]]);
+export const isTabReady = (capability: TAvailabilityCapabilities | null, tab: TAvailabilityTab): boolean => {
+  const flag = TAB_CAPABILITY[tab];
+  if (flag === null) return true;
+  return Boolean(capability?.enabled && capability.capabilities[flag]);
+};
 
 // ---------------------------------------------------------------------------
 // Time zones

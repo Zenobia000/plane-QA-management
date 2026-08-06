@@ -7,6 +7,10 @@
 import { API_BASE_URL } from "@plane/constants";
 import type {
   TAllocationMatrix,
+  TCalendarDay,
+  TCalendarDayInput,
+  TLeaveTypeInput,
+  TWorkCalendarInput,
   TAvailabilityCapabilities,
   TCycleCapacity,
   TAvailabilitySchedule,
@@ -190,6 +194,80 @@ export class AvailabilityService extends APIService {
 
   async getCycleCapacity(workspaceSlug: string, projectId: string, cycleId: string): Promise<TCycleCapacity> {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/${cycleId}/capacity/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createCalendar(workspaceSlug: string, payload: TWorkCalendarInput): Promise<TWorkCalendar> {
+    return this.post(`${this.base(workspaceSlug)}/calendars/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async updateCalendar(workspaceSlug: string, calendarId: string, payload: TWorkCalendarInput): Promise<TWorkCalendar> {
+    return this.patch(`${this.base(workspaceSlug)}/calendars/${calendarId}/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteCalendar(workspaceSlug: string, calendarId: string): Promise<void> {
+    return this.delete(`${this.base(workspaceSlug)}/calendars/${calendarId}/`)
+      .then(() => undefined)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getCalendarDays(workspaceSlug: string, calendarId: string, year?: number): Promise<TCalendarDay[]> {
+    return this.get(`${this.base(workspaceSlug)}/calendars/${calendarId}/days/`, {
+      params: year ? { year } : {},
+    })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async setCalendarDays(
+    workspaceSlug: string,
+    calendarId: string,
+    days: TCalendarDayInput[],
+    replaceYear?: number
+  ): Promise<TCalendarDay[]> {
+    return this.post(`${this.base(workspaceSlug)}/calendars/${calendarId}/days/`, {
+      days,
+      ...(replaceYear ? { replace_year: replaceYear } : {}),
+    })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteCalendarDay(workspaceSlug: string, calendarId: string, dayId: string): Promise<void> {
+    return this.delete(`${this.base(workspaceSlug)}/calendars/${calendarId}/days/${dayId}/`)
+      .then(() => undefined)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createLeaveType(workspaceSlug: string, payload: TLeaveTypeInput): Promise<TLeaveType> {
+    return this.post(`${this.base(workspaceSlug)}/leave-types/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async updateLeaveType(workspaceSlug: string, typeId: string, payload: TLeaveTypeInput): Promise<TLeaveType> {
+    return this.patch(`${this.base(workspaceSlug)}/leave-types/${typeId}/`, payload)
       .then((response) => response.data)
       .catch((error) => {
         throw error?.response?.data;

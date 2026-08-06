@@ -282,6 +282,48 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
   );
 
   server.registerTool(
+    "work_calendar_days_list",
+    {
+      description: "List the holidays and make-up workdays of one work calendar, optionally for one year.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        calendar_id: z.string(),
+        year: z.number().int().optional(),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, calendar_id, year }) =>
+      toolResult(await client.listCalendarDays(workspace, calendar_id, year))
+    )
+  );
+
+  server.registerTool(
+    "work_calendar_days_set",
+    {
+      description:
+        "Add or update holidays and make-up workdays on a calendar. This is how a published national calendar is imported once a year — kind 'makeup_workday' is the Saturday everyone works to bridge a long weekend, which a weekday mask cannot express. Pass replace_year to clear that year first, which is what re-importing a revised official list means. Admins only.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        calendar_id: z.string(),
+        days: z
+          .array(
+            z.object({
+              date: z.string().describe("YYYY-MM-DD"),
+              name: z.string(),
+              kind: z.enum(["holiday", "makeup_workday"]),
+            })
+          )
+          .min(1),
+        replace_year: z.number().int().optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, calendar_id, days, replace_year }) =>
+      toolResult(await client.setCalendarDays(workspace, calendar_id, days, replace_year))
+    )
+  );
+
+  server.registerTool(
     "work_profile_set",
     {
       description:

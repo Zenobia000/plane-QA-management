@@ -14,14 +14,29 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from plane.app.serializers import (
+    CalendarDayBulkSerializer,
+    CalendarDaySerializer,
     MemberWorkProfileSerializer,
     MemberWorkProfileWriteSerializer,
+    WorkCalendarPatchSerializer,
     WorkCalendarSerializer,
     WorkCalendarWriteSerializer,
 )
 from plane.app.views.base import BaseAPIView
-from plane.availability import create_work_calendar, upsert_work_profile
-from plane.db.models import MemberWorkProfile, User, WorkCalendar, Workspace, WorkspaceMember
+from plane.availability import (
+    create_work_calendar,
+    set_calendar_days,
+    update_work_calendar,
+    upsert_work_profile,
+)
+from plane.db.models import (
+    CalendarDay,
+    MemberWorkProfile,
+    User,
+    WorkCalendar,
+    Workspace,
+    WorkspaceMember,
+)
 
 from .permissions import ADMIN, WorkspaceAvailabilityPermission
 
@@ -140,3 +155,107 @@ class MemberWorkProfileDetailEndpoint(BaseAPIView):
             return Response({"error": error.messages}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(MemberWorkProfileSerializer(profile).data)
+
+
+class WorkCalendarDetailEndpoint(BaseAPIView):
+    """Edit or retire one calendar.
+
+    Deleting is refused while members are still bound to it. Silently orphaning them onto
+    the workspace default would move somebody's working days without anyone deciding to.
+    """
+
+    permission_classes = [WorkspaceAvailabilityPermission]
+
+    def patch(self, request, slug, calendar_id):
+        if not _is_admin(request.user, slug):
+            return Response(
+                {"error": "Only a workspace admin can change a work calendar."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        calendar = get_object_or_404(WorkCalendar, workspace__slug=slug, id=calendar_id)
+        payload = WorkCalendarPatchSerializer(data=request.data)
+        if not payload.is_valid():
+            return Response(payload.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            calendar = update_work_calendar(calendar=calendar, **payload.validated_data)
+        except ValidationError as error:
+            return Response({"error": error.messages}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(WorkCalendarSerializer(calendar).data)
+
+    def delete(self, request, slug, calendar_id):
+        if not _is_admin(request.user, slug):
+            return Response(
+                {"error": "Only a workspace admin can delete a work calendar."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        calendar = get_object_or_404(WorkCalendar, workspace__slug=slug, id=calendar_id)
+
+        bound = MemberWorkProfile.objects.filter(work_calendar=calendar).count()
+        if bound:
+            return Response(
+                {
+                    "error": (
+                        f"{bound} member(s) still use this calendar. "
+                        "Move them to another one first — deleting it would change their "
+                        "working days without anyone choosing to."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        calendar.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CalendarDayEndpoint(BaseAPIView):
+    """The holidays and make-up workdays of one calendar.
+
+    This is the path that was missing: without it, `MAKEUP_WORKDAY` -- the whole reason the
+    model can express a Saturday everyone works -- could only be written by the seed command,
+    so nobody could enter this year's published list by hand.
+    """
+
+    permission_classes = [WorkspaceAvailabilityPermission]
+
+    def get(self, request, slug, calendar_id):
+        calendar = get_object_or_404(WorkCalendar, workspace__slug=slug, id=calendar_id)
+        days = calendar.days.all()
+        year = request.GET.get("year")
+        if year:
+            if not year.isdigit():
+                return Response({"error": "year must be a number."}, status=status.HTTP_400_BAD_REQUEST)
+            days = days.filter(date__year=int(year))
+        return Response(CalendarDaySerializer(days, many=True).data)
+
+    def post(self, request, slug, calendar_id):
+        if not _is_admin(request.user, slug):
+            return Response(
+                {"error": "Only a workspace admin can set holidays."}, status=status.HTTP_403_FORBIDDEN
+            )
+        calendar = get_object_or_404(WorkCalendar, workspace__slug=slug, id=calendar_id)
+        payload = CalendarDayBulkSerializer(data=request.data)
+        if not payload.is_valid():
+            return Response(payload.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = payload.validated_data
+        try:
+            written = set_calendar_days(
+                calendar=calendar, days=data["days"], replace_year=data.get("replace_year")
+            )
+        except ValidationError as error:
+            return Response({"error": error.messages}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(CalendarDaySerializer(written, many=True).data, status=status.HTTP_201_CREATED)
+
+
+class CalendarDayDetailEndpoint(BaseAPIView):
+    permission_classes = [WorkspaceAvailabilityPermission]
+
+    def delete(self, request, slug, calendar_id, day_id):
+        if not _is_admin(request.user, slug):
+            return Response(
+                {"error": "Only a workspace admin can remove a holiday."}, status=status.HTTP_403_FORBIDDEN
+            )
+        day = get_object_or_404(CalendarDay, calendar__workspace__slug=slug, calendar_id=calendar_id, id=day_id)
+        day.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 
 import {
+  type CalendarDayInput,
   type DayPart,
   type JsonObject,
   type PlaneQAClient,
@@ -120,6 +121,27 @@ export const executeCommand = async (
     }
     if (action === "calendars") return client.listWorkCalendars(config.workspace);
     if (action === "leave-types") return client.listLeaveTypes(config.workspace);
+    if (action === "calendar-days") {
+      const year = optionString(args.options, "year");
+      return client.listCalendarDays(
+        config.workspace,
+        requiredOption(args.options, "calendar"),
+        year ? Number(year) : undefined
+      );
+    }
+    if (action === "set-calendar-days") {
+      // Takes a JSON array so a published holiday list is one command, not one per date.
+      const days = jsonOption(args.options, "days", {}) as { days?: CalendarDayInput[] };
+      const parsed = Array.isArray(days) ? (days as CalendarDayInput[]) : (days.days ?? []);
+      if (parsed.length === 0) throw new Error("--days must be a JSON array of {date,name,kind}.");
+      const replaceYear = optionString(args.options, "replace_year");
+      return client.setCalendarDays(
+        config.workspace,
+        requiredOption(args.options, "calendar"),
+        parsed,
+        replaceYear ? Number(replaceYear) : undefined
+      );
+    }
     if (action === "leaves") {
       return client.listLeaves(
         config.workspace,

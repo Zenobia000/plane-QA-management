@@ -140,7 +140,11 @@ from .draft import (
 )
 
 from .availability import (
+    CalendarDayBulkSerializer,
     CalendarDaySerializer,
+    CalendarDayWriteSerializer,
+    LeaveTypePatchSerializer,
+    WorkCalendarPatchSerializer,
     LeaveTypeSerializer,
     LeaveTypeWriteSerializer,
     MemberLeaveSerializer,

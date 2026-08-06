@@ -5,6 +5,7 @@
 from .allocation import AllocationMatrixEndpoint, CycleCapacityEndpoint
 from .capability import AvailabilityCapabilityEndpoint
 from .leave import (
+    LeaveTypeDetailEndpoint,
     LeaveTypeListCreateEndpoint,
     MemberLeaveDetailEndpoint,
     MemberLeaveListCreateEndpoint,
@@ -14,8 +15,11 @@ from .leave import (
 from .permissions import WorkspaceAvailabilityPermission
 from .schedule import AvailabilityOverlapEndpoint, AvailabilityScheduleEndpoint
 from .settings import (
+    CalendarDayDetailEndpoint,
+    CalendarDayEndpoint,
     MemberWorkProfileDetailEndpoint,
     MemberWorkProfileListEndpoint,
+    WorkCalendarDetailEndpoint,
     WorkCalendarListCreateEndpoint,
 )
 
@@ -25,6 +29,9 @@ __all__ = [
     "CycleCapacityEndpoint",
     "AvailabilityOverlapEndpoint",
     "AvailabilityScheduleEndpoint",
+    "CalendarDayDetailEndpoint",
+    "CalendarDayEndpoint",
+    "LeaveTypeDetailEndpoint",
     "LeaveTypeListCreateEndpoint",
     "MemberLeaveDetailEndpoint",
     "MemberLeaveListCreateEndpoint",
@@ -32,6 +39,7 @@ __all__ = [
     "MemberWorkProfileListEndpoint",
     "PendingLeaveEndpoint",
     "TeamEventListCreateEndpoint",
+    "WorkCalendarDetailEndpoint",
     "WorkCalendarListCreateEndpoint",
     "WorkspaceAvailabilityPermission",
 ]

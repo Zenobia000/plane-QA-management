@@ -91,6 +91,10 @@ export const coreRoutes: RouteConfigEntry[] = [
               ":workspaceSlug/calendar/allocation",
               "./(all)/[workspaceSlug]/(projects)/calendar/routes/allocation.tsx"
             ),
+            route(
+              ":workspaceSlug/calendar/settings",
+              "./(all)/[workspaceSlug]/(projects)/calendar/routes/settings.tsx"
+            ),
           ]),
         ]),
 

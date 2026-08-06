@@ -5,7 +5,8 @@
     "tabs": {
       "schedule": "Hours",
       "leave": "Time off",
-      "allocation": "Allocation"
+      "allocation": "Allocation",
+      "settings": "Settings"
     },
     "empty": {
       "schedule": {
@@ -76,6 +77,74 @@
       "over": "Over-allocated",
       "admin_only": "Only workspace admins can change these.",
       "hint": "How each person's week is split. The total cannot exceed 100% — the server refuses it."
+    },
+    "settings": {
+      "my_hours": "My working hours",
+      "my_hours_hint": "What you declare about your own week. Only you can change this — an admin setting it for you would not be a declaration.",
+      "calendars": "Work calendars",
+      "calendars_hint": "Working weekdays, time zone, public holidays and make-up workdays, per region.",
+      "leave_types": "Absence types",
+      "leave_types_hint": "Types are retired, never deleted — a type that has been used is part of the record of who was away.",
+      "calendar": "Calendar",
+      "use_default": "Workspace default",
+      "timezone_override": "Time zone override",
+      "work_start": "Start",
+      "work_end": "End",
+      "hours_per_day": "Hours/day",
+      "core_start": "Core from",
+      "core_end": "Core to",
+      "core_hint": "The narrower window you commit to being interruptible in. Leave both blank if your whole working day is fair game.",
+      "approver": "Who approves my time off",
+      "any_admin": "Any workspace admin",
+      "save": "Save",
+      "create": "Create",
+      "default": "Default",
+      "make_default": "Make default",
+      "new_calendar": "Add a calendar",
+      "calendar_name": "Region name",
+      "delete_calendar": "Delete calendar",
+      "no_calendars": "No work calendars yet.",
+      "days": "Holidays and make-up workdays",
+      "no_days": "None recorded for this calendar.",
+      "day_name": "Name",
+      "add_day": "Add",
+      "remove_day": "Remove",
+      "new_type": "Add a type",
+      "type_name": "Name",
+      "no_types": "No absence types yet.",
+      "colour": "Colour",
+      "consumes_capacity": "Removes them from work",
+      "requires_approval": "Needs approval",
+      "active": "Active",
+      "weekday": {
+        "mon": "Mo",
+        "tue": "Tu",
+        "wed": "We",
+        "thu": "Th",
+        "fri": "Fr",
+        "sat": "Sa",
+        "sun": "Su"
+      },
+      "kind": {
+        "holiday": "Holiday",
+        "makeup_workday": "Make-up workday"
+      }
+    },
+    "capacity": {
+      "title": "Capacity",
+      "member": "Member",
+      "allocation": "Allocation",
+      "working_days": "Working days",
+      "gross": "Gross",
+      "absence": "Away",
+      "available": "Available for this project",
+      "total": "Total",
+      "committed": "Committed",
+      "over": "Over capacity by {{hours}}h",
+      "assumed": "Nobody is allocated yet, so everyone is counted at 100%.",
+      "undeclared": "{{count}} member(s) have not set working hours, so they count as zero.",
+      "no_dates": "This cycle has no start or end date, so capacity cannot be worked out.",
+      "points_note": "This project estimates in points, so committed work cannot be compared with hours."
     }
   }
 }

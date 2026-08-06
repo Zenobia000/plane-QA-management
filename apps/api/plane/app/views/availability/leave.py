@@ -17,6 +17,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from plane.app.serializers import (
+    LeaveTypePatchSerializer,
     LeaveTypeSerializer,
     LeaveTypeWriteSerializer,
     MemberLeaveSerializer,
@@ -94,6 +95,38 @@ class LeaveTypeListCreateEndpoint(BaseAPIView):
             return Response({"error": error.messages}, status=status.HTTP_400_BAD_REQUEST)
         leave_type.save()
         return Response(LeaveTypeSerializer(leave_type).data, status=status.HTTP_201_CREATED)
+
+
+class LeaveTypeDetailEndpoint(BaseAPIView):
+    """Edit a leave type, or retire it.
+
+    There is no delete. `MemberLeave.leave_type` is PROTECT, and a type that has ever been
+    used is part of the record of who was away and why -- removing it would rewrite history
+    to tidy a settings list. Setting `is_active` false hides it from the form and leaves
+    everything already logged intact.
+    """
+
+    permission_classes = [WorkspaceAvailabilityPermission]
+
+    def patch(self, request, slug, type_id):
+        if not _is_admin(request.user, slug):
+            return Response(
+                {"error": "Only a workspace admin can change a leave type."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        leave_type = get_object_or_404(LeaveType, workspace__slug=slug, id=type_id)
+        payload = LeaveTypePatchSerializer(data=request.data)
+        if not payload.is_valid():
+            return Response(payload.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        for field, value in payload.validated_data.items():
+            setattr(leave_type, field, value)
+        try:
+            leave_type.full_clean(exclude=["workspace", "created_by", "updated_by"])
+        except ValidationError as error:
+            return Response({"error": error.messages}, status=status.HTTP_400_BAD_REQUEST)
+        leave_type.save()
+        return Response(LeaveTypeSerializer(leave_type).data)
 
 
 class MemberLeaveListCreateEndpoint(BaseAPIView):

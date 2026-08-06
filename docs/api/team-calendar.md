@@ -138,7 +138,7 @@ they have not asked to be protected, so they are not the constraint.
 `members_without_hours` names anyone who has declared nothing. Without it, an empty result
 reads as "never", when the truth is "somebody has not said yet".
 
-## `GET | POST …/availability/calendars/`
+## `GET | POST …/availability/calendars/` · `PATCH | DELETE …/calendars/<id>/`
 
 List, or create (ADMIN only), a regional work calendar.
 
@@ -154,10 +154,42 @@ List, or create (ADMIN only), a regional work calendar.
 `working_weekdays` is ISO — Monday is 1. Setting `is_default` demotes the incumbent in the
 same transaction, so "make this the default" cannot half-succeed.
 
-Individual dates that override the weekday rule (`kind` is `holiday` or `makeup_workday`)
-are written through the service layer; `makeup_workday` exists for Taiwan's practice of
-working a Saturday to bridge a long weekend, which a weekday-mask-plus-holidays model
-cannot express at all.
+**Deleting is refused with 409 while members are still bound to the calendar.** Silently
+re-homing them onto the workspace default would change somebody's working days as a side
+effect of tidying a list.
+
+## `GET | POST …/availability/calendars/<id>/days/` · `DELETE …/days/<day_id>/`
+
+The holidays and make-up workdays of one calendar. `kind` is `holiday` or `makeup_workday`;
+the latter exists for the Saturday everyone works to bridge a long weekend, which a
+weekday-mask-plus-holidays model cannot express at all.
+
+```json
+{
+  "days": [
+    { "date": "2026-02-28", "name": "和平紀念日", "kind": "holiday" },
+    { "date": "2026-02-27", "name": "補班", "kind": "makeup_workday" }
+  ],
+  "replace_year": 2026
+}
+```
+
+`POST` upserts by date, so re-posting a date updates it rather than duplicating.
+`replace_year` clears that year first — what re-importing an officially revised list
+actually means. `GET` takes an optional `?year=`.
+
+Reading is open to the workspace; writing is ADMIN. This is the path a published national
+calendar arrives through once a year, which is why it takes a list rather than one date at
+a time.
+
+## `PATCH …/availability/leave-types/<id>/`
+
+Rename, recolour, or flip `consumes_capacity` / `requires_approval` / `is_active`.
+
+**There is no delete.** `MemberLeave.leave_type` is `PROTECT`, and a type that has been used
+is part of the record of who was away and why — removing it would rewrite that to tidy a
+settings list. `is_active: false` hides it from the form and leaves everything already
+logged intact; a new absence cannot then be logged against it.
 
 ## `GET …/availability/profiles/` · `GET | PATCH …/availability/profiles/<member_id>/`
 

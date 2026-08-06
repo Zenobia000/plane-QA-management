@@ -18,7 +18,11 @@ import type {
   TMemberLeaveInput,
   TTeamEvent,
   TAllocationMatrix,
+  TCalendarDay,
+  TCalendarDayInput,
+  TLeaveTypeInput,
   TWorkCalendar,
+  TWorkCalendarInput,
 } from "@plane/types";
 
 const message = (error: unknown, fallback: string): string => {
@@ -50,6 +54,15 @@ export interface IAvailabilityStore {
   events: TTeamEvent[];
   pendingLeaves: TMemberLeave[];
   allocations: TAllocationMatrix | null;
+  calendarDays: Record<string, TCalendarDay[]>;
+  createCalendar: (workspaceSlug: string, payload: TWorkCalendarInput) => Promise<void>;
+  updateCalendar: (workspaceSlug: string, calendarId: string, payload: TWorkCalendarInput) => Promise<void>;
+  deleteCalendar: (workspaceSlug: string, calendarId: string) => Promise<void>;
+  fetchCalendarDays: (workspaceSlug: string, calendarId: string) => Promise<void>;
+  addCalendarDays: (workspaceSlug: string, calendarId: string, days: TCalendarDayInput[]) => Promise<void>;
+  removeCalendarDay: (workspaceSlug: string, calendarId: string, dayId: string) => Promise<void>;
+  createLeaveType: (workspaceSlug: string, payload: TLeaveTypeInput) => Promise<void>;
+  updateLeaveType: (workspaceSlug: string, typeId: string, payload: TLeaveTypeInput) => Promise<void>;
   fetchAllocations: (workspaceSlug: string) => Promise<void>;
   setAllocation: (workspaceSlug: string, memberId: string, projectId: string, percent: number) => Promise<void>;
   fetchPending: (workspaceSlug: string) => Promise<void>;
@@ -74,6 +87,7 @@ export class AvailabilityStore implements IAvailabilityStore {
   leaves: TMemberLeave[] = [];
   pendingLeaves: TMemberLeave[] = [];
   allocations: TAllocationMatrix | null = null;
+  calendarDays: Record<string, TCalendarDay[]> = {};
   events: TTeamEvent[] = [];
   profiles: Record<string, TMemberWorkProfile> = {};
   loading = false;
@@ -101,6 +115,7 @@ export class AvailabilityStore implements IAvailabilityStore {
       leaves: observable.ref,
       pendingLeaves: observable.ref,
       allocations: observable.ref,
+      calendarDays: observable,
       events: observable.ref,
       profiles: observable,
       loading: observable,
@@ -114,6 +129,14 @@ export class AvailabilityStore implements IAvailabilityStore {
       fetchMonth: action,
       fetchPending: action,
       fetchAllocations: action,
+      createCalendar: action,
+      updateCalendar: action,
+      deleteCalendar: action,
+      fetchCalendarDays: action,
+      addCalendarDays: action,
+      removeCalendarDay: action,
+      createLeaveType: action,
+      updateLeaveType: action,
       setAllocation: action,
       decideLeave: action,
       createLeave: action,
@@ -206,6 +229,87 @@ export class AvailabilityStore implements IAvailabilityStore {
   };
 
   private monthKey: string | null = null;
+
+  /**
+   * Settings writes all clear the cached week and month.
+   *
+   * Changing a calendar, a holiday or a leave type changes who is reachable when — leaving
+   * the drawn week in place would show a schedule the settings no longer produce.
+   */
+  private invalidateDerived() {
+    this.scheduleKey = null;
+    this.monthKey = null;
+  }
+
+  private async guard(work: () => Promise<void>, fallback: string): Promise<void> {
+    try {
+      await work();
+      runInAction(() => {
+        this.error = null;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.error = message(error, fallback);
+      });
+    }
+  }
+
+  createCalendar = async (workspaceSlug: string, payload: TWorkCalendarInput): Promise<void> =>
+    this.guard(async () => {
+      await this.service.createCalendar(workspaceSlug, payload);
+      runInAction(() => this.invalidateDerived());
+      await this.fetchSettings(workspaceSlug);
+    }, "Could not create that calendar.");
+
+  updateCalendar = async (workspaceSlug: string, calendarId: string, payload: TWorkCalendarInput): Promise<void> =>
+    this.guard(async () => {
+      await this.service.updateCalendar(workspaceSlug, calendarId, payload);
+      runInAction(() => this.invalidateDerived());
+      await this.fetchSettings(workspaceSlug);
+    }, "Could not save that calendar.");
+
+  deleteCalendar = async (workspaceSlug: string, calendarId: string): Promise<void> =>
+    this.guard(async () => {
+      await this.service.deleteCalendar(workspaceSlug, calendarId);
+      runInAction(() => this.invalidateDerived());
+      await this.fetchSettings(workspaceSlug);
+    }, "Could not delete that calendar.");
+
+  fetchCalendarDays = async (workspaceSlug: string, calendarId: string): Promise<void> =>
+    this.guard(async () => {
+      const days = await this.service.getCalendarDays(workspaceSlug, calendarId);
+      runInAction(() => {
+        this.calendarDays[calendarId] = days;
+      });
+    }, "Could not load holidays.");
+
+  addCalendarDays = async (workspaceSlug: string, calendarId: string, days: TCalendarDayInput[]): Promise<void> =>
+    this.guard(async () => {
+      await this.service.setCalendarDays(workspaceSlug, calendarId, days);
+      runInAction(() => this.invalidateDerived());
+      await this.fetchCalendarDays(workspaceSlug, calendarId);
+    }, "Could not save that day.");
+
+  removeCalendarDay = async (workspaceSlug: string, calendarId: string, dayId: string): Promise<void> =>
+    this.guard(async () => {
+      await this.service.deleteCalendarDay(workspaceSlug, calendarId, dayId);
+      runInAction(() => this.invalidateDerived());
+      await this.fetchCalendarDays(workspaceSlug, calendarId);
+    }, "Could not remove that day.");
+
+  createLeaveType = async (workspaceSlug: string, payload: TLeaveTypeInput): Promise<void> =>
+    this.guard(async () => {
+      await this.service.createLeaveType(workspaceSlug, payload);
+      runInAction(() => this.invalidateDerived());
+      await this.fetchSettings(workspaceSlug);
+    }, "Could not create that leave type.");
+
+  updateLeaveType = async (workspaceSlug: string, typeId: string, payload: TLeaveTypeInput): Promise<void> =>
+    this.guard(async () => {
+      await this.service.updateLeaveType(workspaceSlug, typeId, payload);
+      runInAction(() => this.invalidateDerived());
+      await this.fetchSettings(workspaceSlug);
+    }, "Could not save that leave type.");
 
   fetchAllocations = async (workspaceSlug: string): Promise<void> => {
     try {
@@ -318,12 +422,14 @@ export class AvailabilityStore implements IAvailabilityStore {
 
   fetchSettings = async (workspaceSlug: string): Promise<void> => {
     try {
-      const [calendars, profiles] = await Promise.all([
+      const [calendars, profiles, leaveTypes] = await Promise.all([
         this.service.getCalendars(workspaceSlug),
         this.service.getProfiles(workspaceSlug),
+        this.service.getLeaveTypes(workspaceSlug),
       ]);
       runInAction(() => {
         this.calendars = calendars;
+        this.leaveTypes = leaveTypes;
         this.profiles = Object.fromEntries(profiles.map((profile) => [profile.member, profile]));
       });
     } catch (error) {

@@ -27,6 +27,8 @@ Layering rule (testing): business logic lives only in `apps/api/plane/testing/` 
 | SDK / CLI / MCP                              | `client.ts` availability methods; `availability` CLI group; 4 MCP tools |
 | i18n                                         | `packages/i18n/src/locales/*/team-calendar.json`                        |
 
+Settings live at `/calendar/settings`, split by who owns the answer: my working hours (the member), work calendars and leave types (admin). The settings tab is the one tab **not** gated on a capability flag — it is where the data gets created, so gating it would leave a fresh workspace unable to configure anything.
+
 Two rules that are easy to break by accident:
 
 1. **Everything is UTC across the wire.** Local wall-clock times exist only on a member's own profile. `"Tuesday 09:00"` is not comparable across cities, and comparing across cities is what this surface is for. Zone resolves profile → calendar → `User.user_timezone`.

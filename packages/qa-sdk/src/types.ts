@@ -456,3 +456,18 @@ export interface CycleCapacity {
   committed_comparable?: boolean;
   committed_hours?: number | null;
 }
+
+export type CalendarDayKind = "holiday" | "makeup_workday";
+
+export interface CalendarDay {
+  id: string;
+  date: string;
+  name: string;
+  kind: CalendarDayKind;
+}
+
+export interface CalendarDayInput {
+  date: string;
+  name: string;
+  kind: CalendarDayKind;
+}

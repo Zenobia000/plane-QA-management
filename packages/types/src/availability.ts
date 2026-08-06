@@ -30,7 +30,7 @@ export type TAvailabilityCapabilities = {
  * "how is one person's time split across projects". They are deliberately not one screen:
  * absence belongs to a person, allocation belongs to the person-project pair.
  */
-export type TAvailabilityTab = "schedule" | "leave" | "allocation";
+export type TAvailabilityTab = "schedule" | "leave" | "allocation" | "settings";
 
 /**
  * One reachable stretch, as absolute UTC instants.
@@ -214,3 +214,40 @@ export type TCycleCapacity = {
   committed_hours?: number | null;
   estimate_type?: string | null;
 };
+
+export type TCalendarDayKind = "holiday" | "makeup_workday";
+
+/**
+ * A date that overrides its calendar's weekday rule.
+ *
+ * `makeup_workday` is the one a weekday-mask model cannot express: a Saturday the whole
+ * country works to bridge a long weekend.
+ */
+export type TCalendarDay = {
+  id: string;
+  date: string;
+  name: string;
+  kind: TCalendarDayKind;
+};
+
+export type TCalendarDayInput = {
+  date: string;
+  name: string;
+  kind: TCalendarDayKind;
+};
+
+export type TWorkCalendarInput = Partial<{
+  name: string;
+  timezone: string;
+  working_weekdays: number[];
+  is_default: boolean;
+}>;
+
+export type TLeaveTypeInput = Partial<{
+  name: string;
+  colour: string;
+  consumes_capacity: boolean;
+  requires_approval: boolean;
+  is_active: boolean;
+  sort_order: number;
+}>;

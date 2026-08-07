@@ -505,7 +505,22 @@
         "on_track": "Đúng tiến độ",
         "at_risk": "Có rủi ro",
         "off_track": "Lệch tiến độ"
-      }
+      },
+      "sort_label": "Sắp xếp",
+      "sort": {
+        "newest": "Mới nhất trước",
+        "oldest": "Cũ nhất trước",
+        "severity": "Nghiêm trọng nhất trước"
+      },
+      "group_label": "Nhóm",
+      "group": {
+        "none": "Không nhóm",
+        "status": "Theo trạng thái",
+        "topic": "Theo chủ đề"
+      },
+      "untagged": "Không có chủ đề",
+      "show_rest": "Hiển thị thêm {count}",
+      "sections_overlap": "Một bài đăng thuộc nhiều chủ đề sẽ xuất hiện ở từng chủ đề, nên các nhóm hiển thị nhiều hơn số bài đăng {count} dòng."
     },
     "readiness": {
       "ready": "Sẵn sàng phát hành",

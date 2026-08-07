@@ -505,7 +505,22 @@
         "on_track": "Sur la bonne voie",
         "at_risk": "À risque",
         "off_track": "Hors piste"
-      }
+      },
+      "sort_label": "Tri",
+      "sort": {
+        "newest": "Plus récents d'abord",
+        "oldest": "Plus anciens d'abord",
+        "severity": "Plus critiques d'abord"
+      },
+      "group_label": "Groupement",
+      "group": {
+        "none": "Sans groupement",
+        "status": "Par statut",
+        "topic": "Par sujet"
+      },
+      "untagged": "Sans sujet",
+      "show_rest": "Afficher {count} de plus",
+      "sections_overlap": "Un message classé sous plusieurs sujets apparaît sous chacun, si bien que les groupes affichent {count} lignes de plus qu'il n'y a de messages."
     },
     "readiness": {
       "ready": "Prêt à livrer",

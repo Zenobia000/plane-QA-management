@@ -505,7 +505,22 @@
         "on_track": "进展正常",
         "at_risk": "有风险",
         "off_track": "已偏离"
-      }
+      },
+      "sort_label": "排序",
+      "sort": {
+        "newest": "最新在前",
+        "oldest": "最早在前",
+        "severity": "最严重在前"
+      },
+      "group_label": "分组",
+      "group": {
+        "none": "不分组",
+        "status": "按状态",
+        "topic": "按主题"
+      },
+      "untagged": "未分类",
+      "show_rest": "显示其余 {count} 条",
+      "sections_overlap": "一条公告若挂了多个主题，会在每个主题下各出现一次，所以下方比实际条数多 {count} 行。"
     },
     "readiness": {
       "ready": "可以发布",

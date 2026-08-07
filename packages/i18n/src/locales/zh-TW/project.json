@@ -505,7 +505,22 @@
         "on_track": "進度正常",
         "at_risk": "有風險",
         "off_track": "已偏離"
-      }
+      },
+      "sort_label": "排序",
+      "sort": {
+        "newest": "最新在前",
+        "oldest": "最舊在前",
+        "severity": "最嚴重在前"
+      },
+      "group_label": "分組",
+      "group": {
+        "none": "不分組",
+        "status": "依狀態",
+        "topic": "依主題"
+      },
+      "untagged": "未分類",
+      "show_rest": "顯示其餘 {count} 則",
+      "sections_overlap": "一則公告若掛了多個主題，會在每個主題下各出現一次，所以下方比實際則數多 {count} 列。"
     },
     "readiness": {
       "ready": "可以發布",

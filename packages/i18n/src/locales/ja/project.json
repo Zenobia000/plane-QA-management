@@ -505,7 +505,22 @@
         "on_track": "順調",
         "at_risk": "リスクあり",
         "off_track": "遅延"
-      }
+      },
+      "sort_label": "並び順",
+      "sort": {
+        "newest": "新しい順",
+        "oldest": "古い順",
+        "severity": "深刻な順"
+      },
+      "group_label": "グループ化",
+      "group": {
+        "none": "グループ化しない",
+        "status": "ステータス別",
+        "topic": "トピック別"
+      },
+      "untagged": "トピックなし",
+      "show_rest": "残り {count} 件を表示",
+      "sections_overlap": "複数のトピックを付けた投稿は各トピックに表示されるため、下のグループは実際の件数より {count} 行多くなります。"
     },
     "readiness": {
       "ready": "リリース可能",

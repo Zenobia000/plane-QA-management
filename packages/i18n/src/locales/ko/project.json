@@ -505,7 +505,22 @@
         "on_track": "정상 진행",
         "at_risk": "위험",
         "off_track": "지연"
-      }
+      },
+      "sort_label": "정렬",
+      "sort": {
+        "newest": "최신순",
+        "oldest": "오래된순",
+        "severity": "심각한순"
+      },
+      "group_label": "그룹",
+      "group": {
+        "none": "그룹 없음",
+        "status": "상태별",
+        "topic": "주제별"
+      },
+      "untagged": "주제 없음",
+      "show_rest": "나머지 {count}건 보기",
+      "sections_overlap": "여러 주제를 단 게시물은 각 주제에 모두 표시되므로, 아래 그룹은 실제 건수보다 {count}줄 많습니다."
     },
     "readiness": {
       "ready": "출시 가능",

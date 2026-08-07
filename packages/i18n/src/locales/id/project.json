@@ -505,7 +505,22 @@
         "on_track": "Sesuai rencana",
         "at_risk": "Berisiko",
         "off_track": "Menyimpang dari rencana"
-      }
+      },
+      "sort_label": "Urutan",
+      "sort": {
+        "newest": "Terbaru dulu",
+        "oldest": "Terlama dulu",
+        "severity": "Terparah dulu"
+      },
+      "group_label": "Pengelompokan",
+      "group": {
+        "none": "Tanpa pengelompokan",
+        "status": "Menurut status",
+        "topic": "Menurut topik"
+      },
+      "untagged": "Tanpa topik",
+      "show_rest": "Tampilkan {count} lagi",
+      "sections_overlap": "Kiriman yang diarsipkan di beberapa topik muncul di masing-masing, sehingga grup menampilkan {count} baris lebih banyak daripada jumlah kiriman."
     },
     "readiness": {
       "ready": "Siap dirilis",

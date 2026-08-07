@@ -8,7 +8,7 @@ import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react";
 // plane imports
-import { ETabIndices } from "@plane/constants";
+import { ETabIndices, EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import type { EditorRefApi } from "@plane/editor";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
@@ -16,13 +16,17 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssue } from "@plane/types";
 import { ToggleSwitch } from "@plane/ui";
 import { renderFormattedPayloadDate, getTabIndex } from "@plane/utils";
+// components
+import { intakeGroupingProperty } from "@/components/work-item-extensions";
 // hooks
 import { useProject } from "@/hooks/store/use-project";
 import { useProjectInbox } from "@/hooks/store/use-project-inbox";
+import { useUserPermissions } from "@/hooks/store/user";
 import { useWorkspace } from "@/hooks/store/use-workspace";
 import { useAppRouter } from "@/hooks/use-app-router";
 import useKeypress from "@/hooks/use-keypress";
 import { usePlatformOS } from "@/hooks/use-platform-os";
+import { useWorkItemPropertyDefinitions, workItemExtensionService } from "@/hooks/use-work-item-extensions";
 // plane web imports
 import { DeDupeButtonRoot } from "@/plane-web/components/de-dupe/de-dupe-button";
 import { DuplicateModalRoot } from "@/plane-web/components/de-dupe/duplicate-modal";
@@ -30,6 +34,8 @@ import { useDebouncedDuplicateIssues } from "@/hooks/use-debounced-duplicate-iss
 // services
 import { FileService } from "@/services/file.service";
 // local imports
+import { IntakeGroupingField } from "./grouping-field";
+import { isGroupingValueMissing, persistGroupingValue } from "./grouping-value";
 import { InboxIssueDescription } from "./issue-description";
 import { InboxIssueProperties } from "./issue-properties";
 import { InboxIssueTitle } from "./issue-title";
@@ -74,10 +80,27 @@ export const InboxIssueCreateRoot = observer(function InboxIssueCreateRoot(props
   const { isMobile } = usePlatformOS();
   const { getProjectById } = useProject();
   const { t } = useTranslation();
+  const { allowPermissions } = useUserPermissions();
+  const { data: propertyDefinitions } = useWorkItemPropertyDefinitions(workspaceSlug, projectId);
   // states
   const [createMore, setCreateMore] = useState<boolean>(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formData, setFormData] = useState<Partial<TIssue>>(defaultIssueData);
+  const [groupingValue, setGroupingValue] = useState<unknown>(undefined);
+  const [groupingError, setGroupingError] = useState<string | undefined>(undefined);
+
+  // The overview groups intake by one project-chosen property, and this is the only place
+  // the person who knows the answer is present. Filing needs GUEST, writing the value
+  // needs MEMBER, so the field is offered only to whoever can actually save it.
+  const groupingProperty = intakeGroupingProperty(
+    propertyDefinitions,
+    allowPermissions(
+      [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
+      EUserPermissionsLevel.PROJECT,
+      workspaceSlug,
+      projectId
+    )
+  );
   const handleFormData = useCallback(
     <T extends keyof Partial<TIssue>>(issueKey: T, issueValue: Partial<TIssue>[T]) => {
       setFormData({
@@ -148,6 +171,11 @@ export const InboxIssueCreateRoot = observer(function InboxIssueCreateRoot(props
       return;
     }
 
+    if (isGroupingValueMissing(groupingProperty, groupingValue)) {
+      setGroupingError("This property is required.");
+      return;
+    }
+
     const payload: Partial<TIssue> = {
       name: formData.name || "",
       description_html: formData.description_html || "<p></p>",
@@ -159,36 +187,60 @@ export const InboxIssueCreateRoot = observer(function InboxIssueCreateRoot(props
     };
     setFormSubmitting(true);
 
-    await createInboxIssue(workspaceSlug, projectId, payload)
-      .then(async (res) => {
-        if (uploadedAssetIds.length > 0) {
-          await fileService.updateBulkProjectAssetsUploadStatus(workspaceSlug, projectId, res?.issue.id ?? "", {
-            asset_ids: uploadedAssetIds,
-          });
-          setUploadedAssetIds([]);
-        }
-        if (!createMore) {
-          router.push(`/${workspaceSlug}/projects/${projectId}/intake/?currentTab=open&inboxIssueId=${res?.issue?.id}`);
-          handleModalClose();
-        } else {
-          descriptionEditorRef?.current?.clearEditor();
-          setFormData(defaultIssueData);
-        }
-        setToast({
-          type: TOAST_TYPE.SUCCESS,
-          title: `Success!`,
-          message: "Work item created successfully.",
+    try {
+      const res = await createInboxIssue(workspaceSlug, projectId, payload);
+      if (uploadedAssetIds.length > 0) {
+        await fileService.updateBulkProjectAssetsUploadStatus(workspaceSlug, projectId, res?.issue.id ?? "", {
+          asset_ids: uploadedAssetIds,
         });
-      })
-      .catch((error) => {
-        console.error(error);
-        setToast({
-          type: TOAST_TYPE.ERROR,
-          title: `Error!`,
-          message: "Some error occurred. Please try again.",
-        });
+        setUploadedAssetIds([]);
+      }
+      // Two requests, not one transaction -- the work item id only exists after the
+      // first. Attribute before navigating away, so the panel this feeds is right by
+      // the time anyone looks at it.
+      const attribution = await persistGroupingValue({
+        definition: groupingProperty,
+        issueId: res?.issue?.id ?? "",
+        projectId,
+        service: workItemExtensionService,
+        value: groupingValue,
+        workspaceSlug,
       });
-    setFormSubmitting(false);
+      if (!createMore) {
+        router.push(`/${workspaceSlug}/projects/${projectId}/intake/?currentTab=open&inboxIssueId=${res?.issue?.id}`);
+        handleModalClose();
+      } else {
+        descriptionEditorRef?.current?.clearEditor();
+        setFormData(defaultIssueData);
+        setGroupingValue(undefined);
+        setGroupingError(undefined);
+      }
+      // The item exists either way. Saying "created successfully" when the attribution
+      // was refused would send the reporter away believing the account was recorded,
+      // and the overview would quietly hold it as unattributed.
+      setToast(
+        attribution === "failed"
+          ? {
+              type: TOAST_TYPE.WARNING,
+              title: "Partly saved",
+              message: `Work item created, but ${groupingProperty?.name} could not be saved. Set it on the work item.`,
+            }
+          : {
+              type: TOAST_TYPE.SUCCESS,
+              title: `Success!`,
+              message: "Work item created successfully.",
+            }
+      );
+    } catch (error) {
+      console.error(error);
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: `Error!`,
+        message: "Some error occurred. Please try again.",
+      });
+    } finally {
+      setFormSubmitting(false);
+    }
   };
 
   const isTitleLengthMoreThan255Character = formData?.name ? formData.name.length > 255 : false;
@@ -228,6 +280,15 @@ export const InboxIssueCreateRoot = observer(function InboxIssueCreateRoot(props
                 containerClassName="bg-layer-2 border-[0.5px] border-subtle-1 py-3 min-h-[150px]"
                 onEnterKeyPress={() => submitBtnRef?.current?.click()}
                 onAssetUpload={(assetId) => setUploadedAssetIds((prev) => [...prev, assetId])}
+              />
+              <IntakeGroupingField
+                definition={groupingProperty}
+                error={groupingError}
+                value={groupingValue}
+                onChange={(value) => {
+                  setGroupingValue(value);
+                  setGroupingError(undefined);
+                }}
               />
               <InboxIssueProperties projectId={projectId} data={formData} handleData={handleFormData} />
             </div>

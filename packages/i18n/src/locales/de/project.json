@@ -420,7 +420,8 @@
     "load_error": "Die Projektübersicht konnte nicht geladen werden.",
     "progress": {
       "title": "Fortschritt",
-      "out_of_scope": "Außerhalb des Umfangs, daher nicht im Balken gezählt"
+      "out_of_scope": "Außerhalb des Umfangs, daher nicht im Balken gezählt",
+      "counts": "Alle aktiven Arbeitselemente dieses Projekts außer den abgebrochenen — eine breitere Grundgesamtheit als die Anforderungszahl oben."
     },
     "links": {
       "title": "Links",
@@ -512,12 +513,17 @@
       "open_testing": "Testing öffnen",
       "coverage": "Abgedeckte Anforderungen",
       "latest_run": "Letzter Lauf bestanden",
-      "open_defects": "Offene Fehler"
+      "open_defects": "Offene Fehler",
+      "unexecuted": "{count} nicht ausgeführt",
+      "skipped": "{count} übersprungen",
+      "coverage_of": "Eingeplante Anforderungen, die einen Abnahmevertrag brauchen. Backlog zählt nicht mit.",
+      "latest_run_of": "Alle Fälle des letzten Laufs, auch die noch nicht ausgeführten.",
+      "open_defects_of": "Aus einem Testergebnis gemeldete und noch nicht geschlossene Fehler."
     },
     "frontline": {
       "unattributed": "Nicht zugeordnet",
       "open_intake": "Intake öffnen",
-      "summary": "{pending} offen · {accepted} eingeplant · {declined} abgelehnt",
+      "summary": "{reports, plural, one {# Meldung} other {# Meldungen}} · {pending} offen · {accepted} eingeplant · {declined} abgelehnt",
       "pending_count": "{count, plural, one {# offen} other {# offen}}",
       "all_scheduled": "Alles eingeplant",
       "accept": "Einplanen",
@@ -529,7 +535,8 @@
         "declined": "Abgelehnt"
       },
       "not_triaged_title": "Status nicht geändert",
-      "not_triaged_message": "Der Status konnte nicht geändert werden."
+      "not_triaged_message": "Der Status konnte nicht geändert werden.",
+      "multi_attributed": "Davon {count} unter mehr als einem {dimension} erfasst, daher ergeben die Gruppen unten {sum} statt {total}."
     },
     "attention": {
       "title": "Braucht Aufmerksamkeit",

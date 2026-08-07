@@ -420,7 +420,8 @@
     "load_error": "프로젝트 개요를 불러오지 못했습니다.",
     "progress": {
       "title": "진행률",
-      "out_of_scope": "범위 밖이므로 막대에 집계되지 않습니다"
+      "out_of_scope": "범위 밖이므로 막대에 집계되지 않습니다",
+      "counts": "취소된 것을 제외한 이 프로젝트의 모든 활성 작업 항목 — 위 요구사항 수보다 넓은 모집단입니다."
     },
     "links": {
       "title": "링크",
@@ -512,12 +513,17 @@
       "open_testing": "Testing 열기",
       "coverage": "커버된 요구사항",
       "latest_run": "최근 실행 통과",
-      "open_defects": "미해결 결함"
+      "open_defects": "미해결 결함",
+      "unexecuted": "{count}건 미실행",
+      "skipped": "{count}건 건너뜀",
+      "coverage_of": "인수 계약이 필요한 예정된 요구사항. 백로그는 계산하지 않습니다.",
+      "latest_run_of": "최근 실행의 모든 케이스. 아직 실행하지 않은 것도 포함합니다.",
+      "open_defects_of": "테스트 결과에서 등록되어 아직 닫히지 않은 결함."
     },
     "frontline": {
       "unattributed": "미분류",
       "open_intake": "Intake 열기",
-      "summary": "대기 {pending} · 예정 {accepted} · 보류 {declined}",
+      "summary": "{reports}건 접수 · 대기 {pending} · 예정 {accepted} · 반려 {declined}",
       "pending_count": "{count, plural, one {대기 #건} other {대기 #건}}",
       "all_scheduled": "모두 예정됨",
       "accept": "일정에 넣기",
@@ -529,7 +535,8 @@
         "declined": "보류"
       },
       "not_triaged_title": "상태를 변경하지 못했습니다",
-      "not_triaged_message": "상태를 변경하지 못했습니다."
+      "not_triaged_message": "상태를 변경하지 못했습니다.",
+      "multi_attributed": "그중 {count}건이 여러 {dimension}에 걸쳐 있어 아래 그룹 합계는 {total}이 아니라 {sum}입니다."
     },
     "attention": {
       "title": "주의 필요",

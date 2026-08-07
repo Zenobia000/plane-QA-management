@@ -420,7 +420,8 @@
     "load_error": "Prehľad projektu sa nepodarilo načítať.",
     "progress": {
       "title": "Priebeh",
-      "out_of_scope": "Mimo rozsahu, preto sa do pruhu nepočíta"
+      "out_of_scope": "Mimo rozsahu, preto sa do pruhu nepočíta",
+      "counts": "Všetky živé pracovné položky projektu okrem zrušených — širší základ než počet požiadaviek vyššie."
     },
     "links": {
       "title": "Odkazy",
@@ -512,12 +513,17 @@
       "open_testing": "Otvoriť Testing",
       "coverage": "Pokryté požiadavky",
       "latest_run": "Posledný beh prešiel",
-      "open_defects": "Otvorené defekty"
+      "open_defects": "Otvorené defekty",
+      "unexecuted": "nevykonané: {count}",
+      "skipped": "preskočené: {count}",
+      "coverage_of": "Naplánované požiadavky, ktoré potrebujú akceptačný kontrakt. Backlog sa nepočíta.",
+      "latest_run_of": "Všetky prípady posledného behu, vrátane zatiaľ nevykonaných.",
+      "open_defects_of": "Chyby založené z výsledku testu a zatiaľ neuzavreté."
     },
     "frontline": {
       "unattributed": "Bez priradenia",
       "open_intake": "Otvoriť Intake",
-      "summary": "Čaká: {pending} · naplánované: {accepted} · odmietnuté: {declined}",
+      "summary": "Hlásenia: {reports} · čaká {pending} · naplánované {accepted} · odmietnuté {declined}",
       "pending_count": "{count, plural, one {# čaká} few {# čakajú} many {# čaká} other {# čaká}}",
       "all_scheduled": "Všetko naplánované",
       "accept": "Naplánovať",
@@ -529,7 +535,8 @@
         "declined": "Odmietnuté"
       },
       "not_triaged_title": "Stav nebol zmenený",
-      "not_triaged_message": "Stav sa nepodarilo zmeniť."
+      "not_triaged_message": "Stav sa nepodarilo zmeniť.",
+      "multi_attributed": "Z toho {count} je vedených pod viac ako jedným {dimension}, takže skupiny nižšie dávajú spolu {sum}, nie {total}."
     },
     "attention": {
       "title": "Vyžaduje pozornosť",

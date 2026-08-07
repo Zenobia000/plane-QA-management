@@ -420,7 +420,8 @@
     "load_error": "Could not load the project overview.",
     "progress": {
       "title": "Progress",
-      "out_of_scope": "Out of scope, so not counted in the bar"
+      "out_of_scope": "Out of scope, so not counted in the bar",
+      "counts": "Every live work item in this project except cancelled ones — a wider population than the requirement count above."
     },
     "links": {
       "title": "Links",
@@ -512,12 +513,17 @@
       "open_testing": "Open Testing",
       "coverage": "Requirements covered",
       "latest_run": "Latest run passed",
-      "open_defects": "Open defects"
+      "open_defects": "Open defects",
+      "unexecuted": "{count} unexecuted",
+      "skipped": "{count} skipped",
+      "coverage_of": "Scheduled requirements that need an acceptance contract. Backlog work is not counted.",
+      "latest_run_of": "Every case in the latest run, including the ones nobody has executed yet.",
+      "open_defects_of": "Defects raised from a test result and not yet closed."
     },
     "frontline": {
       "unattributed": "Not attributed",
       "open_intake": "Open Intake",
-      "summary": "{pending} waiting · {accepted} scheduled · {declined} declined",
+      "summary": "{reports, plural, one {# report} other {# reports}} · {pending} waiting · {accepted} scheduled · {declined} declined",
       "pending_count": "{count, plural, one {# waiting} other {# waiting}}",
       "all_scheduled": "All scheduled",
       "accept": "Schedule it",
@@ -529,7 +535,8 @@
         "declined": "Declined"
       },
       "not_triaged_title": "Status not changed",
-      "not_triaged_message": "The status could not be changed."
+      "not_triaged_message": "The status could not be changed.",
+      "multi_attributed": "{count, plural, one {# of them is filed under more than one {dimension}} other {# of them are filed under more than one {dimension}}}, so the groups below add up to {sum}, not {total}."
     },
     "attention": {
       "title": "Needs attention",

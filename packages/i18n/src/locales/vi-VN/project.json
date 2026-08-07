@@ -420,7 +420,8 @@
     "load_error": "Không thể tải tổng quan dự án.",
     "progress": {
       "title": "Tiến độ",
-      "out_of_scope": "Ngoài phạm vi nên không được tính vào thanh tiến độ"
+      "out_of_scope": "Ngoài phạm vi nên không được tính vào thanh tiến độ",
+      "counts": "Mọi hạng mục công việc còn hiệu lực của dự án trừ các mục đã hủy — phạm vi rộng hơn số yêu cầu ở trên."
     },
     "links": {
       "title": "Liên kết",
@@ -512,12 +513,17 @@
       "open_testing": "Mở Testing",
       "coverage": "Yêu cầu đã được bao phủ",
       "latest_run": "Đã đạt ở lần chạy gần nhất",
-      "open_defects": "Lỗi chưa đóng"
+      "open_defects": "Lỗi chưa đóng",
+      "unexecuted": "{count} chưa chạy",
+      "skipped": "{count} đã bỏ qua",
+      "coverage_of": "Các yêu cầu đã lên lịch và cần hợp đồng nghiệm thu. Backlog không được tính.",
+      "latest_run_of": "Toàn bộ ca kiểm thử trong lần chạy gần nhất, kể cả những ca chưa chạy.",
+      "open_defects_of": "Lỗi được mở từ kết quả kiểm thử và chưa được đóng."
     },
     "frontline": {
       "unattributed": "Chưa quy thuộc",
       "open_intake": "Mở Intake",
-      "summary": "{pending} đang chờ · {accepted} đã lên lịch · {declined} đã từ chối",
+      "summary": "{reports} phản ánh · {pending} chờ xử lý · {accepted} đã lên lịch · {declined} đã từ chối",
       "pending_count": "{count, plural, one {# đang chờ} other {# đang chờ}}",
       "all_scheduled": "Đã lên lịch tất cả",
       "accept": "Đưa vào lịch",
@@ -529,7 +535,8 @@
         "declined": "Đã từ chối"
       },
       "not_triaged_title": "Chưa đổi được trạng thái",
-      "not_triaged_message": "Không thể thay đổi trạng thái."
+      "not_triaged_message": "Không thể thay đổi trạng thái.",
+      "multi_attributed": "Trong đó {count} phản ánh thuộc nhiều {dimension}, nên các nhóm bên dưới cộng lại là {sum} chứ không phải {total}."
     },
     "attention": {
       "title": "Cần chú ý",

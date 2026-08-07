@@ -420,7 +420,8 @@
     "load_error": "Proje genel görünümü yüklenemedi.",
     "progress": {
       "title": "İlerleme",
-      "out_of_scope": "Kapsam dışı olduğu için çubukta sayılmaz"
+      "out_of_scope": "Kapsam dışı olduğu için çubukta sayılmaz",
+      "counts": "Bu projedeki iptal edilenler dışındaki tüm canlı iş öğeleri — yukarıdaki gereksinim sayısından daha geniş bir küme."
     },
     "links": {
       "title": "Bağlantılar",
@@ -512,12 +513,17 @@
       "open_testing": "Testing’i aç",
       "coverage": "Kapsanan gereksinimler",
       "latest_run": "Son çalıştırmada geçen",
-      "open_defects": "Açık hatalar"
+      "open_defects": "Açık hatalar",
+      "unexecuted": "{count} çalıştırılmadı",
+      "skipped": "{count} atlandı",
+      "coverage_of": "Kabul sözleşmesi gereken planlanmış gereksinimler. Backlog sayılmaz.",
+      "latest_run_of": "Son çalıştırmadaki tüm senaryolar, henüz çalıştırılmayanlar dâhil.",
+      "open_defects_of": "Bir test sonucundan açılmış ve henüz kapatılmamış hatalar."
     },
     "frontline": {
       "unattributed": "Atanmamış",
       "open_intake": "Intake’i aç",
-      "summary": "{pending} bekliyor · {accepted} planlandı · {declined} reddedildi",
+      "summary": "{reports} bildirim · {pending} bekliyor · {accepted} planlandı · {declined} reddedildi",
       "pending_count": "{count, plural, one {# bekliyor} other {# bekliyor}}",
       "all_scheduled": "Tümü planlandı",
       "accept": "Planla",
@@ -529,7 +535,8 @@
         "declined": "Reddedildi"
       },
       "not_triaged_title": "Durum değiştirilmedi",
-      "not_triaged_message": "Durum değiştirilemedi."
+      "not_triaged_message": "Durum değiştirilemedi.",
+      "multi_attributed": "Bunlardan {count} tanesi birden fazla {dimension} altında kayıtlı, bu yüzden aşağıdaki gruplar {total} değil {sum} ediyor."
     },
     "attention": {
       "title": "Dikkat gerekiyor",

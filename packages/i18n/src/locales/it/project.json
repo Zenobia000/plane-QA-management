@@ -420,7 +420,8 @@
     "load_error": "Impossibile caricare la panoramica del progetto.",
     "progress": {
       "title": "Avanzamento",
-      "out_of_scope": "Fuori ambito, quindi non conteggiato nella barra"
+      "out_of_scope": "Fuori ambito, quindi non conteggiato nella barra",
+      "counts": "Tutti gli elementi di lavoro attivi del progetto tranne quelli annullati: una base più ampia del numero di requisiti sopra."
     },
     "links": {
       "title": "Collegamenti",
@@ -512,12 +513,17 @@
       "open_testing": "Apri Testing",
       "coverage": "Requisiti coperti",
       "latest_run": "Ultima esecuzione superata",
-      "open_defects": "Difetti aperti"
+      "open_defects": "Difetti aperti",
+      "unexecuted": "{count} non eseguiti",
+      "skipped": "{count} saltati",
+      "coverage_of": "Requisiti pianificati che richiedono un contratto di accettazione. Il backlog non è conteggiato.",
+      "latest_run_of": "Tutti i casi dell'ultima esecuzione, compresi quelli non ancora eseguiti.",
+      "open_defects_of": "Difetti aperti da un risultato di test e non ancora chiusi."
     },
     "frontline": {
       "unattributed": "Non attribuito",
       "open_intake": "Apri Intake",
-      "summary": "{pending} in attesa · {accepted} pianificati · {declined} rifiutati",
+      "summary": "{reports, plural, one {# segnalazione} other {# segnalazioni}} · {pending} in attesa · {accepted} pianificate · {declined} rifiutate",
       "pending_count": "{count, plural, one {# in attesa} many {# in attesa} other {# in attesa}}",
       "all_scheduled": "Tutto pianificato",
       "accept": "Pianifica",
@@ -529,7 +535,8 @@
         "declined": "Rifiutato"
       },
       "not_triaged_title": "Stato non modificato",
-      "not_triaged_message": "Impossibile modificare lo stato."
+      "not_triaged_message": "Impossibile modificare lo stato.",
+      "multi_attributed": "Di queste {count} sono registrate su più di un {dimension}, quindi i gruppi qui sotto sommano {sum} e non {total}."
     },
     "attention": {
       "title": "Richiede attenzione",

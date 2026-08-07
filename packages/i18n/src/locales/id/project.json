@@ -420,7 +420,8 @@
     "load_error": "Tidak dapat memuat ikhtisar proyek.",
     "progress": {
       "title": "Progres",
-      "out_of_scope": "Di luar cakupan sehingga tidak dihitung dalam bilah"
+      "out_of_scope": "Di luar cakupan sehingga tidak dihitung dalam bilah",
+      "counts": "Semua item kerja aktif di proyek ini kecuali yang dibatalkan — cakupan lebih luas daripada jumlah kebutuhan di atas."
     },
     "links": {
       "title": "Tautan",
@@ -512,12 +513,17 @@
       "open_testing": "Buka Testing",
       "coverage": "Kebutuhan yang tercakup",
       "latest_run": "Lulus pada eksekusi terakhir",
-      "open_defects": "Defek terbuka"
+      "open_defects": "Defek terbuka",
+      "unexecuted": "{count} belum dijalankan",
+      "skipped": "{count} dilewati",
+      "coverage_of": "Kebutuhan terjadwal yang memerlukan kontrak penerimaan. Backlog tidak dihitung.",
+      "latest_run_of": "Semua kasus pada eksekusi terakhir, termasuk yang belum dijalankan.",
+      "open_defects_of": "Cacat yang dibuka dari hasil pengujian dan belum ditutup."
     },
     "frontline": {
       "unattributed": "Belum diatribusikan",
       "open_intake": "Buka Intake",
-      "summary": "{pending} menunggu · {accepted} dijadwalkan · {declined} ditolak",
+      "summary": "{reports} laporan · {pending} menunggu · {accepted} dijadwalkan · {declined} ditolak",
       "pending_count": "{count, plural, one {# menunggu} other {# menunggu}}",
       "all_scheduled": "Semua sudah dijadwalkan",
       "accept": "Jadwalkan",
@@ -529,7 +535,8 @@
         "declined": "Ditolak"
       },
       "not_triaged_title": "Status tidak diubah",
-      "not_triaged_message": "Status tidak dapat diubah."
+      "not_triaged_message": "Status tidak dapat diubah.",
+      "multi_attributed": "Sebanyak {count} di antaranya tercatat pada lebih dari satu {dimension}, sehingga grup di bawah berjumlah {sum}, bukan {total}."
     },
     "attention": {
       "title": "Perlu perhatian",

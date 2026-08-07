@@ -420,7 +420,8 @@
     "load_error": "プロジェクトの概要を読み込めませんでした。",
     "progress": {
       "title": "進捗",
-      "out_of_scope": "対象範囲外のため、バーには数えられません"
+      "out_of_scope": "対象範囲外のため、バーには数えられません",
+      "counts": "このプロジェクトの有効な作業項目すべて（キャンセル分を除く）。上の要件数より広い母数です。"
     },
     "links": {
       "title": "リンク",
@@ -512,12 +513,17 @@
       "open_testing": "Testing を開く",
       "coverage": "カバー済みの要件",
       "latest_run": "直近の実行で合格",
-      "open_defects": "未解決の不具合"
+      "open_defects": "未解決の不具合",
+      "unexecuted": "{count} 件未実行",
+      "skipped": "{count} 件スキップ",
+      "coverage_of": "受け入れ契約が必要な、予定済みの要件。バックログは含みません。",
+      "latest_run_of": "直近の実行に含まれる全ケース。未実行のものも含みます。",
+      "open_defects_of": "テスト結果から起票され、まだクローズされていない不具合。"
     },
     "frontline": {
       "unattributed": "未割り当て",
       "open_intake": "Intake を開く",
-      "summary": "未対応 {pending} 件・対応予定 {accepted} 件・見送り {declined} 件",
+      "summary": "{reports} 件の報告 · 未対応 {pending} · 対応予定 {accepted} · 見送り {declined}",
       "pending_count": "{count, plural, one {未対応 # 件} other {未対応 # 件}}",
       "all_scheduled": "すべて対応予定",
       "accept": "対応予定にする",
@@ -529,7 +535,8 @@
         "declined": "見送り"
       },
       "not_triaged_title": "状態を変更できませんでした",
-      "not_triaged_message": "状態を変更できませんでした。"
+      "not_triaged_message": "状態を変更できませんでした。",
+      "multi_attributed": "うち {count} 件が複数の{dimension}に紐づくため、下の各グループの合計は {total} ではなく {sum} になります。"
     },
     "attention": {
       "title": "要注意",

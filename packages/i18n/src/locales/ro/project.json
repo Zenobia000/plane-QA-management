@@ -420,7 +420,8 @@
     "load_error": "Prezentarea generală a proiectului nu a putut fi încărcată.",
     "progress": {
       "title": "Progres",
-      "out_of_scope": "În afara domeniului, deci nu este numărat în bară"
+      "out_of_scope": "În afara domeniului, deci nu este numărat în bară",
+      "counts": "Toate elementele de lucru active din proiect în afara celor anulate — o bază mai largă decât numărul de cerințe de mai sus."
     },
     "links": {
       "title": "Linkuri",
@@ -512,12 +513,17 @@
       "open_testing": "Deschideți Testing",
       "coverage": "Cerințe acoperite",
       "latest_run": "Ultima execuție trecută",
-      "open_defects": "Defecte deschise"
+      "open_defects": "Defecte deschise",
+      "unexecuted": "neexecutate: {count}",
+      "skipped": "omise: {count}",
+      "coverage_of": "Cerințe planificate care au nevoie de un contract de acceptanță. Backlogul nu se numără.",
+      "latest_run_of": "Toate cazurile din ultima execuție, inclusiv cele neexecutate încă.",
+      "open_defects_of": "Defecte deschise dintr-un rezultat de test și încă neînchise."
     },
     "frontline": {
       "unattributed": "Neatribuit",
       "open_intake": "Deschideți Intake",
-      "summary": "{pending} în așteptare · {accepted} planificate · {declined} refuzate",
+      "summary": "Raportări: {reports} · în așteptare {pending} · planificate {accepted} · refuzate {declined}",
       "pending_count": "{count, plural, one {# în așteptare} few {# în așteptare} other {# în așteptare}}",
       "all_scheduled": "Totul este planificat",
       "accept": "Planificați",
@@ -529,7 +535,8 @@
         "declined": "Refuzat"
       },
       "not_triaged_title": "Starea nu a fost modificată",
-      "not_triaged_message": "Starea nu a putut fi modificată."
+      "not_triaged_message": "Starea nu a putut fi modificată.",
+      "multi_attributed": "Dintre acestea {count} sunt înregistrate la mai mult de un {dimension}, așa că grupurile de mai jos însumează {sum}, nu {total}."
     },
     "attention": {
       "title": "Necesită atenție",

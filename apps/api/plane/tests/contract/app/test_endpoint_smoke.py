@@ -113,7 +113,11 @@ def workspace_scoped_routes():
     each assertion carries its own minimum count and merging them would let a collapse in
     one be masked by the other.
     """
-    return sorted(path for path in walk(get_resolver()) if path.startswith("api/workspaces/") and route_params(path) == {"slug"})
+    return sorted(
+        path
+        for path in walk(get_resolver())
+        if path.startswith("api/workspaces/") and route_params(path) == {"slug"}
+    )
 
 
 @pytest.fixture

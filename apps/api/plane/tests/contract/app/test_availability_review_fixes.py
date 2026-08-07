@@ -24,7 +24,6 @@ from plane.db.models import (
     Estimate,
     EstimatePoint,
     Issue,
-    IssueType,
     LeaveStatus,
     LeaveType,
     MemberLeave,
@@ -35,7 +34,6 @@ from plane.db.models import (
     State,
     User,
     WorkCalendar,
-    Workspace,
     WorkspaceMember,
 )
 

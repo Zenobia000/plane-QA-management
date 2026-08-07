@@ -425,6 +425,10 @@ class WorkspaceUserPreference(BaseModel):
         YOUR_WORK = "your_work", "Your Work"
         ARCHIVES = "archives", "Archives"
         STICKIES = "stickies", "Stickies"
+        # Fork-added. `key` is a plain CharField with no `choices`, so this list only drives
+        # which preference rows the endpoint seeds -- a nav item absent from it gets no row,
+        # reads as unpinned, and `SidebarItemBase` returns null for it. No migration needed.
+        TEAM_CALENDAR = "team_calendar", "Team Calendar"
 
     workspace = models.ForeignKey(
         "db.Workspace",

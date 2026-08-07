@@ -11,6 +11,7 @@ import { Loader } from "@plane/ui";
 // local imports
 import useCyclesDetails from "../active-cycle/use-cycles-details";
 import { CycleAnalyticsProgress } from "./issue-progress";
+import { CycleCapacityPanel } from "@/components/cycles/capacity-panel";
 import { CycleSidebarDetails } from "./sidebar-details";
 import { CycleSidebarHeader } from "./sidebar-header";
 
@@ -62,6 +63,12 @@ export const CycleDetailsSidebar = observer(function CycleDetailsSidebar(props: 
 
       {workspaceSlug && projectId && cycleDetails?.id && (
         <CycleAnalyticsProgress workspaceSlug={workspaceSlug} projectId={projectId} cycleId={cycleDetails?.id} />
+      )}
+
+      {/* Availability: what this cycle has after calendars, approved absence and
+          allocation. Renders nothing when the workspace has not set any of that up. */}
+      {workspaceSlug && projectId && cycleDetails?.id && (
+        <CycleCapacityPanel workspaceSlug={workspaceSlug} projectId={projectId} cycleId={cycleDetails.id} />
       )}
     </div>
   );

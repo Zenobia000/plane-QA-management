@@ -77,6 +77,27 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(":workspaceSlug/browse/:workItem", "./(all)/[workspaceSlug]/(projects)/browse/[workItem]/page.tsx"),
         ]),
 
+        // Team Calendar - workspace-scoped, not project-scoped: an absence is a fact
+        // about a person, and a person belongs to the workspace. See ADR 0008.
+        layout("./(all)/[workspaceSlug]/(projects)/calendar/layout.tsx", [
+          layout("./(all)/[workspaceSlug]/(projects)/calendar/page.tsx", [
+            route(":workspaceSlug/calendar", "./(all)/[workspaceSlug]/(projects)/calendar/routes/index.tsx"),
+            route(
+              ":workspaceSlug/calendar/schedule",
+              "./(all)/[workspaceSlug]/(projects)/calendar/routes/schedule.tsx"
+            ),
+            route(":workspaceSlug/calendar/leave", "./(all)/[workspaceSlug]/(projects)/calendar/routes/leave.tsx"),
+            route(
+              ":workspaceSlug/calendar/allocation",
+              "./(all)/[workspaceSlug]/(projects)/calendar/routes/allocation.tsx"
+            ),
+            route(
+              ":workspaceSlug/calendar/settings",
+              "./(all)/[workspaceSlug]/(projects)/calendar/routes/settings.tsx"
+            ),
+          ]),
+        ]),
+
         // Drafts
         layout("./(all)/[workspaceSlug]/(projects)/drafts/layout.tsx", [
           route(":workspaceSlug/drafts", "./(all)/[workspaceSlug]/(projects)/drafts/page.tsx"),

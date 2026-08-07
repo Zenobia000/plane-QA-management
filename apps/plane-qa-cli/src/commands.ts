@@ -2,6 +2,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 
 import {
+  type CalendarDayInput,
+  type DayPart,
   type JsonObject,
   type PlaneQAClient,
   type Project,
@@ -94,6 +96,127 @@ export const executeCommand = async (
           name: optionString(args.options, "name"),
           description: optionString(args.options, "description"),
           ...jsonOption(args.options, "body", {}),
+        })
+      );
+    }
+  }
+
+  // Availability is workspace-scoped, so none of these resolve a project first.
+  if (group === "availability") {
+    if (action === "schedule") {
+      return client.getAvailabilitySchedule(
+        config.workspace,
+        requiredOption(args.options, "from"),
+        requiredOption(args.options, "to"),
+        optionString(args.options, "members")?.split(",").filter(Boolean)
+      );
+    }
+    if (action === "overlap") {
+      return client.findAvailabilityOverlap(config.workspace, {
+        member_ids: requiredOption(args.options, "members").split(",").filter(Boolean),
+        date_from: requiredOption(args.options, "from"),
+        date_to: requiredOption(args.options, "to"),
+        duration_minutes: Number(optionString(args.options, "duration") ?? 30),
+      });
+    }
+    if (action === "calendars") return client.listWorkCalendars(config.workspace);
+    if (action === "leave-types") return client.listLeaveTypes(config.workspace);
+    if (action === "calendar-days") {
+      const year = optionString(args.options, "year");
+      return client.listCalendarDays(
+        config.workspace,
+        requiredOption(args.options, "calendar"),
+        year ? Number(year) : undefined
+      );
+    }
+    if (action === "set-calendar-days") {
+      // Takes a JSON array so a published holiday list is one command, not one per date.
+      const days = jsonOption(args.options, "days", {}) as { days?: CalendarDayInput[] };
+      const parsed = Array.isArray(days) ? (days as CalendarDayInput[]) : (days.days ?? []);
+      if (parsed.length === 0) throw new Error("--days must be a JSON array of {date,name,kind}.");
+      const replaceYear = optionString(args.options, "replace_year");
+      return client.setCalendarDays(
+        config.workspace,
+        requiredOption(args.options, "calendar"),
+        parsed,
+        replaceYear ? Number(replaceYear) : undefined
+      );
+    }
+    if (action === "leaves") {
+      return client.listLeaves(
+        config.workspace,
+        requiredOption(args.options, "from"),
+        requiredOption(args.options, "to"),
+        optionString(args.options, "members")?.split(",").filter(Boolean)
+      );
+    }
+    if (action === "request-leave") {
+      // Built field by field rather than through `compact`, which widens to
+      // Record<string, unknown> and would need a cast that hides a real mismatch.
+      const startPart = optionString(args.options, "start_part") as DayPart | undefined;
+      const endPart = optionString(args.options, "end_part") as DayPart | undefined;
+      return client.createLeave(config.workspace, {
+        leave_type: requiredOption(args.options, "type"),
+        start_date: requiredOption(args.options, "from"),
+        end_date: requiredOption(args.options, "to"),
+        ...(startPart ? { start_day_part: startPart } : {}),
+        ...(endPart ? { end_day_part: endPart } : {}),
+        ...(optionString(args.options, "reason") ? { reason: optionString(args.options, "reason") } : {}),
+        ...(optionString(args.options, "member") ? { member: optionString(args.options, "member") } : {}),
+      });
+    }
+    if (action === "cancel-leave") {
+      requireConfirmation(args, "leave cancel");
+      const leaveId = requiredOption(args.options, "id");
+      const preview = dryRunReceipt(args, "leave cancel", { id: leaveId });
+      if (preview) return preview;
+      return client.cancelLeave(config.workspace, leaveId);
+    }
+    if (action === "pending-leaves") return client.listPendingLeaves(config.workspace);
+    if (action === "allocations") return client.getAllocations(config.workspace);
+    if (action === "set-allocation") {
+      return client.setAllocation(
+        config.workspace,
+        requiredOption(args.options, "member"),
+        requiredOption(args.options, "project_id"),
+        Number(requiredOption(args.options, "percent"))
+      );
+    }
+    if (action === "capacity") {
+      const project = await projectFor(client, config);
+      return client.getCycleCapacity(config.workspace, project.id, requiredOption(args.options, "cycle"));
+    }
+    if (action === "decide-leave") {
+      const decision = enumOption(args.options, "decision", ["approve", "reject"] as const);
+      if (!decision) throw new Error("--decision approve|reject is required.");
+      requireConfirmation(args, `leave ${decision}`);
+      const leaveId = requiredOption(args.options, "id");
+      const preview = dryRunReceipt(args, `leave ${decision}`, { id: leaveId, decision });
+      if (preview) return preview;
+      return client.decideLeave(config.workspace, leaveId, decision, optionString(args.options, "note") ?? "");
+    }
+    if (action === "events") {
+      return client.listTeamEvents(
+        config.workspace,
+        requiredOption(args.options, "from"),
+        requiredOption(args.options, "to")
+      );
+    }
+    if (action === "profiles") return client.listWorkProfiles(config.workspace);
+    if (action === "set-profile") {
+      return client.updateWorkProfile(
+        config.workspace,
+        requiredOption(args.options, "member"),
+        compact({
+          work_calendar: optionString(args.options, "calendar"),
+          timezone: optionString(args.options, "timezone"),
+          work_start_time: optionString(args.options, "start"),
+          work_end_time: optionString(args.options, "end"),
+          core_hours_start: optionString(args.options, "core_start"),
+          core_hours_end: optionString(args.options, "core_end"),
+          hours_per_day: optionString(args.options, "hours"),
+          approver: optionString(args.options, "approver"),
+          clear_core_hours: args.options.clear_core_hours === true ? true : undefined,
         })
       );
     }

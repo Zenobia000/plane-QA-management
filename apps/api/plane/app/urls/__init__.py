@@ -4,6 +4,7 @@
 
 from .analytic import urlpatterns as analytic_urls
 from .api import urlpatterns as api_urls
+from .availability import urlpatterns as availability_urls
 from .asset import urlpatterns as asset_urls
 from .cycle import urlpatterns as cycle_urls
 from .estimate import urlpatterns as estimate_urls
@@ -48,6 +49,7 @@ urlpatterns = [
     *timezone_urls,
     *exporter_urls,
     *testing_urls,
+    *availability_urls,
     *work_item_property_urls,
     *work_item_type_urls,
 ]

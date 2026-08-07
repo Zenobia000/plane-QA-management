@@ -1,0 +1,151 @@
+{
+  "team_calendar": {
+    "label": "團隊行事曆",
+    "title": "團隊行事曆",
+    "tabs": {
+      "schedule": "時段",
+      "leave": "假期",
+      "allocation": "分配",
+      "settings": "設定"
+    },
+    "empty": {
+      "schedule": {
+        "title": "還沒有人設定工作時段",
+        "description": "這裡會把每個人找得到的時段畫在同一條時區軸上,一眼看出團隊真正重疊的時間,直接找出可以一起討論的空檔。"
+      },
+      "leave": {
+        "title": "還沒有請假紀錄",
+        "description": "一個月一眼看完誰不在、什麼時候不在——包含半天、團隊事件,以及各成員所屬地區的國定假日。"
+      },
+      "allocation": {
+        "title": "還沒有人被分配到專案",
+        "description": "每個人的時間怎麼切給各個專案,讓同一個人不會被兩個專案同時當成全職。"
+      }
+    },
+    "schedule": {
+      "timezone": "顯示時區",
+      "previous_week": "上一週",
+      "next_week": "下一週",
+      "pick_day": "選擇日期",
+      "not_declared": "尚未設定時段"
+    },
+    "slot_finder": {
+      "title": "找出大家都有空的時間",
+      "duration": "需要",
+      "search": "尋找空檔",
+      "clear": "清除",
+      "core": "核心時段——所有人都表示這段可以被打擾",
+      "working": "工作時段——所有人都在上班",
+      "no_core": "這週沒有共同的核心時段。",
+      "no_working": "這週沒有共同的工作時段。",
+      "undeclared": "{{names}} 尚未設定工作時段,因此任何空檔都無法包含他們。"
+    },
+    "wallchart": {
+      "previous_month": "上個月",
+      "next_month": "下個月",
+      "log": "登記請假",
+      "member": "成員",
+      "events": "團隊事件",
+      "still_working": "仍在工作",
+      "confirm_cancel": "確定取消這筆{{name}}?無法復原。"
+    },
+    "form": {
+      "type": "假別",
+      "from": "起始日",
+      "to": "結束日",
+      "part": "時段",
+      "full_day": "整天",
+      "morning": "上午",
+      "afternoon": "下午",
+      "reason": "事由",
+      "reason_hint": "選填",
+      "reason_privacy": "只有你本人、你的核准人與工作區管理員看得到。",
+      "submit": "送出",
+      "cancel": "取消"
+    },
+    "approvals": {
+      "title": "等你決定",
+      "approve": "核准",
+      "reject": "駁回",
+      "note": "附註(選填)",
+      "empty": "目前沒有需要你決定的事。",
+      "requested": "申請"
+    },
+    "allocation": {
+      "member": "成員",
+      "total": "合計",
+      "unallocated": "尚未分配到任何專案",
+      "over": "分配超額",
+      "admin_only": "只有工作區管理員可以修改。",
+      "hint": "每個人的一週怎麼切。合計不能超過 100%——伺服器會直接拒絕。"
+    },
+    "settings": {
+      "my_hours": "我的工作時間",
+      "my_hours_hint": "你對自己一週的宣告。只有你能改——由管理員替你設定的就不叫宣告。",
+      "calendars": "工作日曆",
+      "calendars_hint": "各地區的工作日、時區、國定假日與補班日。",
+      "leave_types": "假別",
+      "leave_types_hint": "假別只停用、不刪除——用過的假別是「誰曾經不在」這份紀錄的一部分。",
+      "calendar": "行事曆",
+      "use_default": "使用工作區預設",
+      "timezone_override": "時區覆寫",
+      "work_start": "開始",
+      "work_end": "結束",
+      "hours_per_day": "每日工時",
+      "core_start": "核心時段起",
+      "core_end": "核心時段迄",
+      "core_hint": "你承諾「這段時間可以被打擾」的較窄區間。整個工作時段都可以找你的話,兩格都留空。",
+      "approver": "誰核准我的請假",
+      "any_admin": "任一工作區管理員",
+      "save": "儲存",
+      "create": "建立",
+      "default": "預設",
+      "make_default": "設為預設",
+      "new_calendar": "新增行事曆",
+      "calendar_name": "地區名稱",
+      "delete_calendar": "刪除行事曆",
+      "no_calendars": "還沒有任何工作日曆。",
+      "days": "假日與補班日",
+      "no_days": "這份行事曆還沒有任何紀錄。",
+      "day_name": "名稱",
+      "add_day": "新增",
+      "remove_day": "移除",
+      "new_type": "新增假別",
+      "type_name": "名稱",
+      "no_types": "還沒有任何假別。",
+      "colour": "顏色",
+      "consumes_capacity": "會離開工作",
+      "requires_approval": "需要核准",
+      "active": "啟用",
+      "weekday": {
+        "mon": "一",
+        "tue": "二",
+        "wed": "三",
+        "thu": "四",
+        "fri": "五",
+        "sat": "六",
+        "sun": "日"
+      },
+      "kind": {
+        "holiday": "假日",
+        "makeup_workday": "補班日"
+      }
+    },
+    "capacity": {
+      "title": "產能",
+      "member": "成員",
+      "allocation": "分配",
+      "working_days": "工作日",
+      "gross": "毛工時",
+      "absence": "缺席",
+      "available": "本專案可用",
+      "total": "合計",
+      "committed": "已承諾",
+      "over": "超出 {{hours}} 小時",
+      "assumed": "還沒有人被分配,所以每個人都以 100% 計算。",
+      "undeclared": "有 {{count}} 位成員尚未設定工作時間,因此計為零。",
+      "no_dates": "這個 cycle 沒有起訖日期,無法計算產能。",
+      "points_note": "這個專案用故事點估算,已承諾工作無法與小時比較。"
+    }
+  }
+}

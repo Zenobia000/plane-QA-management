@@ -127,4 +127,19 @@ from .testing import (
     TestStep,
 )
 
+from .availability import (
+    CalendarDay,
+    CalendarDayKind,
+    DayPart,
+    EventAudience,
+    LeaveStatus,
+    LeaveType,
+    MemberLeave,
+    MemberProjectAllocation,
+    MemberWorkProfile,
+    TeamEvent,
+    TeamEventAttendee,
+    WorkCalendar,
+)
+
 from .description import Description, DescriptionVersion

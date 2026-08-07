@@ -1,6 +1,19 @@
 import { errorKindForStatus, PlaneQAError } from "./errors";
 import { paginatedSchema, parsePlaneResponse, projectSchema, testingCapabilitiesSchema } from "./schemas";
 import type {
+  AllocationMatrix,
+  CalendarDay,
+  CalendarDayInput,
+  AvailabilitySchedule,
+  CycleCapacity,
+  LeaveType,
+  MemberLeave,
+  MemberLeaveInput,
+  TeamEvent,
+  MemberWorkProfile,
+  OverlapRequest,
+  OverlapResult,
+  WorkCalendar,
   SavedView,
   SavedViewInput,
   JsonObject,
@@ -236,6 +249,132 @@ export class PlaneQAClient {
       throw new PlaneQAError({ kind: "not_found", status: 404, message: `Project ${projectReference} was not found.` });
     }
     return project;
+  }
+
+  /**
+   * Team availability.
+   *
+   * Workspace-scoped, unlike everything above it: an absence is a fact about a person, not
+   * about a project. See ADR 0008.
+   */
+  getAvailabilitySchedule(
+    workspace: string,
+    from: string,
+    to: string,
+    memberIds?: string[]
+  ): Promise<AvailabilitySchedule> {
+    return this.request("GET", this.apiPath(workspace, "/availability/schedule/"), {
+      query: { from, to, ...(memberIds?.length ? { member_ids: memberIds.join(",") } : {}) },
+    });
+  }
+
+  /** POST for a read: the member list is the request, and it can be long. Nothing is written. */
+  findAvailabilityOverlap(workspace: string, input: OverlapRequest): Promise<OverlapResult> {
+    return this.request("POST", this.apiPath(workspace, "/availability/overlap/"), {
+      body: input,
+      idempotent: true,
+    });
+  }
+
+  listWorkCalendars(workspace: string): Promise<WorkCalendar[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/calendars/"));
+  }
+
+  listWorkProfiles(workspace: string): Promise<MemberWorkProfile[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/profiles/"));
+  }
+
+  updateWorkProfile(
+    workspace: string,
+    memberId: string,
+    input: Partial<MemberWorkProfile> & { clear_core_hours?: boolean }
+  ): Promise<MemberWorkProfile> {
+    return this.request("PATCH", this.apiPath(workspace, `/availability/profiles/${encodePath(memberId)}/`), {
+      body: input,
+    });
+  }
+
+  listLeaveTypes(workspace: string): Promise<LeaveType[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/leave-types/"));
+  }
+
+  listLeaves(workspace: string, from: string, to: string, memberIds?: string[]): Promise<MemberLeave[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/leaves/"), {
+      query: { from, to, ...(memberIds?.length ? { member_ids: memberIds.join(",") } : {}) },
+    });
+  }
+
+  createLeave(workspace: string, input: MemberLeaveInput): Promise<MemberLeave> {
+    return this.request("POST", this.apiPath(workspace, "/availability/leaves/"), { body: input });
+  }
+
+  cancelLeave(workspace: string, leaveId: string): Promise<MemberLeave> {
+    return this.request("PATCH", this.apiPath(workspace, `/availability/leaves/${encodePath(leaveId)}/`), {
+      body: { action: "cancel" },
+    });
+  }
+
+  listTeamEvents(workspace: string, from: string, to: string): Promise<TeamEvent[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/events/"), { query: { from, to } });
+  }
+
+  listPendingLeaves(workspace: string): Promise<MemberLeave[]> {
+    return this.request("GET", this.apiPath(workspace, "/availability/leaves/pending/"));
+  }
+
+  decideLeave(workspace: string, leaveId: string, action: "approve" | "reject", note = ""): Promise<MemberLeave> {
+    return this.request("PATCH", this.apiPath(workspace, `/availability/leaves/${encodePath(leaveId)}/`), {
+      body: { action, note },
+    });
+  }
+
+  getAllocations(workspace: string): Promise<AllocationMatrix> {
+    return this.request("GET", this.apiPath(workspace, "/availability/allocations/"));
+  }
+
+  setAllocation(
+    workspace: string,
+    memberId: string,
+    projectId: string,
+    percent: number
+  ): Promise<{ member_id: string; project_id: string; allocation_percent: number }> {
+    return this.request("PUT", this.apiPath(workspace, "/availability/allocations/"), {
+      body: { member_id: memberId, project_id: projectId, allocation_percent: percent },
+    });
+  }
+
+  getCycleCapacity(workspace: string, projectId: string, cycleId: string): Promise<CycleCapacity> {
+    return this.request("GET", this.projectPath(workspace, projectId, `/cycles/${encodePath(cycleId)}/capacity/`));
+  }
+
+  listCalendarDays(workspace: string, calendarId: string, year?: number): Promise<CalendarDay[]> {
+    return this.request("GET", this.apiPath(workspace, `/availability/calendars/${encodePath(calendarId)}/days/`), {
+      query: year ? { year } : {},
+    });
+  }
+
+  /** The path a published national calendar arrives through, once a year. */
+  setCalendarDays(
+    workspace: string,
+    calendarId: string,
+    days: CalendarDayInput[],
+    replaceYear?: number
+  ): Promise<CalendarDay[]> {
+    return this.request("POST", this.apiPath(workspace, `/availability/calendars/${encodePath(calendarId)}/days/`), {
+      body: { days, ...(replaceYear ? { replace_year: replaceYear } : {}) },
+    });
+  }
+
+  updateWorkCalendar(workspace: string, calendarId: string, input: Partial<WorkCalendar>): Promise<WorkCalendar> {
+    return this.request("PATCH", this.apiPath(workspace, `/availability/calendars/${encodePath(calendarId)}/`), {
+      body: input,
+    });
+  }
+
+  updateLeaveType(workspace: string, typeId: string, input: Partial<LeaveType>): Promise<LeaveType> {
+    return this.request("PATCH", this.apiPath(workspace, `/availability/leave-types/${encodePath(typeId)}/`), {
+      body: input,
+    });
   }
 
   listStates(workspace: string, projectId: string): Promise<PaginatedResponse<State> | State[]> {

@@ -6,49 +6,44 @@ Layering rule (testing): business logic lives only in `apps/api/plane/testing/` 
 
 ## Backend (Django, `apps/api/`)
 
-| Layer                                                                     | Location                                                                    |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Models (all invariants in `save()`/`clean()`)                             | `plane/db/models/testing.py`                                                |
-| Services (cases, versions, runs, results, defects, close)                 | `plane/testing/services.py`                                                 |
-| CI ingestion + JUnit parser + idempotency                                 | `plane/testing/automation.py`                                               |
-| CSV import/export                                                         | `plane/testing/portability.py`                                              |
-| App views (session auth)                                                  | `plane/app/views/testing/{capability,library,run,report}.py`                |
-| App URLs                                                                  | `plane/app/urls/testing.py`                                                 |
-| Public views (X-API-Key; thin subclasses + error envelope + X-Request-ID) | `plane/api/views/testing.py`                                                |
-| Public URLs                                                               | `plane/api/urls/testing.py`                                                 |
-| Ingestion serializers                                                     | `plane/api/serializers/testing.py`                                          |
-| Celery artifact task (autoretry ×3)                                       | `plane/bgtasks/testing_artifact_task.py`                                    |
-| Coverage / overview / release-gate computation                            | `plane/app/views/testing/report.py`                                         |
-| Demo seed (composed modules, goes through the service layer)              | `plane/testing/demo/` + `plane/db/management/commands/seed_testing_demo.py` |
+| Layer                                        | Location                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| Models (invariants in `clean()`)             | `plane/db/models/availability.py`                                       |
+| Working days, holidays, make-up days         | `plane/availability/calendars.py`                                       |
+| Reachable windows + cross-zone intersection  | `plane/availability/schedule.py`                                        |
+| Services (the only write path)               | `plane/availability/services.py`                                        |
+| Permission (members only, guests barred)     | `plane/app/views/availability/permissions.py`                           |
+| App views (session auth)                     | `plane/app/views/availability/{capability,schedule,settings}.py`        |
+| App URLs                                     | `plane/app/urls/availability.py`                                        |
+| Public views (`X-API-Key`, thin subclasses)  | `plane/api/views/availability.py`                                       |
+| Public URLs                                  | `plane/api/urls/availability.py`                                        |
+| Serializers                                  | `plane/app/serializers/availability.py`                                 |
+| Seed (fixed-date holidays only)              | `plane/db/management/commands/seed_work_calendars.py`                   |
+| Types                                        | `packages/types/src/availability.ts`                                    |
+| HTTP service (app tree)                      | `packages/services/src/availability/availability.service.ts`            |
+| MobX store                                   | `apps/web/core/store/availability.store.ts`                             |
+| Route + tabs (Hours / Time off / Allocation) | `apps/web/app/(all)/[workspaceSlug]/(projects)/calendar/`               |
+| Sidebar entry (ADMIN + MEMBER only)          | `packages/constants/src/workspace.ts`                                   |
+| SDK / CLI / MCP                              | `client.ts` availability methods; `availability` CLI group; 4 MCP tools |
+| i18n                                         | `packages/i18n/src/locales/*/team-calendar.json`                        |
 
-Tests (canonical usage examples — read these before changing behavior):
+Settings live at `/calendar/settings`, split by who owns the answer: my working hours (the member), work calendars and leave types (admin). The settings tab is the one tab **not** gated on a capability flag — it is where the data gets created, so gating it would leave a fresh workspace unable to configure anything.
 
-- `plane/tests/contract/api/test_testing_management.py` — full API-key lifecycle: folder → case → version bump → link → run → fail → defect → retest → close → reports; plus 403/400/409 rejection paths.
-- `plane/tests/contract/api/test_testing_automation.py` — idempotency replay/conflict, shared app+public idempotency store.
-- `plane/tests/contract/app/test_testing_{capability,library,runs}.py`, `plane/tests/unit/testing/`, `plane/tests/unit/models/test_testing_library.py`.
+Two rules that are easy to break by accident:
 
-## Delivery surfaces (`apps/api/`, fork-owned, no service layer)
+1. **Everything is UTC across the wire.** Local wall-clock times exist only on a member's own profile. `"Tuesday 09:00"` is not comparable across cities, and comparing across cities is what this surface is for. Zone resolves profile → calendar → `User.user_timezone`.
+2. **Only approved absences bind.** A pending request has not been decided; planning against it is planning against a guess. Cancelling and rejecting keep the row so history stays honest.
+3. **A member's allocations total 100% or less**, refused at the write rather than flagged. Leave reduces every project in proportion — nobody takes leave _from a project_.
+4. **Reasons are redacted by omission**, not by nulling the field — a present key still says there was a reason. Enforced in the serializer, never in a component.
+5. **A make-up workday counts however the weekday mask reads.** Taiwan works some Saturdays to bridge long weekends; a weekday-mask-plus-holiday-list model cannot express that day, and every span containing one silently comes out short. The seed command deliberately ships no lunar or make-up dates — they are announced yearly, and a guessed date is worse than none.
 
-These have thinner plumbing than testing: model invariants in `save()`/`clean()`, logic in the view. That is deliberate — none of them has a second caller, and a service layer with one consumer is indirection, not architecture. Add one the moment a second tree needs the same logic.
+Tests: `plane/tests/unit/availability/` (working days, cross-zone overlap, DST), `plane/tests/contract/app/test_availability_{capability,schedule}.py`, `plane/tests/contract/api/test_availability.py`, `plane/tests/unit/management/test_seed_work_calendars.py`.
 
-| Surface                                                           | Backend                                                                                       | Web                                              |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| Project Overview (progress, activity, links, milestones, updates) | `plane/app/views/project/overview.py`                                                         | `.../projects/(detail)/[projectId]/overview/`    |
-| Noticeboard (`EntityUpdate`, `EntityUpdateLabel`)                 | same file — `EntityUpdateViewSet`                                                             | `apps/web/core/components/updates/panel.tsx`     |
-| Customer frontline (intake grouped by a chosen property)          | same file — `ProjectFrontlineEndpoint`                                                        | `.../overview/frontline-panel.tsx`               |
-| Needs attention (overdue + urgent)                                | same file — `ProjectAttentionEndpoint`                                                        | `.../overview/attention-panel.tsx`               |
-| Release readiness on the overview                                 | reads `testing/overview`'s `release_gate`                                                     | `.../overview/readiness-panel.tsx`               |
-| Work-item types & properties                                      | `plane/db/models/{issue_type,work_item_property}.py`, `plane/app/views/work_item_property.py` | `apps/web/core/components/work-item-extensions/` |
-| Requirement nature (`Issue.requirement_kind`)                     | `plane/db/models/issue.py`; `/api/v1` serializer only                                         | no UI — the app-tree serializer omits the field  |
-| Delivery states (`DEFAULT_STATES`, 14-state `SDLC_STATES`)        | `plane/db/models/state.py`                                                                    | project settings → states                        |
-| Page folders (`Page.is_folder`)                                   | `plane/db/models/page.py`, `plane/app/views/page/base.py`                                     | `apps/web/core/components/pages/list/`           |
-| Milestones                                                        | `plane/db/models/portfolio.py`; both trees                                                    | overview milestones panel                        |
-| Intake ingestion                                                  | `plane/db/models/intake.py`, `plane/app/views/intake/`                                        | `.../projects/(detail)/[projectId]/intake/`      |
-| Automations, state transitions, templates                         | `plane/db/models/automation.py`, `plane/app/urls/project.py`                                  | project settings                                 |
+The capability endpoint reports a false flag per unbuilt slice and the client renders an empty state for each, so the navigation, route and three tabs shipped before any migration existed. Flipping a flag belongs to the slice that earns it — see `docs/planning/team-calendar-wbs.md`.
 
-**The Overview surface is app-tree only.** `overview/`, `progress/`, `activity/`, `updates/`, `frontline/`, `attention/` exist under `/api/workspaces/...` (session auth) and have no `/api/v1` equivalent, so no API key reaches them and no MCP tool wraps them. Milestones and links are the exceptions — both trees. Before adding a `/api/v1` mirror, read the app-tree-only note in api-reference.md: an agent can already feed these panels through the entities they read from.
+A service layer (`plane/availability/`) arrives with the first slice that writes: unlike the delivery surfaces, this one has four consumers from the start — app tree, `/api/v1`, MCP and CLI.
 
-Tests: `plane/tests/contract/app/test_noticeboard.py` (posting, revising, filing, taking down, permission boundary), `test_frontline_and_attention.py` (grouping, triage folding, caps, ordering), `test_endpoint_smoke.py` (every project-scoped GET asserted not to 5xx — new routes are covered the day they are registered).
+Docs: `docs/architecture/decisions/0008-availability-is-a-workspace-fact.md`, `docs/planning/team-calendar.md` (the three questions, the three kinds of "time", the four screens), `docs/planning/team-calendar-wbs.md`.
 
 ## TypeScript tooling
 

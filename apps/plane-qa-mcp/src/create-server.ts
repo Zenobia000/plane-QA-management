@@ -81,6 +81,273 @@ export const createPlaneQAServer = (client: PlaneQAClient): McpServer => {
     safely(async ({ workspace, per_page }) => toolResult(await client.listProjects(workspace, { per_page })))
   );
 
+  // --- Team availability -------------------------------------------------------------
+  // Workspace-scoped, so these take no project. "Find two hours next week when these three
+  // people are all free" is the question this surface exists for, and it should be one
+  // sentence to an agent rather than a scheduling thread.
+
+  server.registerTool(
+    "availability_schedule",
+    {
+      description:
+        "Read declared working hours for a workspace over a date range. Returns absolute UTC windows per member, plus the narrower core-hours windows where a member committed to one. Declared availability only -- this never reports observed activity.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        from: z.string().describe("Start date, YYYY-MM-DD."),
+        to: z.string().describe("End date, YYYY-MM-DD. At most 366 days after 'from'."),
+        member_ids: z.array(z.string()).optional().describe("Omit for the whole workspace."),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, from, to, member_ids }) =>
+      toolResult(await client.getAvailabilitySchedule(workspace, from, to, member_ids))
+    )
+  );
+
+  server.registerTool(
+    "availability_overlap",
+    {
+      description:
+        "Find windows when every named member is reachable at once, across time zones. Returns 'core' (everyone said they may be interrupted) separately from 'working' (everyone is merely at work) -- prefer core. Members who have declared no hours are named in members_without_hours rather than silently emptying the result.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        member_ids: z.array(z.string()).min(1),
+        date_from: z.string().describe("Start date, YYYY-MM-DD."),
+        date_to: z.string().describe("End date, YYYY-MM-DD."),
+        duration_minutes: z.number().int().min(1).max(1440).default(30),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, ...input }) => toolResult(await client.findAvailabilityOverlap(workspace, input)))
+  );
+
+  server.registerTool(
+    "leave_list",
+    {
+      description:
+        "List absences over a date range. Reasons are omitted for anyone the caller is not entitled to read them from — the field is absent rather than null, so its absence carries no information either.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        from: z.string().describe("YYYY-MM-DD"),
+        to: z.string().describe("YYYY-MM-DD"),
+        member_ids: z.array(z.string()).optional(),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, from, to, member_ids }) =>
+      toolResult(await client.listLeaves(workspace, from, to, member_ids))
+    )
+  );
+
+  server.registerTool(
+    "leave_type_list",
+    {
+      description: "List the workspace's absence types. Call before leave_request so the type id is not guessed.",
+      inputSchema: z.object({ workspace: scope.workspace }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace }) => toolResult(await client.listLeaveTypes(workspace)))
+  );
+
+  server.registerTool(
+    "leave_request",
+    {
+      description:
+        "Log an absence. Lands approved when the type needs no approval, otherwise pending. Half days: set both day parts to morning or afternoon on a single-day request; a multi-day range is whole days at both ends.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        leave_type: z.string(),
+        start_date: z.string().describe("YYYY-MM-DD"),
+        end_date: z.string().describe("YYYY-MM-DD"),
+        start_day_part: z.enum(["full", "morning", "afternoon"]).optional(),
+        end_day_part: z.enum(["full", "morning", "afternoon"]).optional(),
+        reason: z.string().optional(),
+        member: z.string().optional().describe("Admins only. Defaults to the key's owner."),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, ...input }) => toolResult(await client.createLeave(workspace, input)))
+  );
+
+  server.registerTool(
+    "leave_cancel",
+    {
+      description:
+        "Withdraw an absence. The row stays so history remains honest; it simply stops counting against availability.",
+      inputSchema: z.object({ workspace: scope.workspace, leave_id: z.string() }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, leave_id }) => toolResult(await client.cancelLeave(workspace, leave_id)))
+  );
+
+  server.registerTool(
+    "leave_pending",
+    {
+      description:
+        "List absence requests waiting on the authenticated principal to decide. Resolves the approver the same way the UI does: the member's named approver, or any workspace admin when nobody was named. Never includes one's own requests.",
+      inputSchema: z.object({ workspace: scope.workspace }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace }) => toolResult(await client.listPendingLeaves(workspace)))
+  );
+
+  server.registerTool(
+    "leave_approve",
+    {
+      description:
+        "Approve or reject a pending absence. Nobody may decide their own request, including admins. Deciding an already-decided request returns a conflict rather than overwriting the first decision.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        leave_id: z.string(),
+        decision: z.enum(["approve", "reject"]),
+        note: z.string().optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, leave_id, decision, note }) =>
+      toolResult(await client.decideLeave(workspace, leave_id, decision, note ?? ""))
+    )
+  );
+
+  server.registerTool(
+    "team_event_list",
+    {
+      description: "List team events over a date range: training, offsites, release days.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        from: z.string().describe("YYYY-MM-DD"),
+        to: z.string().describe("YYYY-MM-DD"),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, from, to }) => toolResult(await client.listTeamEvents(workspace, from, to)))
+  );
+
+  server.registerTool(
+    "allocation_list",
+    {
+      description:
+        "Read how each member's time is split across projects, with per-member totals. A total over 100 is impossible — the server refuses the write that would cause it.",
+      inputSchema: z.object({ workspace: scope.workspace }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace }) => toolResult(await client.getAllocations(workspace)))
+  );
+
+  server.registerTool(
+    "allocation_set",
+    {
+      description:
+        "Promise a share of one member's time to a project, as a percentage. Admins only. Zero removes the allocation. Rejected with 400 if the member's allocations would then exceed 100% — that is two plans that cannot both be true, not a warning.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        member_id: z.string(),
+        project_id: z.string(),
+        allocation_percent: z.number().int().min(0).max(100),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, member_id, project_id, allocation_percent }) =>
+      toolResult(await client.setAllocation(workspace, member_id, project_id, allocation_percent))
+    )
+  );
+
+  server.registerTool(
+    "cycle_capacity",
+    {
+      description:
+        "Available hours per member for a cycle, after their working calendar, approved absences and project allocation. Forward-looking planning input only — this never reports hours worked. `committed_hours` is present only when the project estimates in time; points and hours are not comparable.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        project: scope.project,
+        cycle_id: z.string(),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, project: reference, cycle_id }) => {
+      const project = await resolveProject(client, workspace, reference);
+      return toolResult(await client.getCycleCapacity(workspace, project.id, cycle_id));
+    })
+  );
+
+  server.registerTool(
+    "work_calendar_list",
+    {
+      description:
+        "List the workspace's regional work calendars: working weekdays, time zone, and which is the default. Use before assigning a member to one.",
+      inputSchema: z.object({ workspace: scope.workspace }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace }) => toolResult(await client.listWorkCalendars(workspace)))
+  );
+
+  server.registerTool(
+    "work_calendar_days_list",
+    {
+      description: "List the holidays and make-up workdays of one work calendar, optionally for one year.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        calendar_id: z.string(),
+        year: z.number().int().optional(),
+      }),
+      annotations: readAnnotations,
+    },
+    safely(async ({ workspace, calendar_id, year }) =>
+      toolResult(await client.listCalendarDays(workspace, calendar_id, year))
+    )
+  );
+
+  server.registerTool(
+    "work_calendar_days_set",
+    {
+      description:
+        "Add or update holidays and make-up workdays on a calendar. This is how a published national calendar is imported once a year — kind 'makeup_workday' is the Saturday everyone works to bridge a long weekend, which a weekday mask cannot express. Pass replace_year to clear that year first, which is what re-importing a revised official list means. Admins only.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        calendar_id: z.string(),
+        days: z
+          .array(
+            z.object({
+              date: z.string().describe("YYYY-MM-DD"),
+              name: z.string(),
+              kind: z.enum(["holiday", "makeup_workday"]),
+            })
+          )
+          .min(1),
+        replace_year: z.number().int().optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, calendar_id, days, replace_year }) =>
+      toolResult(await client.setCalendarDays(workspace, calendar_id, days, replace_year))
+    )
+  );
+
+  server.registerTool(
+    "work_profile_set",
+    {
+      description:
+        "Set one member's declared working hours, time zone, calendar, or leave approver. Only that member or a workspace admin may. Pass clear_core_hours to withdraw a core-hours commitment, since omitting a field leaves it unchanged.",
+      inputSchema: z.object({
+        workspace: scope.workspace,
+        member_id: z.string(),
+        work_calendar: z.string().nullable().optional(),
+        timezone: z.string().nullable().optional(),
+        work_start_time: z.string().optional().describe("HH:MM, in the member's own zone."),
+        work_end_time: z.string().optional().describe("HH:MM, in the member's own zone."),
+        core_hours_start: z.string().nullable().optional(),
+        core_hours_end: z.string().nullable().optional(),
+        hours_per_day: z.string().optional(),
+        approver: z.string().nullable().optional(),
+        clear_core_hours: z.boolean().optional(),
+      }),
+      annotations: writeAnnotations,
+    },
+    safely(async ({ workspace, member_id, ...input }) =>
+      toolResult(await client.updateWorkProfile(workspace, member_id, input))
+    )
+  );
+
   server.registerTool(
     "project_get_context",
     {

@@ -1,0 +1,276 @@
+/**
+ * Copyright (c) 2023-present Plane Software, Inc. and contributors
+ * SPDX-License-Identifier: AGPL-3.0-only
+ * See the LICENSE file for details.
+ */
+
+import { API_BASE_URL } from "@plane/constants";
+import type {
+  TAllocationMatrix,
+  TCalendarDay,
+  TCalendarDayInput,
+  TLeaveTypeInput,
+  TWorkCalendarInput,
+  TAvailabilityCapabilities,
+  TCycleCapacity,
+  TAvailabilitySchedule,
+  TMemberWorkProfile,
+  TMemberWorkProfileInput,
+  TOverlapRequest,
+  TOverlapResult,
+  TLeaveType,
+  TMemberLeave,
+  TMemberLeaveInput,
+  TTeamEvent,
+  TUndeclaredWorkProfile,
+  TWorkCalendar,
+} from "@plane/types";
+import { APIService } from "../api.service";
+
+/**
+ * Availability hangs off the workspace, not a project.
+ *
+ * That is the whole argument of ADR 0008 in one URL shape: an absence is a fact about a
+ * person, and a person is a member of the workspace. Every path here therefore takes a
+ * slug and no project id.
+ */
+export class AvailabilityService extends APIService {
+  constructor(BASE_URL?: string) {
+    super(BASE_URL || API_BASE_URL);
+  }
+
+  private base(workspaceSlug: string) {
+    return `/api/workspaces/${workspaceSlug}/availability`;
+  }
+
+  async getCapabilities(workspaceSlug: string): Promise<TAvailabilityCapabilities> {
+    return this.get(`${this.base(workspaceSlug)}/capabilities/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getSchedule(
+    workspaceSlug: string,
+    from: string,
+    to: string,
+    memberIds?: string[]
+  ): Promise<TAvailabilitySchedule> {
+    return this.get(`${this.base(workspaceSlug)}/schedule/`, {
+      params: { from, to, ...(memberIds?.length ? { member_ids: memberIds.join(",") } : {}) },
+    })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * POST for a read, deliberately: the member list is the request, and twenty UUIDs in a
+   * query string is neither readable nor a length every proxy will carry. Nothing is written.
+   */
+  async findOverlap(workspaceSlug: string, payload: TOverlapRequest): Promise<TOverlapResult> {
+    return this.post(`${this.base(workspaceSlug)}/overlap/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getCalendars(workspaceSlug: string): Promise<TWorkCalendar[]> {
+    return this.get(`${this.base(workspaceSlug)}/calendars/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getProfiles(workspaceSlug: string): Promise<TMemberWorkProfile[]> {
+    return this.get(`${this.base(workspaceSlug)}/profiles/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async updateProfile(
+    workspaceSlug: string,
+    memberId: string,
+    payload: TMemberWorkProfileInput
+  ): Promise<TMemberWorkProfile | TUndeclaredWorkProfile> {
+    return this.patch(`${this.base(workspaceSlug)}/profiles/${memberId}/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getLeaveTypes(workspaceSlug: string): Promise<TLeaveType[]> {
+    return this.get(`${this.base(workspaceSlug)}/leave-types/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getLeaves(workspaceSlug: string, from: string, to: string): Promise<TMemberLeave[]> {
+    return this.get(`${this.base(workspaceSlug)}/leaves/`, { params: { from, to } })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createLeave(workspaceSlug: string, payload: TMemberLeaveInput): Promise<TMemberLeave> {
+    return this.post(`${this.base(workspaceSlug)}/leaves/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async cancelLeave(workspaceSlug: string, leaveId: string): Promise<TMemberLeave> {
+    return this.patch(`${this.base(workspaceSlug)}/leaves/${leaveId}/`, { action: "cancel" })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getTeamEvents(workspaceSlug: string, from: string, to: string): Promise<TTeamEvent[]> {
+    return this.get(`${this.base(workspaceSlug)}/events/`, { params: { from, to } })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getPendingLeaves(workspaceSlug: string): Promise<TMemberLeave[]> {
+    return this.get(`${this.base(workspaceSlug)}/leaves/pending/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async decideLeave(
+    workspaceSlug: string,
+    leaveId: string,
+    action: "approve" | "reject",
+    note = ""
+  ): Promise<TMemberLeave> {
+    return this.patch(`${this.base(workspaceSlug)}/leaves/${leaveId}/`, { action, note })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getAllocations(workspaceSlug: string): Promise<TAllocationMatrix> {
+    return this.get(`${this.base(workspaceSlug)}/allocations/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async setAllocation(
+    workspaceSlug: string,
+    memberId: string,
+    projectId: string,
+    percent: number
+  ): Promise<{ member_id: string; project_id: string; allocation_percent: number }> {
+    return this.put(`${this.base(workspaceSlug)}/allocations/`, {
+      member_id: memberId,
+      project_id: projectId,
+      allocation_percent: percent,
+    })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getCycleCapacity(workspaceSlug: string, projectId: string, cycleId: string): Promise<TCycleCapacity> {
+    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/${cycleId}/capacity/`)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createCalendar(workspaceSlug: string, payload: TWorkCalendarInput): Promise<TWorkCalendar> {
+    return this.post(`${this.base(workspaceSlug)}/calendars/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async updateCalendar(workspaceSlug: string, calendarId: string, payload: TWorkCalendarInput): Promise<TWorkCalendar> {
+    return this.patch(`${this.base(workspaceSlug)}/calendars/${calendarId}/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteCalendar(workspaceSlug: string, calendarId: string): Promise<void> {
+    return this.delete(`${this.base(workspaceSlug)}/calendars/${calendarId}/`)
+      .then(() => undefined)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async getCalendarDays(workspaceSlug: string, calendarId: string, year?: number): Promise<TCalendarDay[]> {
+    return this.get(`${this.base(workspaceSlug)}/calendars/${calendarId}/days/`, {
+      params: year ? { year } : {},
+    })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async setCalendarDays(
+    workspaceSlug: string,
+    calendarId: string,
+    days: TCalendarDayInput[],
+    replaceYear?: number
+  ): Promise<TCalendarDay[]> {
+    return this.post(`${this.base(workspaceSlug)}/calendars/${calendarId}/days/`, {
+      days,
+      ...(replaceYear ? { replace_year: replaceYear } : {}),
+    })
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async deleteCalendarDay(workspaceSlug: string, calendarId: string, dayId: string): Promise<void> {
+    return this.delete(`${this.base(workspaceSlug)}/calendars/${calendarId}/days/${dayId}/`)
+      .then(() => undefined)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async createLeaveType(workspaceSlug: string, payload: TLeaveTypeInput): Promise<TLeaveType> {
+    return this.post(`${this.base(workspaceSlug)}/leave-types/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async updateLeaveType(workspaceSlug: string, typeId: string, payload: TLeaveTypeInput): Promise<TLeaveType> {
+    return this.patch(`${this.base(workspaceSlug)}/leave-types/${typeId}/`, payload)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+}

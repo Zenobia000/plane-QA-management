@@ -50,6 +50,11 @@ class WorkspaceUserPreferenceViewSet(BaseAPIView):
                                     WorkspaceUserPreference.UserPreferenceKeys.DRAFTS,
                                     WorkspaceUserPreference.UserPreferenceKeys.YOUR_WORK,
                                     WorkspaceUserPreference.UserPreferenceKeys.STICKIES,
+                                    # Pinned on creation: an unpinned item renders nowhere in
+                                    # the main sidebar, and a feature nobody can find is not
+                                    # shipped. Only affects rows created from here on, so
+                                    # nobody's existing arrangement is overridden.
+                                    WorkspaceUserPreference.UserPreferenceKeys.TEAM_CALENDAR,
                                 ]
                                 else False
                             ),

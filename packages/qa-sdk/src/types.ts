@@ -313,3 +313,161 @@ export interface RequestOptions {
   signal?: AbortSignal;
   responseType?: "array_buffer";
 }
+
+/**
+ * Team availability. Instants are absolute UTC ISO-8601 strings, never local wall clocks --
+ * "Tuesday 09:00" is not comparable across two cities, and comparing across cities is the
+ * entire point of this surface.
+ */
+export interface AvailabilityWindow {
+  start: string;
+  end: string;
+  minutes: number;
+}
+
+export interface MemberSchedule {
+  member_id: string;
+  timezone: string;
+  calendar_id: string | null;
+  hours_per_day: number;
+  working: AvailabilityWindow[];
+  /** Narrower than `working`, and only where the member committed to one. */
+  core: AvailabilityWindow[];
+}
+
+export interface AvailabilitySchedule {
+  from: string;
+  to: string;
+  members: MemberSchedule[];
+}
+
+export interface OverlapRequest {
+  member_ids: string[];
+  date_from: string;
+  date_to: string;
+  duration_minutes?: number;
+}
+
+export interface OverlapResult {
+  duration_minutes: number;
+  core: AvailabilityWindow[];
+  working: AvailabilityWindow[];
+  unknown_members: string[];
+  /** Declared nothing, so no slot can include them. Named rather than silently emptying the answer. */
+  members_without_hours: string[];
+}
+
+export interface WorkCalendar {
+  id: string;
+  name: string;
+  timezone: string;
+  /** ISO weekday numbers, Monday = 1. */
+  working_weekdays: number[];
+  is_default: boolean;
+}
+
+export interface MemberWorkProfile {
+  id: string;
+  member: string;
+  work_calendar: string | null;
+  timezone: string | null;
+  work_start_time: string;
+  work_end_time: string;
+  core_hours_start: string | null;
+  core_hours_end: string | null;
+  hours_per_day: string;
+  approver: string | null;
+}
+
+export type DayPart = "full" | "morning" | "afternoon";
+
+export interface LeaveType {
+  id: string;
+  name: string;
+  colour: string;
+  consumes_capacity: boolean;
+  requires_approval: boolean;
+  is_active: boolean;
+  sort_order: number;
+}
+
+/** `reason` is absent, not null, for readers not entitled to it. */
+export interface MemberLeave {
+  id: string;
+  member: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  start_day_part: DayPart;
+  end_day_part: DayPart;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  reason?: string;
+  decision_note?: string;
+  decided_by: string | null;
+  decided_at: string | null;
+}
+
+export interface MemberLeaveInput {
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  start_day_part?: DayPart;
+  end_day_part?: DayPart;
+  reason?: string;
+  member?: string;
+}
+
+export interface TeamEvent {
+  id: string;
+  project: string | null;
+  title: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  start_day_part: DayPart;
+  end_day_part: DayPart;
+  colour: string;
+  consumes_capacity: boolean;
+  audience: "all_members" | "selected_members";
+  attendee_ids: string[];
+}
+
+export interface AllocationMatrix {
+  allocations: { member_id: string; project_id: string; allocation_percent: number }[];
+  totals: Record<string, number>;
+}
+
+export interface CycleCapacity {
+  ready: boolean;
+  reason?: string;
+  members: {
+    member_id: string;
+    allocation_percent: number;
+    working_days: number;
+    hours_per_day: number;
+    gross_hours: number;
+    absence_hours: number;
+    available_hours: number;
+    declared: boolean;
+  }[];
+  available_hours?: number;
+  allocation_is_assumed?: boolean;
+  undeclared_members?: string[];
+  committed_comparable?: boolean;
+  committed_hours?: number | null;
+}
+
+export type CalendarDayKind = "holiday" | "makeup_workday";
+
+export interface CalendarDay {
+  id: string;
+  date: string;
+  name: string;
+  kind: CalendarDayKind;
+}
+
+export interface CalendarDayInput {
+  date: string;
+  name: string;
+  kind: CalendarDayKind;
+}

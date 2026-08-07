@@ -29,6 +29,28 @@ Commands:
   run list|get|create|record-result|create-defect|close
   quality overview|coverage|release-gate|open-defects
   automation upload-junit|upload-results
+  availability schedule|overlap|calendars|profiles|set-profile
+      |leave-types|leaves|request-leave|cancel-leave|events
+      |calendar-days|set-calendar-days
+      |pending-leaves|decide-leave|allocations|set-allocation|capacity
+      schedule --from 2026-08-03 --to 2026-08-09 [--members ID,ID]
+      overlap --members ID,ID --from DATE --to DATE [--duration 60]
+      (returns 'core' — everyone said they may be interrupted — separately from 'working')
+      set-profile --member ID [--calendar ID] [--timezone Asia/Taipei]
+      [--start 09:00] [--end 18:00] [--core_start 14:00] [--core_end 17:00]
+      [--hours 8] [--approver ID] [--clear_core_hours]
+      calendar-days --calendar ID [--year 2026]
+      set-calendar-days --calendar ID --days '[{"date":"2026-02-27","name":"補班","kind":"makeup_workday"}]'
+      [--replace_year 2026]   (kind: holiday | makeup_workday)
+      leaves --from DATE --to DATE [--members ID,ID]
+      request-leave --type ID --from DATE --to DATE
+      [--start_part full|morning|afternoon] [--end_part ...] [--reason TEXT] [--member ID]
+      (reasons are hidden from anyone but the member, their approver and admins)
+      decide-leave --id ID --decision approve|reject [--note TEXT]
+      (nobody may decide their own request, admins included)
+      set-allocation --member ID --project_id ID --percent 50
+      (a member's allocations must total 100% or less; the server refuses otherwise)
+      capacity --cycle ID   available hours for a cycle, after calendar, leave and allocation
 
 All successful commands print JSON to stdout. Destructive commands require --yes or TTY confirmation.
 Use --dry-run to preview destructive operations without writing.

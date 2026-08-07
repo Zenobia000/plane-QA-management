@@ -1,0 +1,151 @@
+{
+  "team_calendar": {
+    "label": "Team calendar",
+    "title": "Team calendar",
+    "tabs": {
+      "schedule": "Hours",
+      "leave": "Time off",
+      "allocation": "Allocation",
+      "settings": "Settings"
+    },
+    "empty": {
+      "schedule": {
+        "title": "Working hours aren't set up yet",
+        "description": "This is where everyone's reachable hours line up on a single timezone axis, so you can see when the team actually overlaps and find a slot to talk."
+      },
+      "leave": {
+        "title": "No time off recorded yet",
+        "description": "A month at a glance of who is away and when — including half days, team events, and the public holidays of each member's own region."
+      },
+      "allocation": {
+        "title": "Nobody is allocated to a project yet",
+        "description": "How each person's time is split across projects, so the same person is never counted as full-time by two of them at once."
+      }
+    },
+    "schedule": {
+      "timezone": "Shown in",
+      "previous_week": "Previous week",
+      "next_week": "Next week",
+      "pick_day": "Pick a day",
+      "not_declared": "No hours declared"
+    },
+    "slot_finder": {
+      "title": "Find a time everyone is free",
+      "duration": "For",
+      "search": "Find slots",
+      "clear": "Clear",
+      "core": "Core hours — everyone has said you may interrupt them",
+      "working": "Working hours — everyone is at work",
+      "no_core": "No shared core hours this week.",
+      "no_working": "No shared working hours this week.",
+      "undeclared": "{{names}} hasn't declared any hours, so no slot can include them."
+    },
+    "wallchart": {
+      "previous_month": "Previous month",
+      "next_month": "Next month",
+      "log": "Log time off",
+      "member": "Member",
+      "events": "Team events",
+      "still_working": "still working",
+      "confirm_cancel": "Cancel this {{name}}? There is no undo."
+    },
+    "form": {
+      "type": "Type",
+      "from": "From",
+      "to": "To",
+      "part": "Part of day",
+      "full_day": "Full day",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "reason": "Reason",
+      "reason_hint": "Optional",
+      "reason_privacy": "Only you, your approver and workspace admins can read this.",
+      "submit": "Log it",
+      "cancel": "Cancel"
+    },
+    "approvals": {
+      "title": "Waiting on you",
+      "approve": "Approve",
+      "reject": "Reject",
+      "note": "Note (optional)",
+      "empty": "Nothing is waiting on you.",
+      "requested": "asked for"
+    },
+    "allocation": {
+      "member": "Member",
+      "total": "Total",
+      "unallocated": "Not on any project",
+      "over": "Over-allocated",
+      "admin_only": "Only workspace admins can change these.",
+      "hint": "How each person's week is split. The total cannot exceed 100% — the server refuses it."
+    },
+    "settings": {
+      "my_hours": "My working hours",
+      "my_hours_hint": "What you declare about your own week. Only you can change this — an admin setting it for you would not be a declaration.",
+      "calendars": "Work calendars",
+      "calendars_hint": "Working weekdays, time zone, public holidays and make-up workdays, per region.",
+      "leave_types": "Absence types",
+      "leave_types_hint": "Types are retired, never deleted — a type that has been used is part of the record of who was away.",
+      "calendar": "Calendar",
+      "use_default": "Workspace default",
+      "timezone_override": "Time zone override",
+      "work_start": "Start",
+      "work_end": "End",
+      "hours_per_day": "Hours/day",
+      "core_start": "Core from",
+      "core_end": "Core to",
+      "core_hint": "The narrower window you commit to being interruptible in. Leave both blank if your whole working day is fair game.",
+      "approver": "Who approves my time off",
+      "any_admin": "Any workspace admin",
+      "save": "Save",
+      "create": "Create",
+      "default": "Default",
+      "make_default": "Make default",
+      "new_calendar": "Add a calendar",
+      "calendar_name": "Region name",
+      "delete_calendar": "Delete calendar",
+      "no_calendars": "No work calendars yet.",
+      "days": "Holidays and make-up workdays",
+      "no_days": "None recorded for this calendar.",
+      "day_name": "Name",
+      "add_day": "Add",
+      "remove_day": "Remove",
+      "new_type": "Add a type",
+      "type_name": "Name",
+      "no_types": "No absence types yet.",
+      "colour": "Colour",
+      "consumes_capacity": "Removes them from work",
+      "requires_approval": "Needs approval",
+      "active": "Active",
+      "weekday": {
+        "mon": "Mo",
+        "tue": "Tu",
+        "wed": "We",
+        "thu": "Th",
+        "fri": "Fr",
+        "sat": "Sa",
+        "sun": "Su"
+      },
+      "kind": {
+        "holiday": "Holiday",
+        "makeup_workday": "Make-up workday"
+      }
+    },
+    "capacity": {
+      "title": "Capacity",
+      "member": "Member",
+      "allocation": "Allocation",
+      "working_days": "Working days",
+      "gross": "Gross",
+      "absence": "Away",
+      "available": "Available for this project",
+      "total": "Total",
+      "committed": "Committed",
+      "over": "Over capacity by {{hours}}h",
+      "assumed": "Nobody is allocated yet, so everyone is counted at 100%.",
+      "undeclared": "{{count}} member(s) have not set working hours, so they count as zero.",
+      "no_dates": "This cycle has no start or end date, so capacity cannot be worked out.",
+      "points_note": "This project estimates in points, so committed work cannot be compared with hours."
+    }
+  }
+}

@@ -1,0 +1,113 @@
+# Copyright (c) 2023-present Plane Software, Inc. and contributors
+# SPDX-License-Identifier: AGPL-3.0-only
+# See the LICENSE file for details.
+
+from django.urls import path
+
+from plane.api.views.availability import (
+    AllocationMatrixAPIEndpoint,
+    AvailabilityCapabilityAPIEndpoint,
+    CycleCapacityAPIEndpoint,
+    AvailabilityOverlapAPIEndpoint,
+    AvailabilityScheduleAPIEndpoint,
+    CalendarDayAPIEndpoint,
+    CalendarDayDetailAPIEndpoint,
+    LeaveTypeAPIEndpoint,
+    LeaveTypeDetailAPIEndpoint,
+    MemberLeaveAPIEndpoint,
+    MemberLeaveDetailAPIEndpoint,
+    PendingLeaveAPIEndpoint,
+    MemberWorkProfileDetailAPIEndpoint,
+    MemberWorkProfileListAPIEndpoint,
+    TeamEventAPIEndpoint,
+    WorkCalendarAPIEndpoint,
+    WorkCalendarDetailAPIEndpoint,
+)
+
+urlpatterns = [
+    path(
+        "workspaces/<str:slug>/availability/capabilities/",
+        AvailabilityCapabilityAPIEndpoint.as_view(),
+        name="api-availability-capabilities",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/schedule/",
+        AvailabilityScheduleAPIEndpoint.as_view(),
+        name="api-availability-schedule",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/overlap/",
+        AvailabilityOverlapAPIEndpoint.as_view(),
+        name="api-availability-overlap",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/calendars/",
+        WorkCalendarAPIEndpoint.as_view(),
+        name="api-availability-calendars",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/profiles/",
+        MemberWorkProfileListAPIEndpoint.as_view(),
+        name="api-availability-profiles",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/profiles/<uuid:member_id>/",
+        MemberWorkProfileDetailAPIEndpoint.as_view(),
+        name="api-availability-profile-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leave-types/",
+        LeaveTypeAPIEndpoint.as_view(),
+        name="api-availability-leave-types",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leaves/",
+        MemberLeaveAPIEndpoint.as_view(),
+        name="api-availability-leaves",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leaves/<uuid:leave_id>/",
+        MemberLeaveDetailAPIEndpoint.as_view(),
+        name="api-availability-leave-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/events/",
+        TeamEventAPIEndpoint.as_view(),
+        name="api-availability-events",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leaves/pending/",
+        PendingLeaveAPIEndpoint.as_view(),
+        name="api-availability-pending-leaves",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/allocations/",
+        AllocationMatrixAPIEndpoint.as_view(),
+        name="api-availability-allocations",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/cycles/<uuid:cycle_id>/capacity/",
+        CycleCapacityAPIEndpoint.as_view(),
+        name="api-availability-cycle-capacity",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/calendars/<uuid:calendar_id>/",
+        WorkCalendarDetailAPIEndpoint.as_view(),
+        name="api-availability-calendar-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/calendars/<uuid:calendar_id>/days/",
+        CalendarDayAPIEndpoint.as_view(),
+        name="api-availability-calendar-days",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/calendars/<uuid:calendar_id>/days/<uuid:day_id>/",
+        CalendarDayDetailAPIEndpoint.as_view(),
+        name="api-availability-calendar-day-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leave-types/<uuid:type_id>/",
+        LeaveTypeDetailAPIEndpoint.as_view(),
+        name="api-availability-leave-type-detail",
+    ),
+]

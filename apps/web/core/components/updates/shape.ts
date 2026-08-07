@@ -100,18 +100,39 @@ export function groupUpdates(
     })).filter((section) => section.updates.length > 0);
   }
 
+  // One pass over the posts rather than one scan of the board per topic: a project with
+  // twenty topics and a long board would otherwise re-read every post twenty times. The
+  // single pass also fixes the order for free -- posts land in each bucket in the order
+  // they arrived, which is the order `sortUpdates` chose.
+  const known = new Set(labels.map((label) => label.id));
+  const byTopic = new Map<string, TEntityUpdate[]>();
+  const untagged: TEntityUpdate[] = [];
+
+  for (const update of updates) {
+    let filed = false;
+    for (const id of update.label_ids ?? []) {
+      // A topic deleted from project settings leaves its id behind on the post. Skipping
+      // it here and letting the post fall through to `untagged` keeps the announcement on
+      // the board; matching on it would create a heading with no name.
+      if (!known.has(id)) continue;
+      filed = true;
+      const bucket = byTopic.get(id);
+      if (bucket) bucket.push(update);
+      else byTopic.set(id, [update]);
+    }
+    if (!filed) untagged.push(update);
+  }
+
   // Topic order follows the project's own label order, so the board agrees with the filter
   // row above it and with project settings. Topics nobody has posted under never appear.
   const sections: TBoardSection[] = [];
   for (const label of labels) {
-    const inTopic = updates.filter((update) => (update.label_ids ?? []).includes(label.id));
-    if (inTopic.length) sections.push({ key: label.id, label, updates: inTopic });
+    const inTopic = byTopic.get(label.id);
+    if (inTopic?.length) sections.push({ key: label.id, label, updates: inTopic });
   }
 
   // Last, and never hidden: this is the pile nobody has filed, and a board that drops it
   // reports a tidier noticeboard than the one that exists.
-  const known = new Set(labels.map((label) => label.id));
-  const untagged = updates.filter((update) => !(update.label_ids ?? []).some((id) => known.has(id)));
   if (untagged.length) sections.push({ key: UNTAGGED_SECTION, updates: untagged });
 
   return sections;

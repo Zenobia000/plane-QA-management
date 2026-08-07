@@ -4,14 +4,15 @@
  * See the LICENSE file for details.
  */
 
-import { useMemo, useState } from "react";
+import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { Pencil, Tag, Trash2, X } from "lucide-react";
 import { useTranslation } from "@plane/i18n";
 import type { IIssueLabel, TEntityUpdate, TUpdateEntityName, TUpdateStatus } from "@plane/types";
 import { CustomSearchSelect } from "@plane/ui";
 import { BoardControls, SectionHeader } from "./board-controls";
 import { SECTION_PREVIEW, type TBoardGrouping, type TBoardSort, groupUpdates, overlap, sortUpdates } from "./shape";
-import { STATUS_CLASSES, UPDATE_STATUS_KEYS, UpdateStatusPill } from "./status-pill";
+import { STATUS_CLASSES, UPDATE_STATUS_KEYS } from "./status";
+import { UpdateStatusPill } from "./status-pill";
 
 /**
  * How many topics the filter row shows before collapsing the rest behind a toggle.
@@ -21,6 +22,20 @@ import { STATUS_CLASSES, UPDATE_STATUS_KEYS, UpdateStatusPill } from "./status-p
  * panel's width.
  */
 const VISIBLE_TOPIC_FILTERS = 6;
+
+/**
+ * Add or remove one section key from a set of them.
+ *
+ * Module scope rather than inside the panel: it closes over nothing, so rebuilding it on
+ * every render only costs work and defeats memoisation downstream.
+ */
+const toggleKey = (setter: Dispatch<SetStateAction<Set<string>>>, key: string) =>
+  setter((current) => {
+    const next = new Set(current);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    return next;
+  });
 
 // Re-exported so importers of this module keep the surface they had before the pill moved
 // out to break a cycle with `board-controls.tsx`.
@@ -472,14 +487,6 @@ export function UpdatesPanel({
     };
   };
 
-  const toggleKey = (setter: typeof setClosedSections) => (key: string) =>
-    setter((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-
   const submit = async () => {
     setPosting(true);
     setError(null);
@@ -632,7 +639,7 @@ export function UpdatesPanel({
                 <SectionHeader
                   section={section}
                   open={open}
-                  onToggle={() => toggleKey(setClosedSections)(section.key)}
+                  onToggle={() => toggleKey(setClosedSections, section.key)}
                 />
               )}
               {open && (
@@ -658,7 +665,7 @@ export function UpdatesPanel({
                     <button
                       type="button"
                       className={`mt-2 text-11 font-medium text-accent-primary hover:underline ${grouped ? "ml-5" : ""}`}
-                      onClick={() => toggleKey(setOpenedInFull)(section.key)}
+                      onClick={() => toggleKey(setOpenedInFull, section.key)}
                     >
                       {t("project_overview.updates.show_rest", { count: rest })}
                     </button>

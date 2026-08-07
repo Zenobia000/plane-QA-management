@@ -40,11 +40,23 @@ beforeEach(() => {
   getIntakeStateById.mockReturnValue(undefined);
 });
 
+/** The variant the intake detail panel renders it with, so the button carries its text. */
+const renderDropdown = (overrides: { disabled?: boolean } = {}) =>
+  render(
+    <IntakeStateDropdown
+      value="triage-1"
+      projectId="project-1"
+      onChange={vi.fn()}
+      buttonVariant="transparent-with-text"
+      {...overrides}
+    />
+  );
+
 describe("IntakeStateDropdown when read-only", () => {
   // SCN-IA-08. The intake detail panel renders this disabled, so it never opens -- and
   // loading only on open left it showing the placeholder for every item that had a state.
   it("loads the intake state on mount instead of waiting to be opened", () => {
-    render(<IntakeStateDropdown value="triage-1" projectId="project-1" onChange={vi.fn()} disabled />);
+    renderDropdown({ disabled: true });
 
     expect(fetchProjectIntakeState).toHaveBeenCalledWith("acme", "project-1");
   });
@@ -53,15 +65,7 @@ describe("IntakeStateDropdown when read-only", () => {
     getProjectIntakeStateIds.mockReturnValue(["triage-1"]);
     getIntakeStateById.mockReturnValue(triage);
 
-    render(
-      <IntakeStateDropdown
-        value="triage-1"
-        projectId="project-1"
-        onChange={vi.fn()}
-        disabled
-        buttonVariant="transparent-with-text"
-      />
-    );
+    renderDropdown({ disabled: true });
 
     expect(screen.getByText("Triage")).toBeTruthy();
     // `t()` returns the key under vitest, so the placeholder would read as "state".
@@ -72,13 +76,13 @@ describe("IntakeStateDropdown when read-only", () => {
     getProjectIntakeStateIds.mockReturnValue(["triage-1"]);
     getIntakeStateById.mockReturnValue(triage);
 
-    render(<IntakeStateDropdown value="triage-1" projectId="project-1" onChange={vi.fn()} disabled />);
+    renderDropdown({ disabled: true });
 
     expect(fetchProjectIntakeState).not.toHaveBeenCalled();
   });
 
   it("leaves an editable dropdown to load when it is opened", () => {
-    render(<IntakeStateDropdown value="triage-1" projectId="project-1" onChange={vi.fn()} />);
+    renderDropdown();
 
     expect(fetchProjectIntakeState).not.toHaveBeenCalled();
   });

@@ -10,10 +10,11 @@
 
 .gcloudignore
 
-# Git metadata is never read by a Dockerfile.
+# The history is never read by a Dockerfile, but the ignore files are: web,
+# admin, space and live all `COPY .gitignore .gitignore` as part of the turbo
+# prune flow, so excluding it breaks the build with
+# `failed to compute cache key: "/.gitignore" not found`.
 .git/
-.gitignore
-.gitattributes
 
 # Dependencies and build output: reinstalled and rebuilt inside the images.
 node_modules/

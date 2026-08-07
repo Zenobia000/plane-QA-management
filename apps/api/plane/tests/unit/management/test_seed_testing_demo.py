@@ -385,6 +385,27 @@ class TestSeededFrontline:
         """The panel links to Intake; a project with the module off would 404 the reader."""
         assert seeded.intake_view is True
 
+    def test_a_report_nobody_accepted_is_not_yet_the_project_s_work(self, seeded):
+        """Until someone accepts it, a field report is not work this project has taken on.
+
+        This module writes `Issue` rows directly instead of going through
+        `IntakeIssueViewSet.create`, which files everything into triage. Skipping that let
+        `Issue.save` supply the default state, and `Issue.issue_objects` -- the manager
+        behind the progress bar, Needs attention and requirement coverage -- excludes only
+        the triage group. So an untriaged customer report was simultaneously "waiting" on
+        the frontline panel and outstanding work on three others, on the one page whose
+        entire job is to be consistent about the state of the project.
+        """
+        reports = IntakeIssue.objects.filter(project=seeded)
+        unaccepted = list(reports.exclude(status=1).values_list("issue_id", flat=True))
+        accepted = list(reports.filter(status=1).values_list("issue_id", flat=True))
+
+        assert unaccepted and accepted, "the seed must show both sides of the triage decision"
+        assert not Issue.issue_objects.filter(id__in=unaccepted).exists()
+        # Accepting is what admits a report, so those must be visible -- a fix that hid
+        # every report would satisfy the assertion above and break the panel it feeds.
+        assert Issue.issue_objects.filter(id__in=accepted).count() == len(accepted)
+
 
 @pytest.mark.unit
 @pytest.mark.django_db

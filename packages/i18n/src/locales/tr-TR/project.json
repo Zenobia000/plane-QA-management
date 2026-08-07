@@ -505,7 +505,22 @@
         "on_track": "Planlandığı gibi",
         "at_risk": "Risk altında",
         "off_track": "Plan dışı"
-      }
+      },
+      "sort_label": "Sıralama",
+      "sort": {
+        "newest": "Önce en yeni",
+        "oldest": "Önce en eski",
+        "severity": "Önce en kritik"
+      },
+      "group_label": "Gruplama",
+      "group": {
+        "none": "Gruplama yok",
+        "status": "Duruma göre",
+        "topic": "Konuya göre"
+      },
+      "untagged": "Konu yok",
+      "show_rest": "{count} tane daha göster",
+      "sections_overlap": "Birden fazla konuya işlenen bir gönderi her birinin altında görünür, bu yüzden gruplar gönderi sayısından {count} satır fazla gösterir."
     },
     "readiness": {
       "ready": "Yayına hazır",

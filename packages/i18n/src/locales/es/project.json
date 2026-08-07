@@ -505,7 +505,22 @@
         "on_track": "Según lo previsto",
         "at_risk": "En riesgo",
         "off_track": "Fuera de plan"
-      }
+      },
+      "sort_label": "Orden",
+      "sort": {
+        "newest": "Más recientes primero",
+        "oldest": "Más antiguos primero",
+        "severity": "Más graves primero"
+      },
+      "group_label": "Agrupación",
+      "group": {
+        "none": "Sin agrupar",
+        "status": "Por estado",
+        "topic": "Por tema"
+      },
+      "untagged": "Sin tema",
+      "show_rest": "Mostrar {count} más",
+      "sections_overlap": "Una publicación archivada en varios temas aparece en cada uno, por lo que los grupos muestran {count} filas más de las que hay publicaciones."
     },
     "readiness": {
       "ready": "Listo para entregar",

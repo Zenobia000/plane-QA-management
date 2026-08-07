@@ -4,11 +4,15 @@
  * See the LICENSE file for details.
  */
 
-import { useMemo, useState } from "react";
+import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { Pencil, Tag, Trash2, X } from "lucide-react";
 import { useTranslation } from "@plane/i18n";
 import type { IIssueLabel, TEntityUpdate, TUpdateEntityName, TUpdateStatus } from "@plane/types";
 import { CustomSearchSelect } from "@plane/ui";
+import { BoardControls, SectionHeader } from "./board-controls";
+import { SECTION_PREVIEW, type TBoardGrouping, type TBoardSort, groupUpdates, overlap, sortUpdates } from "./shape";
+import { STATUS_CLASSES, UPDATE_STATUS_KEYS } from "./status";
+import { UpdateStatusPill } from "./status-pill";
 
 /**
  * How many topics the filter row shows before collapsing the rest behind a toggle.
@@ -19,27 +23,23 @@ import { CustomSearchSelect } from "@plane/ui";
  */
 const VISIBLE_TOPIC_FILTERS = 6;
 
-/** Translation keys rather than English, so the pill reads in the reader's language. */
-export const UPDATE_STATUS_KEYS: Record<TUpdateStatus, string> = {
-  on_track: "project_overview.updates.status.on_track",
-  at_risk: "project_overview.updates.status.at_risk",
-  off_track: "project_overview.updates.status.off_track",
-};
+/**
+ * Add or remove one section key from a set of them.
+ *
+ * Module scope rather than inside the panel: it closes over nothing, so rebuilding it on
+ * every render only costs work and defeats memoisation downstream.
+ */
+const toggleKey = (setter: Dispatch<SetStateAction<Set<string>>>, key: string) =>
+  setter((current) => {
+    const next = new Set(current);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    return next;
+  });
 
-const STATUS_CLASSES: Record<TUpdateStatus, string> = {
-  on_track: "bg-success-subtle text-success-primary",
-  at_risk: "bg-warning-subtle text-warning-primary",
-  off_track: "bg-danger-subtle text-danger-primary",
-};
-
-export function UpdateStatusPill({ status }: { status: TUpdateStatus }) {
-  const { t } = useTranslation();
-  return (
-    <span className={`rounded px-1.5 py-0.5 text-10 font-medium ${STATUS_CLASSES[status]}`}>
-      {t(UPDATE_STATUS_KEYS[status])}
-    </span>
-  );
-}
+// Re-exported so importers of this module keep the surface they had before the pill moved
+// out to break a cycle with `board-controls.tsx`.
+export { STATUS_CLASSES, UPDATE_STATUS_KEYS, UpdateStatusPill };
 
 /**
  * A topic chip, coloured by whatever the team picked in project settings.
@@ -424,6 +424,14 @@ export function UpdatesPanel({
   // than the click that asked for it.
   const [topicFilter, setTopicFilter] = useState<string | null>(null);
   const [showAllTopics, setShowAllTopics] = useState(false);
+  // How the board is read. Both default to what the endpoint already returns, so a reader
+  // who touches nothing sees exactly the board that existed before these controls did.
+  const [sort, setSort] = useState<TBoardSort>("newest");
+  const [grouping, setGrouping] = useState<TBoardGrouping>("none");
+  // Sections the reader folded shut, and sections they asked past the preview. Both are
+  // keyed by section rather than by index, so a new post arriving does not reassign them.
+  const [closedSections, setClosedSections] = useState<Set<string>>(new Set());
+  const [openedInFull, setOpenedInFull] = useState<Set<string>>(new Set());
 
   // The active filter is always shown, wherever it sits in the list. Collapsing the row
   // while it is filtering by something now hidden would leave the reader looking at a
@@ -438,8 +446,18 @@ export function UpdatesPanel({
   const { t } = useTranslation();
 
   const all = expanded ?? updates;
-  const shown = topicFilter ? all.filter((update) => (update.label_ids ?? []).includes(topicFilter)) : all;
   const hidden = (total ?? all.length) - all.length;
+
+  const shown = useMemo(
+    () => (topicFilter ? all.filter((update) => (update.label_ids ?? []).includes(topicFilter)) : all),
+    [all, topicFilter]
+  );
+  const sections = useMemo(
+    () => groupUpdates(sortUpdates(shown, sort), grouping, labels),
+    [shown, sort, grouping, labels]
+  );
+  // Positive only when a post carries several topics and so appears under each.
+  const extraRows = overlap(sections, shown);
 
   const showAll = async () => {
     if (!onLoadAll) return;
@@ -452,6 +470,21 @@ export function UpdatesPanel({
     } finally {
       setExpanding(false);
     }
+  };
+
+  /**
+   * Reordering a partly-loaded board would rank ten of forty posts and present the answer
+   * as the board's worst-first order -- the escalation the reader was looking for could sit
+   * in the thirty nobody fetched. So anything that changes the order pulls the rest first.
+   *
+   * The default view is exempt: newest-first ungrouped is the order the endpoint already
+   * returned, so the embedded page is a true prefix of it.
+   */
+  const reorder = <T,>(apply: (next: T) => void, isDefault: (next: T) => boolean) => {
+    return (next: T) => {
+      apply(next);
+      if (!isDefault(next) && !expanded && hidden > 0) void showAll();
+    };
   };
 
   const submit = async () => {
@@ -571,26 +604,83 @@ export function UpdatesPanel({
         </div>
       )}
 
-      <ul className="mt-4 space-y-3">
-        {shown.map((update) => (
-          <UpdateThread
-            key={update.id}
-            update={update}
-            disabled={disabled}
-            labels={labels}
-            canChange={canModerate || (!!currentUserId && update.actor_detail?.id === currentUserId)}
-            onLoadReplies={onLoadReplies}
-            onReply={onReply}
-            onEdit={onEdit}
-            onDelete={onDelete}
+      {/* Not worth a control until there is something to reorder. */}
+      {shown.length > 1 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
+          <BoardControls
+            sort={sort}
+            grouping={grouping}
+            onSort={reorder(setSort, (next) => next === "newest")}
+            onGrouping={reorder(setGrouping, (next) => next === "none")}
           />
-        ))}
-        {!shown.length && (
-          <li className="text-12 text-tertiary">
+          {/* The section counts below add up to more than the board holds when a post is
+              filed under two topics. Saying so beats arithmetic that reads as a bug. */}
+          {extraRows > 0 && (
+            <p className="text-10 text-tertiary">
+              {t("project_overview.updates.sections_overlap", { count: extraRows })}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="mt-3 space-y-3">
+        {sections.map((section) => {
+          const grouped = grouping !== "none";
+          const open = !closedSections.has(section.key);
+          const inFull = openedInFull.has(section.key);
+          // The cap is the point of the whole control: a board that renders everything it
+          // has is the running log the reader was complaining about.
+          const visible = inFull ? section.updates : section.updates.slice(0, SECTION_PREVIEW);
+          const rest = section.updates.length - visible.length;
+
+          return (
+            <div key={section.key}>
+              {grouped && (
+                <SectionHeader
+                  section={section}
+                  open={open}
+                  onToggle={() => toggleKey(setClosedSections, section.key)}
+                />
+              )}
+              {open && (
+                <>
+                  <ul className={`space-y-3 ${grouped ? "mt-1 pl-5" : ""}`}>
+                    {visible.map((update) => (
+                      <UpdateThread
+                        key={update.id}
+                        update={update}
+                        disabled={disabled}
+                        labels={labels}
+                        canChange={canModerate || (!!currentUserId && update.actor_detail?.id === currentUserId)}
+                        onLoadReplies={onLoadReplies}
+                        onReply={onReply}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                      />
+                    ))}
+                  </ul>
+                  {/* Distinct from "load earlier" below: these are already fetched and
+                      merely folded, so the control says so and costs no round trip. */}
+                  {rest > 0 && (
+                    <button
+                      type="button"
+                      className={`mt-2 text-11 font-medium text-accent-primary hover:underline ${grouped ? "ml-5" : ""}`}
+                      onClick={() => toggleKey(setOpenedInFull, section.key)}
+                    >
+                      {t("project_overview.updates.show_rest", { count: rest })}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+        {!sections.length && (
+          <p className="text-12 text-tertiary">
             {topicFilter ? t("project_overview.updates.none_in_topic") : t("project_overview.updates.empty")}
-          </li>
+          </p>
         )}
-      </ul>
+      </div>
       {/* The caller embeds only the newest few. Saying how many are hidden beats
           truncating silently, which reads as the thread having stopped. */}
       {hidden > 0 && onLoadAll && (

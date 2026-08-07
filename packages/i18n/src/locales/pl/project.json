@@ -505,7 +505,22 @@
         "on_track": "Zgodnie z planem",
         "at_risk": "Zagrożone",
         "off_track": "Poza planem"
-      }
+      },
+      "sort_label": "Sortowanie",
+      "sort": {
+        "newest": "Najnowsze najpierw",
+        "oldest": "Najstarsze najpierw",
+        "severity": "Najpoważniejsze najpierw"
+      },
+      "group_label": "Grupowanie",
+      "group": {
+        "none": "Bez grupowania",
+        "status": "Według statusu",
+        "topic": "Według tematu"
+      },
+      "untagged": "Bez tematu",
+      "show_rest": "Pokaż jeszcze {count}",
+      "sections_overlap": "Wpis przypisany do kilku tematów pojawia się przy każdym z nich, więc grupy pokazują o {count} wierszy więcej niż jest wpisów."
     },
     "readiness": {
       "ready": "Gotowe do wydania",

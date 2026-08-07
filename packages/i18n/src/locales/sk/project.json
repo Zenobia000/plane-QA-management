@@ -505,7 +505,22 @@
         "on_track": "Podľa plánu",
         "at_risk": "Ohrozené",
         "off_track": "Mimo plánu"
-      }
+      },
+      "sort_label": "Zoradenie",
+      "sort": {
+        "newest": "Najnovšie prvé",
+        "oldest": "Najstaršie prvé",
+        "severity": "Najzávažnejšie prvé"
+      },
+      "group_label": "Zoskupenie",
+      "group": {
+        "none": "Bez zoskupenia",
+        "status": "Podľa stavu",
+        "topic": "Podľa témy"
+      },
+      "untagged": "Bez témy",
+      "show_rest": "Zobraziť ďalších {count}",
+      "sections_overlap": "Príspevok zaradený pod viac tém sa objaví pri každej z nich, takže skupiny zobrazujú o {count} riadkov viac, než je príspevkov."
     },
     "readiness": {
       "ready": "Pripravené na vydanie",

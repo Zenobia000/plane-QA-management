@@ -505,7 +505,22 @@
         "on_track": "Im Plan",
         "at_risk": "Gefährdet",
         "off_track": "Vom Plan abgewichen"
-      }
+      },
+      "sort_label": "Sortierung",
+      "sort": {
+        "newest": "Neueste zuerst",
+        "oldest": "Älteste zuerst",
+        "severity": "Kritischste zuerst"
+      },
+      "group_label": "Gruppierung",
+      "group": {
+        "none": "Keine Gruppierung",
+        "status": "Nach Status",
+        "topic": "Nach Thema"
+      },
+      "untagged": "Kein Thema",
+      "show_rest": "Weitere {count} anzeigen",
+      "sections_overlap": "Ein Beitrag mit mehreren Themen erscheint unter jedem, daher zeigen die Gruppen {count} Zeilen mehr als es Beiträge gibt."
     },
     "readiness": {
       "ready": "Auslieferbereit",

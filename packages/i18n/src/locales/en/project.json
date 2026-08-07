@@ -505,7 +505,22 @@
         "on_track": "On track",
         "at_risk": "At risk",
         "off_track": "Off track"
-      }
+      },
+      "sort_label": "Sort",
+      "sort": {
+        "newest": "Newest first",
+        "oldest": "Oldest first",
+        "severity": "Worst first"
+      },
+      "group_label": "Group",
+      "group": {
+        "none": "No grouping",
+        "status": "By status",
+        "topic": "By topic"
+      },
+      "untagged": "No topic",
+      "show_rest": "Show {count} more",
+      "sections_overlap": "A post filed under several topics appears under each, so the groups show {count} more rows than there are posts."
     },
     "readiness": {
       "ready": "Ready to ship",

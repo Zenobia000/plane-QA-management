@@ -505,7 +505,22 @@
         "on_track": "Conform planului",
         "at_risk": "În pericol",
         "off_track": "În afara planului"
-      }
+      },
+      "sort_label": "Sortare",
+      "sort": {
+        "newest": "Cele mai noi întâi",
+        "oldest": "Cele mai vechi întâi",
+        "severity": "Cele mai grave întâi"
+      },
+      "group_label": "Grupare",
+      "group": {
+        "none": "Fără grupare",
+        "status": "După stare",
+        "topic": "După subiect"
+      },
+      "untagged": "Fără subiect",
+      "show_rest": "Afișează încă {count}",
+      "sections_overlap": "O postare încadrată la mai multe subiecte apare la fiecare, așa că grupurile afișează cu {count} rânduri mai mult decât sunt postări."
     },
     "readiness": {
       "ready": "Gata de livrare",

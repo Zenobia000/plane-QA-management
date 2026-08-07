@@ -505,7 +505,22 @@
         "on_track": "In linea",
         "at_risk": "A rischio",
         "off_track": "Fuori rotta"
-      }
+      },
+      "sort_label": "Ordinamento",
+      "sort": {
+        "newest": "Più recenti prima",
+        "oldest": "Più vecchi prima",
+        "severity": "Più gravi prima"
+      },
+      "group_label": "Raggruppamento",
+      "group": {
+        "none": "Nessun raggruppamento",
+        "status": "Per stato",
+        "topic": "Per argomento"
+      },
+      "untagged": "Nessun argomento",
+      "show_rest": "Mostra altri {count}",
+      "sections_overlap": "Un messaggio classificato sotto più argomenti compare in ciascuno, quindi i gruppi mostrano {count} righe in più rispetto ai messaggi."
     },
     "readiness": {
       "ready": "Pronto per il rilascio",

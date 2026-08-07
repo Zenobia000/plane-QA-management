@@ -26,6 +26,7 @@ from plane.app.serializers import (
     TeamEventWriteSerializer,
 )
 from plane.app.views.base import BaseAPIView
+from plane.utils.host import base_host
 from plane.availability import (
     NotTheApprover,
     cancel_leave,
@@ -190,7 +191,13 @@ class MemberLeaveListCreateEndpoint(BaseAPIView):
             )
 
         try:
-            leave = create_leave(workspace=workspace, member=membership.member, leave_type=leave_type, **data)
+            leave = create_leave(
+                workspace=workspace,
+                member=membership.member,
+                leave_type=leave_type,
+                origin=base_host(request=request, is_app=True),
+                **data,
+            )
         except ValidationError as error:
             return Response({"error": error.messages}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -232,6 +239,7 @@ class MemberLeaveDetailEndpoint(BaseAPIView):
                     actor=request.user,
                     approve=action == "approve",
                     note=request.data.get("note", ""),
+                    origin=base_host(request=request, is_app=True),
                 )
             except NotTheApprover:
                 return Response(

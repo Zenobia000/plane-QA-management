@@ -12,6 +12,12 @@ architecture rather than indirection.
 
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
+
+from plane.bgtasks.availability_notification_task import (
+    leave_awaiting_decision_email,
+    leave_decided_email,
+)
+from plane.utils.exception_logger import log_exception
 from django.utils import timezone
 
 from plane.db.models import (
@@ -51,6 +57,26 @@ UNSET = _Unset()
 
 def _validate(instance, exclude=()):
     instance.full_clean(exclude=tuple(exclude) + AUDIT_FIELDS)
+
+
+def _notify(task, leave_id, origin):
+    """Queue an email once the surrounding transaction has actually committed.
+
+    `on_commit` rather than a bare `.delay()`: the worker is a separate process and would
+    otherwise race the transaction, find no such leave, and silently send nothing. Wrapped in
+    a try so a broker that is down cannot fail a decision that already happened -- the queue
+    on the page remains the source of truth, the email is the reminder.
+    """
+    if not origin:
+        return
+
+    def dispatch():
+        try:
+            task.delay(str(leave_id), origin)
+        except Exception as error:  # noqa: BLE001
+            log_exception(error)
+
+    transaction.on_commit(dispatch)
 
 
 
@@ -183,6 +209,7 @@ def create_leave(
     start_day_part=DayPart.FULL,
     end_day_part=DayPart.FULL,
     reason="",
+    origin=None,
 ):
     """Log an absence.
 
@@ -203,6 +230,13 @@ def create_leave(
     )
     _validate(leave, ["workspace", "member", "leave_type"])
     leave.save()
+
+    if leave.status == LeaveStatus.PENDING:
+        # After commit, not inside it: a worker that picks the task up first would read a row
+        # that is not there yet. `origin` is threaded from the request because the API has no
+        # reliable way to know its own public URL.
+        _notify(leave_awaiting_decision_email, leave.id, origin)
+
     return leave
 
 
@@ -330,7 +364,7 @@ def _active_approver_id(workspace_id, member_id):
 
 
 @transaction.atomic
-def decide_leave(*, leave_id, actor, approve, note=""):
+def decide_leave(*, leave_id, actor, approve, note="", origin=None):
     """Approve or reject a pending request.
 
     Re-read under `select_for_update` rather than trusting the instance the view fetched:
@@ -350,6 +384,9 @@ def decide_leave(*, leave_id, actor, approve, note=""):
     leave.decision_note = note
     _validate(leave, ["workspace", "member", "leave_type"])
     leave.save()
+
+    _notify(leave_decided_email, leave.id, origin)
+
     return leave
 
 

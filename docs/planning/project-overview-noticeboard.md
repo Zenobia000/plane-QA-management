@@ -195,7 +195,8 @@ EntityUpdateLabel(entity_update, label, project, workspace)
 
 1. 專案設定 → 自訂屬性,建一個 select 或 multi-select,名字自己取(客戶、租戶、地區)
 2. 同一列點「Group overview by this」
-3. 在 Intake 的工作項上填那個屬性
+3. 在 Intake 的工作項上填那個屬性 —— 這一步當初在 UI 上做不到(建立視窗與詳情頁都沒有
+   渲染自訂屬性),補在 [`intake-attribution.md`](intake-attribution.md)
 4. Overview 出現該面板,標題就是你取的名字
 
 公佈欄的分類同理:專案設定 → 標籤,建幾個自己的分類,發公告時勾選。

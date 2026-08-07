@@ -5,6 +5,7 @@
  */
 
 import { observer } from "mobx-react";
+import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import {
   StatePropertyIcon,
   MembersPropertyIcon,
@@ -27,7 +28,10 @@ import type { TIssueOperations } from "@/components/issues/issue-detail";
 import { IssueLabel } from "@/components/issues/issue-detail/label";
 // hooks
 import { useProject } from "@/hooks/store/use-project";
+import { useUserPermissions } from "@/hooks/store/user";
 import { useAppRouter } from "@/hooks/use-app-router";
+// plane web imports
+import { WorkItemAdditionalSidebarProperties } from "@/plane-web/components/issues/issue-details/additional-properties";
 
 type Props = {
   workspaceSlug: string;
@@ -46,6 +50,17 @@ export const InboxIssueContentProperties = observer(function InboxIssueContentPr
   const router = useAppRouter();
   // store hooks
   const { currentProjectDetails } = useProject();
+  const { allowPermissions } = useUserPermissions();
+
+  // Writing a property value needs MEMBER, while this panel's own `isEditable` also lets
+  // the item's creator through -- and a creator can be a GUEST. Requiring both keeps the
+  // fields read-only for someone whose save the API would refuse.
+  const canSetPropertyValues = allowPermissions(
+    [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
+    EUserPermissionsLevel.PROJECT,
+    workspaceSlug,
+    projectId
+  );
 
   const minDate = issue.start_date ? getDate(issue.start_date) : null;
   minDate?.setDate(minDate.getDate());
@@ -82,8 +97,6 @@ export const InboxIssueContentProperties = observer(function InboxIssueContentPr
                   className="group w-3/5 flex-grow"
                   buttonContainerClassName="w-full text-left"
                   buttonClassName="text-13"
-                  dropdownArrow
-                  dropdownArrowClassName="h-3.5 w-3.5 hidden group-hover:inline"
                 />
               )}
             </div>
@@ -183,6 +196,20 @@ export const InboxIssueContentProperties = observer(function InboxIssueContentPr
                 )}
               </div>
             </div>
+
+            {/* Custom properties, including whichever one the overview groups intake by.
+                Triage is where the attribution can still be corrected before the item
+                leaves intake -- previously it could only be set after accepting, by
+                reopening the same item somewhere else. */}
+            {issue?.id && (
+              <WorkItemAdditionalSidebarProperties
+                workItemId={issue.id}
+                workItemTypeId={issue.type_id ?? null}
+                projectId={projectId}
+                workspaceSlug={workspaceSlug}
+                isEditable={isEditable && canSetPropertyValues}
+              />
+            )}
 
             {/* duplicate to*/}
             {duplicateIssueDetails && (

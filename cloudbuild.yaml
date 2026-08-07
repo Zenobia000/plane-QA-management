@@ -1,0 +1,95 @@
+# Build the six deployable images for amd64 and push them to Artifact Registry.
+#
+# Never build on the production VM: it is an e2-small (2 GB) and the Node builds
+# will not survive there. Images are IP-agnostic — the app URLs are read from the
+# runtime environment, not baked in at build time — so changing the site address
+# only touches ~/plane-qa/.env on the VM and needs no rebuild.
+#
+#   gcloud builds submit --config=cloudbuild.yaml \
+#     --substitutions=_TAG="$(git rev-parse --short HEAD)" \
+#     --project=cedar-scope-489604-g3
+#
+# The Compute Engine default service account is both the build runtime and the
+# VM's pull identity, so it needs roles/cloudbuild.builds.builder and
+# roles/artifactregistry.writer.
+
+substitutions:
+  # Overridden per build with the short git sha. `latest` is only a fallback so a
+  # forgotten substitution produces a mutable tag rather than a broken ref.
+  _TAG: latest
+  _REGION: asia-east1
+  _REPO: plane
+
+options:
+  # apps/web and apps/live pin `# syntax=docker/dockerfile:1.7`, which only the
+  # BuildKit frontend understands.
+  env:
+    - DOCKER_BUILDKIT=1
+  # No GCS log bucket is provisioned for this project.
+  logging: CLOUD_LOGGING_ONLY
+
+# Six images, four of them full Node monorepo builds. The 10-minute default is
+# nowhere near enough.
+timeout: 3600s
+
+steps:
+  # web, admin, space and live build from the repo root: they resolve workspace
+  # packages through the monorepo.
+  - id: web
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file=./apps/web/Dockerfile.web
+      - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:${_TAG}
+      - .
+
+  - id: admin
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file=./apps/admin/Dockerfile.admin
+      - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/admin:${_TAG}
+      - .
+
+  - id: space
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file=./apps/space/Dockerfile.space
+      - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/space:${_TAG}
+      - .
+
+  - id: live
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file=./apps/live/Dockerfile.live
+      - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/live:${_TAG}
+      - .
+
+  # api and proxy build from their own subdirectory.
+  - id: api
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file=./apps/api/Dockerfile.api
+      - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/api:${_TAG}
+      - ./apps/api
+
+  - id: proxy
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file=./apps/proxy/Dockerfile.ce
+      - --tag=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/proxy:${_TAG}
+      - ./apps/proxy
+
+# api serves the api, worker, beat-worker and migrator services, so five images
+# cover all twelve running containers.
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:${_TAG}
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/admin:${_TAG}
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/space:${_TAG}
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/live:${_TAG}
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/api:${_TAG}
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/proxy:${_TAG}

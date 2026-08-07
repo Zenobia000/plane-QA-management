@@ -1,0 +1,72 @@
+# What NOT to upload as the Cloud Build source context.
+#
+# gcloud falls back to .gitignore when this file is absent, which would upload
+# every build artifact that .gitignore happens not to list. Keeping this explicit
+# also keeps the upload small: the Node builds install their own dependencies, so
+# shipping node_modules would only make the context slower to transfer.
+#
+# This does NOT replace .dockerignore — that still prunes each image's build
+# context once the source is here.
+
+.gcloudignore
+
+# Git metadata is never read by a Dockerfile.
+.git/
+.gitignore
+.gitattributes
+
+# Dependencies and build output: reinstalled and rebuilt inside the images.
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+out/
+**/out/
+.next/
+**/.next/
+.turbo/
+**/.turbo/
+.vite/
+**/.vite/
+
+# Python virtualenvs and bytecode.
+venv/
+.venv/
+**/venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Secrets. Production secrets are generated on the VM and never committed or
+# uploaded; a stray local .env must not reach a build. No Dockerfile reads any of
+# these, .env.example included, so the exclusion needs no exceptions.
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Local-only stacks and tooling that no image needs.
+docker-compose-dev-ports.yml
+docker-compose-local.yml
+docker-compose-test.yml
+.worktrees/
+CLAUDE.md
+.claude/
+.agents/
+
+# Test, coverage and log output.
+coverage/
+**/coverage/
+*.lcov
+.junit/
+**/.junit/
+*-debug.log*
+
+# Editor and OS junk.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

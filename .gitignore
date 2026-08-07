@@ -120,3 +120,6 @@ packages/i18n/src/types/keys.generated.ts
 
 # Screenshots dropped into the repo root while working.
 image*.png
+
+# Isolated checkouts for parallel work (git worktree add .worktrees/<branch>).
+/.worktrees/

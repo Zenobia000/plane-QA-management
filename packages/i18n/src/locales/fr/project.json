@@ -420,7 +420,8 @@
     "load_error": "Impossible de charger la vue d’ensemble du projet.",
     "progress": {
       "title": "Progression",
-      "out_of_scope": "Hors périmètre, donc non compté dans la barre"
+      "out_of_scope": "Hors périmètre, donc non compté dans la barre",
+      "counts": "Tous les éléments de travail actifs du projet hors annulés — un périmètre plus large que le nombre d'exigences ci-dessus."
     },
     "links": {
       "title": "Liens",
@@ -512,12 +513,17 @@
       "open_testing": "Ouvrir Testing",
       "coverage": "Exigences couvertes",
       "latest_run": "Dernière exécution réussie",
-      "open_defects": "Anomalies ouvertes"
+      "open_defects": "Anomalies ouvertes",
+      "unexecuted": "{count} non exécutés",
+      "skipped": "{count} ignorés",
+      "coverage_of": "Exigences planifiées nécessitant un contrat de recette. Le backlog n'est pas compté.",
+      "latest_run_of": "Tous les cas de la dernière exécution, y compris ceux non encore exécutés.",
+      "open_defects_of": "Anomalies ouvertes depuis un résultat de test et non encore clôturées."
     },
     "frontline": {
       "unattributed": "Non attribué",
       "open_intake": "Ouvrir Intake",
-      "summary": "{pending} en attente · {accepted} planifiés · {declined} refusés",
+      "summary": "{reports, plural, one {# signalement} other {# signalements}} · {pending} en attente · {accepted} planifiés · {declined} refusés",
       "pending_count": "{count, plural, one {# en attente} many {# en attente} other {# en attente}}",
       "all_scheduled": "Tout est planifié",
       "accept": "Planifier",
@@ -529,7 +535,8 @@
         "declined": "Refusé"
       },
       "not_triaged_title": "Statut non modifié",
-      "not_triaged_message": "Impossible de modifier le statut."
+      "not_triaged_message": "Impossible de modifier le statut.",
+      "multi_attributed": "Dont {count} rattachés à plusieurs {dimension}, si bien que les groupes ci-dessous totalisent {sum} et non {total}."
     },
     "attention": {
       "title": "À surveiller",

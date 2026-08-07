@@ -105,6 +105,9 @@ class TestFrontline:
 
         assert body["dimension"] is None
         assert body["groups"] == []
+        # Same shape as the populated response. A client reading `totals["reports"]` should
+        # not have to branch on whether the project configured a dimension.
+        assert body["totals"] == {"pending": 0, "accepted": 0, "declined": 0, "reports": 0, "multi_attributed": 0}
 
     def test_intake_groups_under_the_project_s_own_headings(
         self, session_client, workspace, project, intake, dimension
@@ -151,7 +154,41 @@ class TestFrontline:
 
         body = session_client.get(frontline_url(workspace, project)).json()
 
-        assert body["totals"] == {"pending": 2, "accepted": 1, "declined": 2}
+        assert body["totals"] == {
+            "pending": 2,
+            "accepted": 1,
+            "declined": 2,
+            "reports": 5,
+            "multi_attributed": 0,
+        }
+
+    def test_a_report_under_two_headings_is_counted_once_and_the_gap_is_reported(
+        self, session_client, workspace, project, intake, dimension
+    ):
+        """The group totals over-count on purpose, so the response has to say by how much.
+
+        Two reports under headings that sum to three is the arithmetic a reader stops at:
+        without `multi_attributed` the panel shows a summary and a set of groups that
+        disagree, and the only available reading is that one of them is wrong.
+        """
+        file_intake(workspace, project, intake, "Shared bug", -2, ["acme", "globex"], dimension)
+        file_intake(workspace, project, intake, "Acme only", -2, ["acme"], dimension)
+
+        body = session_client.get(frontline_url(workspace, project)).json()
+
+        assert sum(group["total"] for group in body["groups"]) == 3
+        assert body["totals"]["reports"] == 2
+        assert body["totals"]["multi_attributed"] == 1
+
+    def test_an_untagged_report_is_not_counted_as_multiply_attributed(
+        self, session_client, workspace, project, intake, dimension
+    ):
+        """Nothing to group by is one bucket, not several."""
+        file_intake(workspace, project, intake, "Nobody claimed this", -2)
+
+        totals = session_client.get(frontline_url(workspace, project)).json()["totals"]
+
+        assert totals == {"pending": 1, "accepted": 0, "declined": 0, "reports": 1, "multi_attributed": 0}
 
     def test_a_group_is_capped_but_says_how_many_it_holds(
         self, session_client, workspace, project, intake, dimension

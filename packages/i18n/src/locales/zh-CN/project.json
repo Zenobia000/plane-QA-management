@@ -420,7 +420,8 @@
     "load_error": "无法加载项目概览。",
     "progress": {
       "title": "进度",
-      "out_of_scope": "超出范围，因此不计入进度条"
+      "out_of_scope": "超出范围，因此不计入进度条",
+      "counts": "本项目所有存活的工作项（不含已取消）——范围比上方的需求数更广。"
     },
     "links": {
       "title": "链接",
@@ -512,12 +513,17 @@
       "open_testing": "打开 Testing",
       "coverage": "已覆盖的需求",
       "latest_run": "最近一次执行通过",
-      "open_defects": "未关闭的缺陷"
+      "open_defects": "未关闭的缺陷",
+      "unexecuted": "{count} 条未执行",
+      "skipped": "{count} 条跳过",
+      "coverage_of": "已排期且需要验收契约的需求；待办（Backlog）不计入。",
+      "latest_run_of": "最近一次执行的全部用例，含尚未执行的。",
+      "open_defects_of": "由测试结果提出、尚未关闭的缺陷。"
     },
     "frontline": {
       "unattributed": "尚未归属",
       "open_intake": "打开 Intake",
-      "summary": "待处理 {pending} · 已排入 {accepted} · 已婉拒 {declined}",
+      "summary": "{reports} 条反馈 · 待处理 {pending} · 已排期 {accepted} · 已婉拒 {declined}",
       "pending_count": "{count, plural, one {待处理 #} other {待处理 #}}",
       "all_scheduled": "已全部排入",
       "accept": "排入开发",
@@ -529,7 +535,8 @@
         "declined": "已婉拒"
       },
       "not_triaged_title": "状态未变更",
-      "not_triaged_message": "无法变更状态。"
+      "not_triaged_message": "无法变更状态。",
+      "multi_attributed": "其中 {count} 条同时归属多个{dimension}，所以下方各组相加是 {sum} 而非 {total}。"
     },
     "attention": {
       "title": "需要注意",

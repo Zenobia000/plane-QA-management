@@ -41,7 +41,11 @@ export function ProgressBar({ progress }: { progress: TProjectProgress }) {
     <section className="rounded border border-subtle p-4">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-13 font-medium text-primary">{t("project_overview.progress.title")}</h2>
-        <p className="text-12 text-secondary">
+        {/* Says what it counts, because the readiness panel above renders its own "X / Y"
+            over a narrower population -- scheduled requirements that need an acceptance
+            contract, not every work item. Two ratios in the same column with different
+            denominators and no definitions read as one number contradicting itself. */}
+        <p className="text-12 text-secondary" title={t("project_overview.progress.counts")}>
           {progress.completed} / {inScope} done
           <span className="ml-2 font-medium text-primary">{progress.completion_percentage}%</span>
         </p>

@@ -165,6 +165,12 @@ export function FrontlinePanel({ workspaceSlug, projectId, data, canTriage, onTr
   if (!data?.dimension || !data.groups.length) return null;
   const { totals } = data;
 
+  // The group headings below add up to more than the summary whenever a report names two
+  // accounts, because it is listed under both. That is the right rendering of one bug two
+  // customers reported, but on screen it is two numbers that disagree and nothing saying
+  // why -- so the panel states the arithmetic instead of leaving the reader to doubt it.
+  const grouped = data.groups.reduce((running, group) => running + group.total, 0);
+
   return (
     <section className="rounded border border-subtle p-4">
       <div className="flex items-baseline justify-between gap-3">
@@ -178,11 +184,22 @@ export function FrontlinePanel({ workspaceSlug, projectId, data, canTriage, onTr
       </div>
       <p className="mt-0.5 text-11 text-tertiary">
         {t("project_overview.frontline.summary", {
+          reports: totals.reports,
           pending: totals.pending,
           accepted: totals.accepted,
           declined: totals.declined,
         })}
       </p>
+      {totals.multi_attributed > 0 && (
+        <p className="mt-0.5 text-11 text-tertiary">
+          {t("project_overview.frontline.multi_attributed", {
+            count: totals.multi_attributed,
+            dimension: data.dimension.name,
+            sum: grouped,
+            total: totals.reports,
+          })}
+        </p>
+      )}
 
       <ul className="mt-3">
         {data.groups.map((group) => (

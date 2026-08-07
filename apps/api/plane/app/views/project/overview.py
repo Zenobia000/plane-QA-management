@@ -463,7 +463,13 @@ class ProjectFrontlineEndpoint(BaseAPIView):
             deleted_at__isnull=True,
         ).first()
         if dimension is None:
-            return Response({"dimension": None, "groups": [], "totals": self._empty_totals()})
+            return Response(
+                {
+                    "dimension": None,
+                    "groups": [],
+                    "totals": {**self._empty_totals(), "reports": 0, "multi_attributed": 0},
+                }
+            )
 
         intake_rows = list(
             IntakeIssue.objects.filter(project_id=project_id, workspace__slug=slug)
@@ -473,7 +479,8 @@ class ProjectFrontlineEndpoint(BaseAPIView):
         issue_ids = [row.issue_id for row in intake_rows]
 
         labels = {option.value: option.label for option in dimension.options.all()}
-        buckets = self._group(intake_rows, self._dimension_values(dimension, issue_ids))
+        values = self._dimension_values(dimension, issue_ids)
+        buckets = self._group(intake_rows, values)
 
         return Response(
             {
@@ -494,7 +501,15 @@ class ProjectFrontlineEndpoint(BaseAPIView):
                     }
                     for value, rows in buckets
                 ],
-                "totals": self._counts(intake_rows),
+                "totals": {
+                    **self._counts(intake_rows),
+                    # Reports, counted once each. The group totals below cannot be summed to
+                    # get here: a report tagged with two accounts is listed under both, so
+                    # four groups of two can describe seven reports. Both numbers are on the
+                    # same panel, so the panel has to be able to say why they differ.
+                    "reports": len(intake_rows),
+                    "multi_attributed": sum(1 for row in intake_rows if len(values.get(row.issue_id) or []) > 1),
+                },
             }
         )
 
@@ -520,6 +535,10 @@ class ProjectFrontlineEndpoint(BaseAPIView):
         Untagged is deliberately kept rather than dropped. It is the pile that says how much
         of the intake nobody has attributed yet, and a panel that hides it reports a
         tidier project than the one that exists.
+
+        A report carrying two values lands in both buckets, so these totals over-count on
+        purpose and `totals["multi_attributed"]` is what lets the reader tell that apart
+        from an arithmetic error.
         """
         buckets = defaultdict(list)
         for row in intake_rows:

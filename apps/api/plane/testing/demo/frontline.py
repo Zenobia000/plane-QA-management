@@ -30,6 +30,7 @@ from plane.db.models import (
     IntakeIssue,
     Issue,
     IssueType,
+    State,
     WorkItemProperty,
     WorkItemPropertyOption,
     WorkItemPropertyValue,
@@ -111,9 +112,10 @@ def create_frontline(workspace, project, owner, labels):
     dimension = _create_dimension(workspace, project)
     intake = _project_intake(workspace, project, owner)
     bug_type = IssueType.objects.filter(workspace=workspace, name="Bug").first()
+    states = _report_states(project)
 
     reports = [
-        _file_report(workspace, project, owner, intake, dimension, bug_type, report) for report in REPORTS
+        _file_report(workspace, project, owner, intake, dimension, bug_type, states, report) for report in REPORTS
     ]
     announcements = _post_announcements(workspace, project, owner, labels)
     return {"dimension": dimension, "reports": reports, "announcements": announcements}
@@ -152,7 +154,34 @@ def _project_intake(workspace, project, owner):
     )
 
 
-def _file_report(workspace, project, owner, intake, dimension, bug_type, report):
+def _report_states(project):
+    """Where a report sits before and after somebody accepts it.
+
+    `IntakeIssueViewSet.create` files everything into triage and
+    `IntakeIssueSerializer.update` moves it to the default state on acceptance, which is
+    what keeps an unaccepted report out of `Issue.issue_objects` -- the manager excludes the
+    triage group, and every count on the overview goes through it.
+
+    This module writes `Issue` rows directly, so it has to reproduce that rule itself.
+    Without it `Issue.save` supplies the default state to everything, and a report the
+    frontline panel calls "waiting" is simultaneously inside the progress denominator and
+    eligible for Needs attention -- the demo showing three panels that disagree about
+    whether the same report is work the team has taken on.
+    """
+    states = {
+        "triage": State.triage_objects.filter(project=project).first(),
+        "accepted": State.objects.filter(project=project, default=True).first(),
+    }
+    # Loudly, because the failure is otherwise invisible: `Issue.save` fills a null state in
+    # with the project default, so a missing triage state would put every untriaged report
+    # back into the progress bar and the seed would go on reporting success.
+    missing = [name for name, state in states.items() if state is None]
+    if missing:
+        raise RuntimeError(f"{project.name} has no {' or '.join(missing)} state to file intake into")
+    return states
+
+
+def _file_report(workspace, project, owner, intake, dimension, bug_type, states, report):
     name, accounts, status, note = report
     issue = Issue.objects.create(
         workspace=workspace,
@@ -161,6 +190,10 @@ def _file_report(workspace, project, owner, intake, dimension, bug_type, report)
         description_html=f"<p>{note}</p>",
         type=bug_type,
         created_by=owner,
+        # Accepting is the act that admits a report into the project's work; until then it
+        # sits in triage and no count on the overview sees it. A declined report never got
+        # that far, so it stays in triage too.
+        state=states["accepted"] if status == ACCEPTED else states["triage"],
         # Priority is deliberately left at the default. Something arriving from outside the
         # team has not been triaged yet, and stamping one here would pretend it had.
     )

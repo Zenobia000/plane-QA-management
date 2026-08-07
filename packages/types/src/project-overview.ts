@@ -180,7 +180,18 @@ export type TFrontlineGroup = {
 export type TProjectFrontline = {
   dimension: { id: string; name: string; kind: string } | null;
   groups: TFrontlineGroup[];
-  totals: { pending: number; accepted: number; declined: number };
+  totals: {
+    pending: number;
+    accepted: number;
+    declined: number;
+    /**
+     * Reports counted once each, which is not the sum of the group totals: a report
+     * attributed to two accounts appears under both headings.
+     */
+    reports: number;
+    /** How many reports carry more than one heading, and so are counted more than once. */
+    multi_attributed: number;
+  };
 };
 
 export type TAttentionItem = {

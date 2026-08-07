@@ -420,7 +420,8 @@
     "load_error": "Não foi possível carregar a visão geral do projeto.",
     "progress": {
       "title": "Progresso",
-      "out_of_scope": "Fora do escopo, portanto não contabilizado na barra"
+      "out_of_scope": "Fora do escopo, portanto não contabilizado na barra",
+      "counts": "Todos os itens de trabalho vivos do projeto exceto os cancelados — uma base maior que a contagem de requisitos acima."
     },
     "links": {
       "title": "Links",
@@ -512,12 +513,17 @@
       "open_testing": "Abrir Testing",
       "coverage": "Requisitos cobertos",
       "latest_run": "Última execução aprovada",
-      "open_defects": "Defeitos abertos"
+      "open_defects": "Defeitos abertos",
+      "unexecuted": "{count} não executados",
+      "skipped": "{count} ignorados",
+      "coverage_of": "Requisitos planejados que precisam de contrato de aceitação. O backlog não é contado.",
+      "latest_run_of": "Todos os casos da última execução, inclusive os ainda não executados.",
+      "open_defects_of": "Defeitos abertos a partir de um resultado de teste e ainda não fechados."
     },
     "frontline": {
       "unattributed": "Sem atribuição",
       "open_intake": "Abrir Intake",
-      "summary": "{pending} aguardando · {accepted} planejados · {declined} recusados",
+      "summary": "{reports, plural, one {# relato} other {# relatos}} · {pending} aguardando · {accepted} planejados · {declined} recusados",
       "pending_count": "{count, plural, one {# aguardando} many {# aguardando} other {# aguardando}}",
       "all_scheduled": "Tudo planejado",
       "accept": "Planejar",
@@ -529,7 +535,8 @@
         "declined": "Recusado"
       },
       "not_triaged_title": "Status não alterado",
-      "not_triaged_message": "Não foi possível alterar o status."
+      "not_triaged_message": "Não foi possível alterar o status.",
+      "multi_attributed": "Destes, {count} estão registrados em mais de um {dimension}, então os grupos abaixo somam {sum} e não {total}."
     },
     "attention": {
       "title": "Precisa de atenção",

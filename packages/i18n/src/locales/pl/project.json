@@ -420,7 +420,8 @@
     "load_error": "Nie udało się załadować przeglądu projektu.",
     "progress": {
       "title": "Postęp",
-      "out_of_scope": "Poza zakresem, więc nieliczone na pasku"
+      "out_of_scope": "Poza zakresem, więc nieliczone na pasku",
+      "counts": "Wszystkie żywe elementy pracy w projekcie poza anulowanymi — szersza podstawa niż liczba wymagań powyżej."
     },
     "links": {
       "title": "Linki",
@@ -512,12 +513,17 @@
       "open_testing": "Otwórz Testing",
       "coverage": "Pokryte wymagania",
       "latest_run": "Ostatnie uruchomienie zaliczone",
-      "open_defects": "Otwarte defekty"
+      "open_defects": "Otwarte defekty",
+      "unexecuted": "niewykonane: {count}",
+      "skipped": "pominięte: {count}",
+      "coverage_of": "Zaplanowane wymagania wymagające kontraktu odbioru. Backlog nie jest liczony.",
+      "latest_run_of": "Wszystkie przypadki ostatniego przebiegu, łącznie z jeszcze niewykonanymi.",
+      "open_defects_of": "Defekty zgłoszone z wyniku testu i jeszcze niezamknięte."
     },
     "frontline": {
       "unattributed": "Nieprzypisane",
       "open_intake": "Otwórz Intake",
-      "summary": "Oczekujące: {pending} · zaplanowane: {accepted} · odrzucone: {declined}",
+      "summary": "Zgłoszenia: {reports} · oczekujące {pending} · zaplanowane {accepted} · odrzucone {declined}",
       "pending_count": "{count, plural, one {# oczekujące} few {# oczekujące} many {# oczekujących} other {# oczekującego}}",
       "all_scheduled": "Wszystko zaplanowane",
       "accept": "Zaplanuj",
@@ -529,7 +535,8 @@
         "declined": "Odrzucone"
       },
       "not_triaged_title": "Nie zmieniono statusu",
-      "not_triaged_message": "Nie udało się zmienić statusu."
+      "not_triaged_message": "Nie udało się zmienić statusu.",
+      "multi_attributed": "Z tego {count} przypisano do więcej niż jednego {dimension}, więc grupy poniżej sumują się do {sum}, a nie do {total}."
     },
     "attention": {
       "title": "Wymaga uwagi",

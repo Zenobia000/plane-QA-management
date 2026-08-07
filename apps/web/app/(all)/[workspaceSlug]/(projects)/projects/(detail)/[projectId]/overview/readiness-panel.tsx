@@ -52,6 +52,26 @@ export function ReadinessPanel({ workspaceSlug, projectId }: Props) {
   const blockers = gate?.blockers ?? [];
   const testingHref = `/${workspaceSlug}/projects/${projectId}/testing/overview`;
 
+  // Every case the run carries, not just the ones that reached a verdict. The old
+  // denominator was `passed + failed + blocked`, which drops `open` and `skipped` -- so a
+  // run of twenty cases with nine still unexecuted reported "8/11" and read as nearly
+  // finished. The gate above already names those nine in a blocker, which left the panel
+  // contradicting itself: a sentence counting cases the statistic beside it pretended were
+  // not in the run.
+  const runTotal = latestRun
+    ? latestRun.passed + latestRun.failed + latestRun.blocked + latestRun.open + latestRun.skipped
+    : 0;
+  // Spelled out beside the ratio rather than left to the tooltip. "8/20" invites the reader
+  // to assume twelve failures; the reason for the gap is the point.
+  const runCaveats = latestRun
+    ? [
+        // Same wording the gate's own blocker uses, so the two cannot be read as counting
+        // different things.
+        latestRun.open ? t("project_overview.readiness.unexecuted", { count: latestRun.open }) : null,
+        latestRun.skipped ? t("project_overview.readiness.skipped", { count: latestRun.skipped }) : null,
+      ].filter(Boolean)
+    : [];
+
   return (
     <section
       className={`rounded border p-4 ${ready ? "border-success-subtle bg-success-subtle" : "border-danger-subtle bg-danger-subtle"}`}
@@ -88,22 +108,27 @@ export function ReadinessPanel({ workspaceSlug, projectId }: Props) {
         </ul>
       )}
 
+      {/* Each ratio carries what it counts. This panel and the progress bar below it both
+          render "X / Y" and count different populations -- requirements that are scheduled
+          and need a contract here, every live work item there -- so without the definition
+          the two denominators read as one number that disagrees with itself. */}
       <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-subtle pt-3">
-        <div className="flex items-baseline gap-1.5">
+        <div className="flex items-baseline gap-1.5" title={t("project_overview.readiness.coverage_of")}>
           <dt className="text-11 text-tertiary">{t("project_overview.readiness.coverage")}</dt>
           <dd className="text-12 text-primary">
             {requirements.covered}/{requirements.total}
           </dd>
         </div>
         {latestRun && (
-          <div className="flex items-baseline gap-1.5">
+          <div className="flex items-baseline gap-1.5" title={t("project_overview.readiness.latest_run_of")}>
             <dt className="text-11 text-tertiary">{t("project_overview.readiness.latest_run")}</dt>
             <dd className="text-12 text-primary">
-              {latestRun.passed}/{latestRun.passed + latestRun.failed + latestRun.blocked}
+              {latestRun.passed}/{runTotal}
             </dd>
+            {!!runCaveats.length && <dd className="text-11 text-tertiary">({runCaveats.join(" · ")})</dd>}
           </div>
         )}
-        <div className="flex items-baseline gap-1.5">
+        <div className="flex items-baseline gap-1.5" title={t("project_overview.readiness.open_defects_of")}>
           <dt className="text-11 text-tertiary">{t("project_overview.readiness.open_defects")}</dt>
           <dd className="text-12 text-primary">{openDefects}</dd>
         </div>

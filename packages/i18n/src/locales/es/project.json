@@ -420,7 +420,8 @@
     "load_error": "No se pudo cargar la vista general del proyecto.",
     "progress": {
       "title": "Progreso",
-      "out_of_scope": "Fuera de alcance, por lo que no se cuenta en la barra"
+      "out_of_scope": "Fuera de alcance, por lo que no se cuenta en la barra",
+      "counts": "Todos los elementos de trabajo vivos del proyecto salvo los cancelados: un conjunto más amplio que el número de requisitos de arriba."
     },
     "links": {
       "title": "Enlaces",
@@ -512,12 +513,17 @@
       "open_testing": "Abrir Testing",
       "coverage": "Requisitos cubiertos",
       "latest_run": "Última ejecución superada",
-      "open_defects": "Defectos abiertos"
+      "open_defects": "Defectos abiertos",
+      "unexecuted": "{count} sin ejecutar",
+      "skipped": "{count} omitidos",
+      "coverage_of": "Requisitos planificados que necesitan un contrato de aceptación. El backlog no se cuenta.",
+      "latest_run_of": "Todos los casos de la última ejecución, incluidos los que aún no se han ejecutado.",
+      "open_defects_of": "Defectos abiertos a partir de un resultado de prueba y aún sin cerrar."
     },
     "frontline": {
       "unattributed": "Sin atribuir",
       "open_intake": "Abrir Intake",
-      "summary": "{pending} en espera · {accepted} planificados · {declined} rechazados",
+      "summary": "{reports, plural, one {# reporte} other {# reportes}} · {pending} en espera · {accepted} planificados · {declined} rechazados",
       "pending_count": "{count, plural, one {# en espera} other {# en espera}}",
       "all_scheduled": "Todo planificado",
       "accept": "Planificar",
@@ -529,7 +535,8 @@
         "declined": "Rechazado"
       },
       "not_triaged_title": "Estado no modificado",
-      "not_triaged_message": "No se pudo modificar el estado."
+      "not_triaged_message": "No se pudo modificar el estado.",
+      "multi_attributed": "De ellos {count} están registrados en más de un {dimension}, por lo que los grupos de abajo suman {sum} y no {total}."
     },
     "attention": {
       "title": "Requiere atención",

@@ -420,7 +420,8 @@
     "load_error": "無法載入專案總覽。",
     "progress": {
       "title": "進度",
-      "out_of_scope": "超出範圍，因此不計入進度列"
+      "out_of_scope": "超出範圍，因此不計入進度列",
+      "counts": "本專案所有存活的工作項目（不含已取消）——範圍比上方的需求數更廣。"
     },
     "links": {
       "title": "連結",
@@ -512,12 +513,17 @@
       "open_testing": "開啟 Testing",
       "coverage": "已涵蓋的需求",
       "latest_run": "最近一次執行通過",
-      "open_defects": "未關閉的缺陷"
+      "open_defects": "未關閉的缺陷",
+      "unexecuted": "{count} 筆未執行",
+      "skipped": "{count} 筆略過",
+      "coverage_of": "已排程且需要驗收契約的需求；待辦（Backlog）不計入。",
+      "latest_run_of": "最近一次執行的全部案例，含尚未執行的。",
+      "open_defects_of": "由測試結果開出、尚未關閉的缺陷。"
     },
     "frontline": {
       "unattributed": "尚未歸屬",
       "open_intake": "開啟 Intake",
-      "summary": "待處理 {pending} · 已排入 {accepted} · 已婉拒 {declined}",
+      "summary": "{reports} 筆回報 · 待處理 {pending} · 已排入 {accepted} · 已婉拒 {declined}",
       "pending_count": "{count, plural, one {待處理 #} other {待處理 #}}",
       "all_scheduled": "全數已排入",
       "accept": "排入開發",
@@ -529,7 +535,8 @@
         "declined": "已婉拒"
       },
       "not_triaged_title": "狀態未變更",
-      "not_triaged_message": "無法變更狀態。"
+      "not_triaged_message": "無法變更狀態。",
+      "multi_attributed": "其中 {count} 筆同時歸屬多個{dimension}，所以下方各組相加是 {sum} 而非 {total}。"
     },
     "attention": {
       "title": "需要注意",

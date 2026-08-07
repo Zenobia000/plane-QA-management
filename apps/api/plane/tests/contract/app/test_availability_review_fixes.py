@@ -460,3 +460,66 @@ class TestCommittedHours:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["committed_hours"] == 0.0
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+class TestTheSidebarEntryIsReachable:
+    """A nav item absent from the preference keys renders nowhere.
+
+    `SidebarItemBase` returns null for any dynamic item that is not pinned, and the server
+    only creates a preference row for keys it knows about — so a nav entry missing from
+    `UserPreferenceKeys` is invisible no matter how correctly it is declared in constants.
+    """
+
+    def test_the_key_is_one_the_server_seeds(self):
+        from plane.db.models import WorkspaceUserPreference
+
+        assert "team_calendar" in dict(WorkspaceUserPreference.UserPreferenceKeys.choices)
+
+    def test_it_arrives_pinned_so_it_is_findable(self, session_client, workspace):
+        body = session_client.get(f"/api/workspaces/{workspace.slug}/sidebar-preferences/").json()
+
+        assert "team_calendar" in body
+        assert body["team_calendar"]["is_pinned"] is True
+
+
+@pytest.mark.contract
+@pytest.mark.django_db
+class TestThePublicErrorEnvelopeKeepsTheReason:
+    """`message` is the field every CLI and MCP caller prints."""
+
+    def test_a_model_validation_message_survives(self, api_key_client, workspace, create_user):
+        """Django's ValidationError carries a *list*, which the envelope used to discard."""
+        MemberWorkProfile.objects.create(
+            workspace=workspace,
+            member=create_user,
+            work_start_time=time(9, 0),
+            work_end_time=time(18, 0),
+        )
+
+        body = api_key_client.patch(
+            f"/api/v1/workspaces/{workspace.slug}/availability/profiles/{create_user.id}/",
+            {"core_hours_start": "07:00", "core_hours_end": "08:00"},
+            format="json",
+        ).json()
+
+        assert "core hours" in body["error"]["message"].lower()
+        assert body["error"]["message"] != "The request could not be completed."
+
+    def test_a_serializer_field_error_names_its_field(self, api_key_client, workspace):
+        body = api_key_client.post(
+            f"/api/v1/workspaces/{workspace.slug}/availability/overlap/",
+            {"member_ids": [], "date_from": "2026-08-03", "date_to": "2026-08-03"},
+            format="json",
+        ).json()
+
+        assert "member_ids" in body["error"]["message"]
+
+    def test_an_unreadable_payload_still_falls_back(self, api_key_client, workspace):
+        response = api_key_client.get(
+            f"/api/v1/workspaces/{workspace.slug}/availability/schedule/", {"from": "2026-08-03"}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()["error"]["message"]

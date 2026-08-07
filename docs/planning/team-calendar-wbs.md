@@ -196,8 +196,15 @@ docker compose -f docker-compose-test.yml run --rm api-tests pytest \
 pnpm --filter web test                                                          # 170 passed
 pnpm --filter web check:types && pnpm --filter web check:lint                    # 0 errors
 pnpm check && pnpm check:qa-tools && pnpm turbo run test
+pnpm --filter @plane/i18n check:sync
+docker compose -f docker-compose-test.yml run --rm api-tests ruff check .        # ← 見下
 git diff --check
 ```
 
 前端跑之前先 `pnpm turbo run build --filter='./packages/*'`。packages 的 dist 過期時
 `filters.spec.ts` 與兩個 testing 元件 spec 會失敗,而失敗訊息看起來像是那些檔案的迴歸。
+
+**`ruff check .` 不在守則 A4 的清單裡,但 CI 的 Lint API 會擋。** pre-commit hook 只 lint
+JS/TS,Python 沒有任何本機關卡。這一輪它擋下三個錯誤(一行過長、兩個未使用的 import),
+在推上去之後才發現。`running-local-docker-stack/SKILL.md` §4 早就寫了這件事——漏的是人,
+不是文件。

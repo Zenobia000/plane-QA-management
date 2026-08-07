@@ -35,6 +35,41 @@ from plane.testing import IdempotencyConflict, ingest_automation_results, parse_
 from .base import BaseAPIView
 
 
+def _readable(raw):
+    """The server's own words where there are any, the generic line only as a last resort.
+
+    Django raises `ValidationError`, whose `.messages` is a **list**, and every refusal in
+    the availability surface arrives that way -- so a string-only check meant a person read
+    "core hours must fall inside the working window" in the browser while the CLI and MCP
+    got "The request could not be completed." The reason was in `details` all along, but the
+    field every caller prints is `message`.
+
+    DRF field errors are a dict of lists (`{"start_date": ["This field is required."]}`), so
+    those are flattened with their field name rather than dropped.
+    """
+    if isinstance(raw, str):
+        return raw
+
+    if isinstance(raw, (list, tuple)):
+        parts = [str(item) for item in raw if isinstance(item, (str, int, float))]
+        if parts:
+            return " ".join(parts)
+
+    if isinstance(raw, dict):
+        parts = []
+        for field, value in raw.items():
+            rendered = _readable(value)
+            if rendered and rendered != FALLBACK_MESSAGE:
+                parts.append(rendered if field == "error" else f"{field}: {rendered}")
+        if parts:
+            return " ".join(parts)
+
+    return FALLBACK_MESSAGE
+
+
+FALLBACK_MESSAGE = "The request could not be completed."
+
+
 class APIKeyTestingEndpointMixin:
     """Expose the shared Testing handlers through the public API-key boundary."""
 
@@ -59,7 +94,7 @@ class APIKeyTestingEndpointMixin:
             raw_message = payload.get("error") or payload.get("detail") or payload
         else:
             raw_message = payload
-        message = raw_message if isinstance(raw_message, str) else "The request could not be completed."
+        message = _readable(raw_message)
         response.data = {
             "error": {
                 "code": f"http_{response.status_code}",

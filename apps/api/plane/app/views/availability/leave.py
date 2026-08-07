@@ -221,7 +221,10 @@ class MemberLeaveDetailEndpoint(BaseAPIView):
                     {"error": "Only this member or a workspace admin can cancel it."},
                     status=status.HTTP_403_FORBIDDEN,
                 )
-            leave = cancel_leave(leave=leave, actor=request.user)
+            try:
+                leave = cancel_leave(leave_id=leave.id, actor=request.user)
+            except ValidationError as error:
+                return Response({"error": error.messages}, status=status.HTTP_409_CONFLICT)
         else:
             try:
                 leave = decide_leave(

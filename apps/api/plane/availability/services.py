@@ -34,6 +34,21 @@ from plane.db.models import (
 AUDIT_FIELDS = ("created_by", "updated_by")
 
 
+class _Unset:
+    """Distinguishes "caller said nothing" from "caller said null".
+
+    Every optional field here used `None` for both, so a request clearing an approver, a
+    calendar or a timezone override was indistinguishable from one that never mentioned it --
+    and those three could be set but never unset.
+    """
+
+    def __repr__(self):
+        return "UNSET"
+
+
+UNSET = _Unset()
+
+
 def _validate(instance, exclude=()):
     instance.full_clean(exclude=tuple(exclude) + AUDIT_FIELDS)
 
@@ -111,14 +126,14 @@ def upsert_work_profile(
     *,
     workspace,
     member,
-    work_calendar=None,
-    timezone=None,
+    work_calendar=UNSET,
+    timezone=UNSET,
     work_start_time=None,
     work_end_time=None,
     core_hours_start=None,
     core_hours_end=None,
     hours_per_day=None,
-    approver=None,
+    approver=UNSET,
     clear_core_hours=False,
 ):
     """Create or update one member's declared working shape.
@@ -129,9 +144,10 @@ def upsert_work_profile(
     """
     profile, _ = MemberWorkProfile.objects.get_or_create(workspace=workspace, member=member)
 
-    if work_calendar is not None:
+    # `UNSET` means untouched; an explicit `None` clears the field.
+    if work_calendar is not UNSET:
         profile.work_calendar = work_calendar
-    if timezone is not None:
+    if timezone is not UNSET:
         profile.timezone = timezone or None
     if work_start_time is not None:
         profile.work_start_time = work_start_time
@@ -139,7 +155,7 @@ def upsert_work_profile(
         profile.work_end_time = work_end_time
     if hours_per_day is not None:
         profile.hours_per_day = hours_per_day
-    if approver is not None:
+    if approver is not UNSET:
         profile.approver = approver
 
     if clear_core_hours:
@@ -191,14 +207,25 @@ def create_leave(
 
 
 @transaction.atomic
-def cancel_leave(*, leave, actor):
-    """Withdraw one's own absence.
+def cancel_leave(*, leave_id, actor):
+    """Withdraw an absence that is still pending or approved.
 
     Cancelling is not deleting: the row stays so the wallchart's history remains honest,
     and `member_occupancy` stops counting it because only approved rows bind.
+
+    A rejected leave cannot be cancelled. Allowing it would let the requester rewrite
+    `decided_by` and `decided_at` to themselves while the approver's `decision_note` stayed
+    on the row -- the history would then read as though they had written it. Re-read under
+    `select_for_update` for the same reason `decide_leave` does: a cancel racing a decision
+    must lose rather than silently win.
     """
+    leave = MemberLeave.objects.select_for_update().get(id=leave_id)
+
     if leave.status == LeaveStatus.CANCELLED:
         return leave
+    if leave.status == LeaveStatus.REJECTED:
+        raise ValidationError("A rejected request cannot be cancelled; its decision stands.")
+
     leave.status = LeaveStatus.CANCELLED
     leave.decided_by = actor
     leave.decided_at = timezone.now()
@@ -268,13 +295,38 @@ def may_decide(*, leave, actor):
     if leave.member_id == actor.id:
         return False
 
-    profile = MemberWorkProfile.objects.filter(workspace_id=leave.workspace_id, member_id=leave.member_id).first()
-    if profile and profile.approver_id:
-        return profile.approver_id == actor.id
+    if _active_approver_id(leave.workspace_id, leave.member_id) == actor.id:
+        return True
+
+    # Admins are the fallback whenever no *active* approver is named. Without the activity
+    # check a request whose approver has since left the company can be decided by nobody:
+    # they are refused by the permission class, and the admins were excluded on the grounds
+    # that someone else owned it.
+    if _active_approver_id(leave.workspace_id, leave.member_id) is not None:
+        return False
 
     return WorkspaceMember.objects.filter(
         workspace_id=leave.workspace_id, member=actor, role=20, is_active=True
     ).exists()
+
+
+def _active_approver_id(workspace_id, member_id):
+    """The member's named approver, but only while they can still act.
+
+    `settings.py` validates that a new approver is an active member; nothing re-checked it
+    at decision time, so deactivating someone silently froze every request pointed at them.
+    """
+    approver_id = (
+        MemberWorkProfile.objects.filter(workspace_id=workspace_id, member_id=member_id)
+        .values_list("approver_id", flat=True)
+        .first()
+    )
+    if not approver_id:
+        return None
+    still_active = WorkspaceMember.objects.filter(
+        workspace_id=workspace_id, member_id=approver_id, is_active=True
+    ).exists()
+    return approver_id if still_active else None
 
 
 @transaction.atomic
@@ -320,12 +372,19 @@ def pending_for(*, workspace, actor):
     if not is_admin:
         return pending.filter(member_id__in=named)
 
-    with_approver = set(
-        MemberWorkProfile.objects.filter(workspace=workspace, approver__isnull=False).values_list(
-            "member_id", flat=True
-        )
+    # Only approvers who can still act take a request out of the admin queue. Counting a
+    # deactivated one would hide the request from everybody who is left.
+    active_member_ids = set(
+        WorkspaceMember.objects.filter(workspace=workspace, is_active=True).values_list("member_id", flat=True)
     )
-    return pending.filter(models.Q(member_id__in=named) | ~models.Q(member_id__in=with_approver))
+    with_live_approver = {
+        member_id
+        for member_id, approver_id in MemberWorkProfile.objects.filter(
+            workspace=workspace, approver__isnull=False
+        ).values_list("member_id", "approver_id")
+        if approver_id in active_member_ids
+    }
+    return pending.filter(models.Q(member_id__in=named) | ~models.Q(member_id__in=with_live_approver))
 
 
 @transaction.atomic

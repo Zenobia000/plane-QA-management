@@ -12,7 +12,7 @@ import { useTranslation } from "@plane/i18n";
 import type { TMemberLeave, TTeamEvent } from "@plane/types";
 import { useAvailability } from "@/hooks/store/use-availability";
 import { useMember } from "@/hooks/store/use-member";
-import { monthGrid, shiftMonth, spanCovers } from "../helpers";
+import { browserZone, dateInZone, monthGrid, shiftMonth, spanCovers } from "../helpers";
 import { ApprovalQueue } from "./approval-queue";
 import { LeaveForm } from "./leave-form";
 
@@ -28,7 +28,9 @@ export const Wallchart = observer(function Wallchart() {
     workspace: { fetchWorkspaceMembers, workspaceMemberIds },
   } = useMember();
 
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  // `toISOString()` is UTC, so on the first of the month before 08:00 in Taipei this opened
+  // on the previous month. Everything else in this feature routes through `dateInZone`.
+  const [month, setMonth] = useState(() => dateInZone(new Date(), browserZone()).slice(0, 7));
   const [composing, setComposing] = useState(false);
 
   const grid = useMemo(() => monthGrid(month), [month]);
@@ -129,7 +131,14 @@ export const Wallchart = observer(function Wallchart() {
                           <button
                             type="button"
                             title={`${cell.name}${cell.half ? " (½)" : ""}`}
-                            onClick={() => void cancelLeave(slug, cell.leave.id)}
+                            // Confirmed, because a block is the only thing in the grid that
+                            // looks clickable and cancelling has no undo -- the API offers
+                            // cancel/approve/reject and nothing that restores.
+                            onClick={() => {
+                              if (window.confirm(t("team_calendar.wallchart.confirm_cancel", { name: cell.name }))) {
+                                void cancelLeave(slug, cell.leave.id);
+                              }
+                            }}
                             className="block h-4 w-full rounded-sm"
                             style={{
                               backgroundColor: cell.colour,

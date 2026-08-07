@@ -10,6 +10,7 @@ the opposite of the work profile, which only the member may set.
 """
 
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
@@ -32,19 +33,40 @@ class AllocationMatrixEndpoint(BaseAPIView):
     permission_classes = [WorkspaceAvailabilityPermission]
 
     def get(self, request, slug):
-        rows = MemberProjectAllocation.objects.filter(workspace__slug=slug)
+        # Scoped to projects the caller is actually on, the same way every other
+        # workspace-scoped read in this codebase is (workspace/label.py:25,
+        # workspace/state.py:24, workspace/cycle.py:26). Without it the matrix enumerates
+        # private projects and their staffing to anyone in the workspace -- the UI happened
+        # to mask that by intersecting with the project store, so it only leaked through the
+        # raw API and the /api/v1 mirror.
+        rows = MemberProjectAllocation.objects.filter(
+            workspace__slug=slug,
+            project__project_projectmember__member=request.user,
+            project__project_projectmember__is_active=True,
+            project__archived_at__isnull=True,
+        ).distinct()
         totals: dict[str, int] = {}
         payload = []
         for row in rows:
-            member_id = str(row.member_id)
-            totals[member_id] = totals.get(member_id, 0) + row.allocation_percent
             payload.append(
                 {
-                    "member_id": member_id,
+                    "member_id": str(row.member_id),
                     "project_id": str(row.project_id),
                     "allocation_percent": row.allocation_percent,
                 }
             )
+
+        # Totals are summed over *every* project, including ones this reader cannot see.
+        # Deriving them from the visible rows instead would show a member as 40% allocated
+        # to someone outside one of their projects, and the whole point of the column is
+        # that it answers "is this person already promised elsewhere".
+        for member_id, total in (
+            MemberProjectAllocation.objects.filter(workspace__slug=slug)
+            .values_list("member_id")
+            .annotate(total=Sum("allocation_percent"))
+        ):
+            totals[str(member_id)] = total
+
         return Response({"allocations": payload, "totals": totals})
 
     def put(self, request, slug):

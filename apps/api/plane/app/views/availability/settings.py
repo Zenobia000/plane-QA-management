@@ -24,6 +24,7 @@ from plane.app.serializers import (
 )
 from plane.app.views.base import BaseAPIView
 from plane.availability import (
+    UNSET,
     create_work_calendar,
     set_calendar_days,
     update_work_calendar,
@@ -118,11 +119,13 @@ class MemberWorkProfileDetailEndpoint(BaseAPIView):
             )
 
         data = dict(payload.validated_data)
-        calendar_id = data.pop("work_calendar", None)
-        approver_id = data.pop("approver", None)
+        # `pop(..., UNSET)` keeps "field absent" apart from "field explicitly null"; the
+        # serializer allows null on all three precisely so they can be withdrawn.
+        calendar_id = data.pop("work_calendar", UNSET)
+        approver_id = data.pop("approver", UNSET)
 
-        calendar = None
-        if calendar_id is not None:
+        calendar = UNSET if calendar_id is UNSET else None
+        if calendar_id is not UNSET and calendar_id is not None:
             calendar = WorkCalendar.objects.filter(workspace=workspace, id=calendar_id).first()
             if calendar is None:
                 return Response(
@@ -130,8 +133,8 @@ class MemberWorkProfileDetailEndpoint(BaseAPIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        approver = None
-        if approver_id is not None:
+        approver = UNSET if approver_id is UNSET else None
+        if approver_id is not UNSET and approver_id is not None:
             # An approver outside the workspace could never act on the request, so a
             # pointer at one is a silent dead end rather than a configuration.
             if not WorkspaceMember.objects.filter(
@@ -203,6 +206,29 @@ class WorkCalendarDetailEndpoint(BaseAPIView):
                 },
                 status=status.HTTP_409_CONFLICT,
             )
+
+        # `work_calendar` is nullable and means "the workspace default", so counting explicit
+        # assignments misses everyone who never picked one -- which is most people. Deleting
+        # the default would drop them to a bare Mon-Fri mask with no holidays at all, which is
+        # exactly the harm the check above exists to prevent, just harder to see.
+        if calendar.is_default:
+            implicit = (
+                WorkspaceMember.objects.filter(workspace=calendar.workspace, is_active=True).count()
+                - MemberWorkProfile.objects.filter(
+                    workspace=calendar.workspace, work_calendar__isnull=False
+                ).count()
+            )
+            if implicit > 0:
+                return Response(
+                    {
+                        "error": (
+                            f"This is the workspace default, so {implicit} member(s) rely on it "
+                            "without having chosen it. Make another calendar the default first — "
+                            "deleting this one would leave them with no holidays at all."
+                        )
+                    },
+                    status=status.HTTP_409_CONFLICT,
+                )
 
         calendar.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

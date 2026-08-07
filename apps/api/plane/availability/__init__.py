@@ -22,6 +22,7 @@ from .schedule import (
     workspace_schedule,
 )
 from .services import (
+    UNSET,
     NotTheApprover,
     cancel_leave,
     decide_leave,
@@ -39,6 +40,7 @@ from .services import (
 __all__ = [
     "Halves",
     "NotTheApprover",
+    "UNSET",
     "decide_leave",
     "may_decide",
     "pending_for",

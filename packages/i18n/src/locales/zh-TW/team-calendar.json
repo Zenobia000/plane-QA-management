@@ -46,7 +46,8 @@
       "log": "登記請假",
       "member": "成員",
       "events": "團隊事件",
-      "still_working": "仍在工作"
+      "still_working": "仍在工作",
+      "confirm_cancel": "確定取消這筆{{name}}?無法復原。"
     },
     "form": {
       "type": "假別",

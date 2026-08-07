@@ -18,7 +18,7 @@ Three things this deliberately does not do, all from ADR 0008:
   while meaning nothing.
 """
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from plane.db.models import (
     Estimate,
@@ -142,9 +142,16 @@ def _committed_hours(project, cycle):
         point.id: _numeric(point.value)
         for point in EstimatePoint.objects.filter(estimate=estimate)
     }
+    # `issue_objects` rather than `objects`, and the CycleIssue soft-delete guard, matching
+    # api/views/cycle.py:860. `objects` still returns triage items, archived work items,
+    # archived projects and drafts; and removing an issue from a cycle only soft-deletes the
+    # CycleIssue row, which a join filter reads straight through -- so a transferred issue
+    # would count in both cycles and push the panel into a false over-capacity warning.
     total = Decimal(0)
-    for point_id in Issue.objects.filter(
-        issue_cycle__cycle=cycle, estimate_point__isnull=False
+    for point_id in Issue.issue_objects.filter(
+        issue_cycle__cycle=cycle,
+        issue_cycle__deleted_at__isnull=True,
+        estimate_point__isnull=False,
     ).values_list("estimate_point_id", flat=True):
         total += values.get(point_id, Decimal(0))
 
@@ -156,9 +163,14 @@ def _committed_hours(project, cycle):
 
 
 def _numeric(value):
+    """An estimate point's value is free text, so anything unusable contributes zero.
+
+    `Decimal("nan")` and `Decimal("inf")` parse happily, then raise `InvalidOperation` in
+    `quantize()` several frames away -- a 500 on the whole panel because one point was typed
+    wrong. `is_finite()` is the check the bare try/except was assumed to be making.
+    """
     try:
-        return Decimal(str(value))
-    except Exception:
-        # An estimate point's value is free text; one that is not a number contributes
-        # nothing rather than blowing up the whole panel.
+        parsed = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
         return Decimal(0)
+    return parsed if parsed.is_finite() else Decimal(0)

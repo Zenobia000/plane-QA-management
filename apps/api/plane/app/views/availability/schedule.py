@@ -109,7 +109,11 @@ class AvailabilityOverlapEndpoint(BaseAPIView):
         # A requested member with no profile has declared nothing, so folding them in would
         # empty every result with no explanation. Named back instead.
         missing = {str(value) for value in data["member_ids"]} - {entry.member_id for entry in schedules}
-        undeclared = [entry.member_id for entry in schedules if not entry.working]
+        # `working` is empty for two different reasons -- never declared any hours, or away
+        # for the whole range -- and the caller needs them apart. Reporting somebody on leave
+        # as "hasn't declared any hours" sends the reader to fix a settings problem that does
+        # not exist. `hours_per_day` is zero only when there is no profile at all.
+        undeclared = [entry.member_id for entry in schedules if not entry.working and not entry.hours_per_day]
 
         result = common_windows(schedules, minimum_minutes=data["duration_minutes"])
 

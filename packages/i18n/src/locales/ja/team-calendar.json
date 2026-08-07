@@ -46,7 +46,8 @@
       "log": "Log time off",
       "member": "Member",
       "events": "Team events",
-      "still_working": "still working"
+      "still_working": "still working",
+      "confirm_cancel": "Cancel this {{name}}? There is no undo."
     },
     "form": {
       "type": "Type",

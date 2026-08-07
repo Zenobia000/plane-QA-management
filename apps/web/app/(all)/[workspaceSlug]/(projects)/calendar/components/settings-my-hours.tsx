@@ -73,7 +73,7 @@ export const MyHoursSettings = observer(function MyHoursSettings() {
     setSaving(true);
     const clearing = !form.core_hours_start && !form.core_hours_end;
     try {
-      await updateProfile(slug, memberId, {
+      const saved = await updateProfile(slug, memberId, {
         work_calendar: form.work_calendar || null,
         timezone: form.timezone || null,
         work_start_time: form.work_start_time,
@@ -86,7 +86,9 @@ export const MyHoursSettings = observer(function MyHoursSettings() {
           ? { clear_core_hours: true }
           : { core_hours_start: form.core_hours_start, core_hours_end: form.core_hours_end }),
       });
-      await fetchSettings(slug);
+      // Only refetch when the write took; on a refusal the store has set `error` and the
+      // form keeps what was typed so it can be corrected rather than silently discarded.
+      if (saved) await fetchSettings(slug);
     } finally {
       setSaving(false);
     }

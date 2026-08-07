@@ -158,6 +158,11 @@ same transaction, so "make this the default" cannot half-succeed.
 re-homing them onto the workspace default would change somebody's working days as a side
 effect of tidying a list.
 
+**Deleting the workspace default is refused whenever anyone relies on it implicitly.**
+`work_calendar` is nullable and means "the default", so counting explicit assignments misses
+most people — removing it would drop them to a bare Mon–Fri mask with no holidays at all.
+Make another calendar the default first.
+
 ## `GET | POST …/availability/calendars/<id>/days/` · `DELETE …/days/<day_id>/`
 
 The holidays and make-up workdays of one calendar. `kind` is `holiday` or `makeup_workday`;
@@ -266,10 +271,15 @@ spellings of one thing makes the day count depend on which was used.
 `PATCH` accepts `{"action": "cancel" | "approve" | "reject", "note": "…"}`.
 
 Cancelling does not delete — the row stays so history is honest, and it simply stops
-counting against availability.
+counting against availability. **A rejected request cannot be cancelled** (409): allowing it
+would let the requester overwrite `decided_by` and `decided_at` with themselves while the
+approver's `decision_note` stayed on the row, so the history would read as though they wrote
+it.
 
-**Who may decide.** The member's `MemberWorkProfile.approver` if they named one, otherwise
-any workspace ADMIN. Plane has no reporting line, so a pointer per member is how "my
+**Who may decide.** The member's `MemberWorkProfile.approver` if they named one **and that
+person is still an active member**, otherwise any workspace ADMIN. Without the activity
+check a request whose approver has since left is decidable by nobody — they are refused by
+the permission class, and admins were excluded on the grounds that someone else owned it. Plane has no reporting line, so a pointer per member is how "my
 manager decides" is expressed without inventing a second model of the organisation.
 
 **Nobody decides their own request, admins included.** Self-approval is not approval.
@@ -316,8 +326,16 @@ person cannot be away on the wallchart and reachable in the slot finder.
 
 ## `GET | PUT …/availability/allocations/`
 
-How each member's week is split across projects. Reading is open to the workspace; writing
-is ADMIN only — an allocation is a promise made _about_ somebody's time by whoever runs the
+How each member's week is split across projects. **Rows are scoped to projects the caller is
+a member of**, the same way every other workspace-scoped read in this codebase is — otherwise
+the matrix enumerates private projects and their staffing to anyone in the workspace.
+
+`totals` is deliberately summed over _every_ project, including ones the reader cannot see.
+Deriving it from the visible rows would show a fully-booked colleague as free to whoever is
+outside one of their projects, and answering "is this person already promised elsewhere" is
+the column's whole job.
+
+Reading is open to the workspace; writing is ADMIN only — an allocation is a promise made _about_ somebody's time by whoever runs the
 plan, the opposite of the work profile, which only the member may set.
 
 ```json
@@ -377,10 +395,16 @@ project**. People do not take leave from a project.
 is counted at 100%. An empty panel on the day the feature ships would look broken.
 
 `undeclared_members` names anyone who has never set working hours; their capacity reads
-zero, and without the list that would look like a bug rather than a blank form.
+zero, and without the list that would look like a bug rather than a blank form. Somebody who
+is merely **away** for the whole range is not in it — "hasn't told us anything" and "is on
+leave" are different answers, and conflating them sends the reader to fix a settings problem
+that does not exist.
 
 **`committed_hours` is null and `committed_comparable` false unless the project's estimate
-system is `TIME`.** Story points and hours are not commensurate, and a ratio built from two
+system is `TIME`.** When it is present it counts only live cycle issues — soft-deleted
+`CycleIssue` rows, triage items, archived work items and drafts are all excluded, matching
+`api/views/cycle.py`. An estimate value that is not a finite number contributes zero rather
+than taking the endpoint down. Story points and hours are not commensurate, and a ratio built from two
 units reads like a fact while meaning nothing. A cycle with no dates returns
 `ready: false, reason: "cycle_has_no_dates"` rather than guessing a range.
 

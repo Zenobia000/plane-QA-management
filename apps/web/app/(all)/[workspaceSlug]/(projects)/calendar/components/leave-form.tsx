@@ -10,6 +10,7 @@ import { useParams } from "react-router";
 import { useTranslation } from "@plane/i18n";
 import type { TDayPart } from "@plane/types";
 import { useAvailability } from "@/hooks/store/use-availability";
+import { browserZone, dateInZone } from "../helpers";
 
 type Props = { onDone: () => void };
 
@@ -26,7 +27,9 @@ export const LeaveForm = observer(function LeaveForm({ onDone }: Props) {
   const slug = workspaceSlug?.toString() ?? "";
   const { leaveTypes, createLeave, error } = useAvailability();
 
-  const today = new Date().toISOString().slice(0, 10);
+  // The viewer's today, not UTC's: before 08:00 in Taipei the UTC date is still yesterday,
+  // and this form would pre-fill both date fields with a day that has already passed.
+  const today = dateInZone(new Date(), browserZone());
   const [typeId, setTypeId] = useState("");
   const [from, setFrom] = useState(today);
   const [to, setTo] = useState(today);

@@ -110,6 +110,15 @@ export const barPosition = (window: TAvailabilityWindow, dayStart: Date): TBarPo
   };
 };
 
+/** The viewer's own zone, falling back to UTC where the environment will not say. */
+export const browserZone = (): string => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+};
+
 /** `HH:mm` for an instant, read in the viewer's chosen zone. */
 export const clockInZone = (iso: string, timeZone: string): string =>
   new Intl.DateTimeFormat("en-GB", {

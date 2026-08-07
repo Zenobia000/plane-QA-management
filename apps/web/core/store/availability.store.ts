@@ -76,11 +76,7 @@ export interface IAvailabilityStore {
   createLeave: (workspaceSlug: string, payload: TMemberLeaveInput) => Promise<boolean>;
   cancelLeave: (workspaceSlug: string, leaveId: string) => Promise<boolean>;
   fetchSettings: (workspaceSlug: string) => Promise<void>;
-  updateProfile: (
-    workspaceSlug: string,
-    memberId: string,
-    payload: TMemberWorkProfileInput
-  ) => Promise<TMemberWorkProfile>;
+  updateProfile: (workspaceSlug: string, memberId: string, payload: TMemberWorkProfileInput) => Promise<boolean>;
 }
 
 export class AvailabilityStore implements IAvailabilityStore {
@@ -109,6 +105,7 @@ export class AvailabilityStore implements IAvailabilityStore {
   private inflight: Promise<void> | null = null;
   /** Keyed by workspace+range, so paging back to last week does not refetch it. */
   private scheduleKey: string | null = null;
+  private scopedTo: string | null = null;
 
   constructor(private service: AvailabilityService = new AvailabilityService()) {
     makeObservable(this, {
@@ -152,6 +149,7 @@ export class AvailabilityStore implements IAvailabilityStore {
   }
 
   fetchCapabilities = async (workspaceSlug: string): Promise<void> => {
+    runInAction(() => this.scopeTo(workspaceSlug));
     if (this.hydratedFor === workspaceSlug) return;
     // A second tab mounting while the first request is open must not fire another.
     if (this.inflight) return this.inflight;
@@ -186,6 +184,7 @@ export class AvailabilityStore implements IAvailabilityStore {
   };
 
   fetchSchedule = async (workspaceSlug: string, from: string, to: string): Promise<void> => {
+    runInAction(() => this.scopeTo(workspaceSlug));
     const key = `${workspaceSlug}:${from}:${to}`;
     if (this.scheduleKey === key) return;
 
@@ -242,6 +241,34 @@ export class AvailabilityStore implements IAvailabilityStore {
    * the drawn week in place would show a schedule the settings no longer produce.
    */
   private invalidateDerived() {
+    this.scheduleKey = null;
+    this.monthKey = null;
+  }
+
+  /**
+   * Drops everything belonging to another workspace.
+   *
+   * The store is a root-store singleton and only `resetOnSignOut` ever rebuilt it, so
+   * switching workspace left the previous one's absences rendered under the new one's member
+   * list -- attributing colleagues' time off to the wrong people until the new response
+   * landed, and permanently if it failed.
+   */
+  private scopeTo(workspaceSlug: string) {
+    if (this.scopedTo === workspaceSlug) return;
+    this.scopedTo = workspaceSlug;
+    this.capability = null;
+    this.schedule = null;
+    this.overlap = null;
+    this.calendars = [];
+    this.leaveTypes = [];
+    this.leaves = [];
+    this.pendingLeaves = [];
+    this.events = [];
+    this.allocations = null;
+    this.profiles = {};
+    this.calendarDays = {};
+    this.error = null;
+    this.hydratedFor = null;
     this.scheduleKey = null;
     this.monthKey = null;
   }
@@ -383,6 +410,7 @@ export class AvailabilityStore implements IAvailabilityStore {
     }, "Could not record that decision.");
 
   fetchMonth = async (workspaceSlug: string, from: string, to: string): Promise<void> => {
+    runInAction(() => this.scopeTo(workspaceSlug));
     const key = `${workspaceSlug}:${from}:${to}`;
     if (this.monthKey === key) return;
     try {
@@ -443,17 +471,16 @@ export class AvailabilityStore implements IAvailabilityStore {
     }
   };
 
-  updateProfile = async (
-    workspaceSlug: string,
-    memberId: string,
-    payload: TMemberWorkProfileInput
-  ): Promise<TMemberWorkProfile> => {
-    const updated = (await this.service.updateProfile(workspaceSlug, memberId, payload)) as TMemberWorkProfile;
-    runInAction(() => {
-      this.profiles[memberId] = updated;
-      // Declared hours changed, so the drawn week is stale.
-      this.scheduleKey = null;
-    });
-    return updated;
-  };
+  updateProfile = async (workspaceSlug: string, memberId: string, payload: TMemberWorkProfileInput): Promise<boolean> =>
+    // Through `guard` like every other write. It was the one that rethrew instead, so the
+    // six `clean()` rules on a work profile reached the person as an empty error banner and
+    // an unhandled rejection.
+    this.guard(async () => {
+      const updated = (await this.service.updateProfile(workspaceSlug, memberId, payload)) as TMemberWorkProfile;
+      runInAction(() => {
+        this.profiles[memberId] = updated;
+        // Declared hours changed, so the drawn week is stale.
+        this.scheduleKey = null;
+      });
+    }, "Could not save those working hours.");
 }

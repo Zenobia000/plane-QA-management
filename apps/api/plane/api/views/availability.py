@@ -18,6 +18,9 @@ from plane.app.views.availability import (
     CycleCapacityEndpoint as AppCycleCapacityEndpoint,
     AvailabilityOverlapEndpoint as AppAvailabilityOverlapEndpoint,
     AvailabilityScheduleEndpoint as AppAvailabilityScheduleEndpoint,
+    CalendarDayDetailEndpoint as AppCalendarDayDetailEndpoint,
+    CalendarDayEndpoint as AppCalendarDayEndpoint,
+    LeaveTypeDetailEndpoint as AppLeaveTypeDetailEndpoint,
     LeaveTypeListCreateEndpoint as AppLeaveTypeListCreateEndpoint,
     MemberLeaveDetailEndpoint as AppMemberLeaveDetailEndpoint,
     MemberLeaveListCreateEndpoint as AppMemberLeaveListCreateEndpoint,
@@ -25,6 +28,7 @@ from plane.app.views.availability import (
     MemberWorkProfileDetailEndpoint as AppMemberWorkProfileDetailEndpoint,
     MemberWorkProfileListEndpoint as AppMemberWorkProfileListEndpoint,
     TeamEventListCreateEndpoint as AppTeamEventListCreateEndpoint,
+    WorkCalendarDetailEndpoint as AppWorkCalendarDetailEndpoint,
     WorkCalendarListCreateEndpoint as AppWorkCalendarListCreateEndpoint,
 )
 
@@ -80,4 +84,24 @@ class AllocationMatrixAPIEndpoint(APIKeyEndpointMixin, AppAllocationMatrixEndpoi
 
 
 class CycleCapacityAPIEndpoint(APIKeyEndpointMixin, AppCycleCapacityEndpoint):
+    pass
+
+
+# The four the SDK, CLI and MCP already call. `docs/api/team-calendar.md` says "Two trees,
+# same handlers"; without these it was only true of the other nine, and
+# `plane-qa availability set-calendar-days` -- the flow the seed command points people at
+# for importing a published holiday list -- 404'd.
+class WorkCalendarDetailAPIEndpoint(APIKeyEndpointMixin, AppWorkCalendarDetailEndpoint):
+    pass
+
+
+class CalendarDayAPIEndpoint(APIKeyEndpointMixin, AppCalendarDayEndpoint):
+    pass
+
+
+class CalendarDayDetailAPIEndpoint(APIKeyEndpointMixin, AppCalendarDayDetailEndpoint):
+    pass
+
+
+class LeaveTypeDetailAPIEndpoint(APIKeyEndpointMixin, AppLeaveTypeDetailEndpoint):
     pass

@@ -10,7 +10,10 @@ from plane.api.views.availability import (
     CycleCapacityAPIEndpoint,
     AvailabilityOverlapAPIEndpoint,
     AvailabilityScheduleAPIEndpoint,
+    CalendarDayAPIEndpoint,
+    CalendarDayDetailAPIEndpoint,
     LeaveTypeAPIEndpoint,
+    LeaveTypeDetailAPIEndpoint,
     MemberLeaveAPIEndpoint,
     MemberLeaveDetailAPIEndpoint,
     PendingLeaveAPIEndpoint,
@@ -18,6 +21,7 @@ from plane.api.views.availability import (
     MemberWorkProfileListAPIEndpoint,
     TeamEventAPIEndpoint,
     WorkCalendarAPIEndpoint,
+    WorkCalendarDetailAPIEndpoint,
 )
 
 urlpatterns = [
@@ -85,5 +89,25 @@ urlpatterns = [
         "workspaces/<str:slug>/projects/<uuid:project_id>/cycles/<uuid:cycle_id>/capacity/",
         CycleCapacityAPIEndpoint.as_view(),
         name="api-availability-cycle-capacity",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/calendars/<uuid:calendar_id>/",
+        WorkCalendarDetailAPIEndpoint.as_view(),
+        name="api-availability-calendar-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/calendars/<uuid:calendar_id>/days/",
+        CalendarDayAPIEndpoint.as_view(),
+        name="api-availability-calendar-days",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/calendars/<uuid:calendar_id>/days/<uuid:day_id>/",
+        CalendarDayDetailAPIEndpoint.as_view(),
+        name="api-availability-calendar-day-detail",
+    ),
+    path(
+        "workspaces/<str:slug>/availability/leave-types/<uuid:type_id>/",
+        LeaveTypeDetailAPIEndpoint.as_view(),
+        name="api-availability-leave-type-detail",
     ),
 ]

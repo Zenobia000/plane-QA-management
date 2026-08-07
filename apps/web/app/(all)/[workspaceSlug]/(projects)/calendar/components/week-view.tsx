@@ -13,18 +13,10 @@ import type { TAvailabilityWindow, TMemberSchedule } from "@plane/types";
 import { useAvailability } from "@/hooks/store/use-availability";
 import { useMember } from "@/hooks/store/use-member";
 import type { TBarPosition } from "../helpers";
-import { addDays, barPosition, clockInZone, dateInZone, startOfDayInZone, weekOf } from "../helpers";
+import { addDays, barPosition, browserZone, clockInZone, dateInZone, startOfDayInZone, weekOf } from "../helpers";
 import { SlotFinder } from "./slot-finder";
 
 const HOUR_TICKS = [0, 3, 6, 9, 12, 15, 18, 21];
-
-const browserZone = () => {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  } catch {
-    return "UTC";
-  }
-};
 
 type RowProps = {
   label: string;

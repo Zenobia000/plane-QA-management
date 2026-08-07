@@ -25,7 +25,7 @@ export const ApprovalQueue = observer(function ApprovalQueue() {
   const slug = workspaceSlug?.toString() ?? "";
   const { pendingLeaves, leaveTypes, fetchPending, decideLeave } = useAvailability();
   const { getUserDetails } = useMember();
-  const [note, setNote] = useState("");
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (slug) void fetchPending(slug);
@@ -54,9 +54,18 @@ export const ApprovalQueue = observer(function ApprovalQueue() {
               {/* Present only because the reader is entitled to it; the API omits the key
                   entirely for anyone else. */}
               {leave.reason && <span className="text-tertiary">“{leave.reason}”</span>}
+              {/* Per request. One shared note meant typing a reason for Bob and attaching
+                  it to Ana, and it was never cleared between decisions. */}
+              <input
+                type="text"
+                value={notes[leave.id] ?? ""}
+                onChange={(event) => setNotes((current) => ({ ...current, [leave.id]: event.target.value }))}
+                placeholder={t("team_calendar.approvals.note")}
+                className="w-48 rounded border border-subtle bg-surface-1 px-2 py-1 text-12"
+              />
               <button
                 type="button"
-                onClick={() => void decideLeave(slug, leave.id, "approve", note)}
+                onClick={() => void decideLeave(slug, leave.id, "approve", notes[leave.id] ?? "")}
                 className="flex items-center gap-1 rounded bg-success-subtle px-2 py-1 text-12 text-success-primary"
               >
                 <Check className="size-3" />
@@ -64,7 +73,7 @@ export const ApprovalQueue = observer(function ApprovalQueue() {
               </button>
               <button
                 type="button"
-                onClick={() => void decideLeave(slug, leave.id, "reject", note)}
+                onClick={() => void decideLeave(slug, leave.id, "reject", notes[leave.id] ?? "")}
                 className="flex items-center gap-1 rounded bg-danger-subtle px-2 py-1 text-12 text-danger-primary"
               >
                 <X className="size-3" />
@@ -74,14 +83,6 @@ export const ApprovalQueue = observer(function ApprovalQueue() {
           );
         })}
       </ul>
-
-      <input
-        type="text"
-        value={note}
-        onChange={(event) => setNote(event.target.value)}
-        placeholder={t("team_calendar.approvals.note")}
-        className="rounded border border-subtle bg-surface-1 px-2 py-1 text-12"
-      />
     </section>
   );
 });

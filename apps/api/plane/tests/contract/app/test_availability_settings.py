@@ -118,8 +118,17 @@ class TestWorkCalendarEditing:
         assert response.status_code == status.HTTP_409_CONFLICT
         assert WorkCalendar.objects.filter(id=taiwan.id).exists()
 
-    def test_an_unused_calendar_can_be_deleted(self, session_client, workspace, taiwan):
-        assert session_client.delete(calendar_url(workspace, taiwan)).status_code == status.HTTP_204_NO_CONTENT
+    def test_an_unused_non_default_calendar_can_be_deleted(self, session_client, workspace, taiwan):
+        """`taiwan` is the default, and deleting the default is refused separately.
+
+        This used to delete `taiwan` itself and pass, which was the bug: members whose
+        `work_calendar` is null rely on the default without having chosen it, so removing it
+        dropped them to a bare Mon-Fri mask with no holidays. See
+        `test_availability_review_fixes.TestDeletingTheDefaultCalendar`.
+        """
+        spare = WorkCalendar.objects.create(workspace=workspace, name="Spare", timezone="Europe/Berlin")
+
+        assert session_client.delete(calendar_url(workspace, spare)).status_code == status.HTTP_204_NO_CONTENT
 
 
 @pytest.mark.contract

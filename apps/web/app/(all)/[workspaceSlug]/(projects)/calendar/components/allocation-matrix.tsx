@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { AlertTriangle } from "lucide-react";
 import { useParams } from "react-router";
@@ -32,6 +32,9 @@ export const AllocationMatrix = observer(function AllocationMatrix() {
   const { workspaceSlug } = useParams();
   const slug = workspaceSlug?.toString() ?? "";
   const { allocations, fetchAllocations, setAllocation, error } = useAvailability();
+  // Holds only what is being typed right now; cleared on blur so the row falls back to the
+  // server's answer whether the write was accepted or refused.
+  const [draft, setDraft] = useState<Record<string, number>>({});
   const {
     getUserDetails,
     workspace: { fetchWorkspaceMembers, workspaceMemberIds },
@@ -93,9 +96,22 @@ export const AllocationMatrix = observer(function AllocationMatrix() {
                         max={100}
                         step={5}
                         disabled={!canEdit}
-                        defaultValue={percentFor(memberId, projectId)}
+                        // Controlled, so a refused write snaps back to what the server holds.
+                        // With `defaultValue` the cell kept the typed number while the total
+                        // column showed the server's, displaying a split that was never saved.
+                        value={draft[`${memberId}:${projectId}`] ?? percentFor(memberId, projectId)}
+                        onChange={(event) =>
+                          setDraft((current) => ({
+                            ...current,
+                            [`${memberId}:${projectId}`]: Number(event.target.value),
+                          }))
+                        }
                         onBlur={(event) => {
                           const next = Number(event.target.value);
+                          setDraft((current) => {
+                            const { [`${memberId}:${projectId}`]: _drop, ...rest } = current;
+                            return rest;
+                          });
                           if (next !== percentFor(memberId, projectId)) {
                             void setAllocation(slug, memberId, projectId, next);
                           }

@@ -15,7 +15,6 @@ import { renderFormattedPayloadDate, getDate, getTabIndex } from "@plane/utils";
 import { CycleDropdown } from "@/components/dropdowns/cycle";
 import { DateDropdown } from "@/components/dropdowns/date";
 import { EstimateDropdown } from "@/components/dropdowns/estimate";
-import { IntakeStateDropdown } from "@/components/dropdowns/intake-state/dropdown";
 import { MemberDropdown } from "@/components/dropdowns/member/dropdown";
 import { ModuleDropdown } from "@/components/dropdowns/module/dropdown";
 import { PriorityDropdown } from "@/components/dropdowns/priority";
@@ -55,17 +54,10 @@ export const InboxIssueProperties = observer(function InboxIssueProperties(props
 
   return (
     <div className="relative flex flex-wrap items-center gap-2">
-      {/* intake state */}
-      <div className="h-7">
-        <IntakeStateDropdown
-          value={data?.state_id}
-          onChange={(stateId) => handleData("state_id", stateId)}
-          projectId={projectId}
-          buttonVariant="border-with-text"
-          tabIndex={getIndex("state_id")}
-          isForWorkItemCreation={!data?.id}
-        />
-      </div>
+      {/* No state control. `IntakeIssueViewSet.create` overwrites `state_id` with the
+          project's triage state on every request, so the dropdown that used to sit here
+          could only ever offer one option and had its answer discarded regardless. A
+          control whose value the server throws away is a question with no answer. */}
 
       {/* priority */}
       <div className="h-7">

@@ -11,9 +11,12 @@ Layering rule (testing): business logic lives only in `apps/api/plane/testing/` 
 | Models (invariants in `clean()`)             | `plane/db/models/availability.py`                                       |
 | Working days, holidays, make-up days         | `plane/availability/calendars.py`                                       |
 | Reachable windows + cross-zone intersection  | `plane/availability/schedule.py`                                        |
+| Absence occupancy (half-days union, not sum) | `plane/availability/absence.py`                                        |
+| Cycle capacity (working days × hours × %)    | `plane/availability/capacity.py`                                       |
 | Services (the only write path)               | `plane/availability/services.py`                                        |
+| Leave-decision email (two events)            | `plane/bgtasks/availability_notification_task.py`                      |
 | Permission (members only, guests barred)     | `plane/app/views/availability/permissions.py`                           |
-| App views (session auth)                     | `plane/app/views/availability/{capability,schedule,settings}.py`        |
+| App views (session auth)                     | `plane/app/views/availability/{capability,schedule,settings,leave,allocation}.py` |
 | App URLs                                     | `plane/app/urls/availability.py`                                        |
 | Public views (`X-API-Key`, thin subclasses)  | `plane/api/views/availability.py`                                       |
 | Public URLs                                  | `plane/api/urls/availability.py`                                        |
@@ -24,7 +27,7 @@ Layering rule (testing): business logic lives only in `apps/api/plane/testing/` 
 | MobX store                                   | `apps/web/core/store/availability.store.ts`                             |
 | Route + tabs (Hours / Time off / Allocation) | `apps/web/app/(all)/[workspaceSlug]/(projects)/calendar/`               |
 | Sidebar entry (ADMIN + MEMBER only)          | `packages/constants/src/workspace.ts`                                   |
-| SDK / CLI / MCP                              | `client.ts` availability methods; `availability` CLI group; 4 MCP tools |
+| SDK / CLI / MCP                              | `client.ts` availability methods; `availability` CLI group; 16 MCP tools |
 | i18n                                         | `packages/i18n/src/locales/*/team-calendar.json`                        |
 
 Settings live at `/calendar/settings`, split by who owns the answer: my working hours (the member), work calendars and leave types (admin). The settings tab is the one tab **not** gated on a capability flag — it is where the data gets created, so gating it would leave a fresh workspace unable to configure anything.
@@ -37,9 +40,9 @@ Two rules that are easy to break by accident:
 4. **Reasons are redacted by omission**, not by nulling the field — a present key still says there was a reason. Enforced in the serializer, never in a component.
 5. **A make-up workday counts however the weekday mask reads.** Taiwan works some Saturdays to bridge long weekends; a weekday-mask-plus-holiday-list model cannot express that day, and every span containing one silently comes out short. The seed command deliberately ships no lunar or make-up dates — they are announced yearly, and a guessed date is worse than none.
 
-Tests: `plane/tests/unit/availability/` (working days, cross-zone overlap, DST), `plane/tests/contract/app/test_availability_{capability,schedule}.py`, `plane/tests/contract/api/test_availability.py`, `plane/tests/unit/management/test_seed_work_calendars.py`.
+Tests: `plane/tests/unit/availability/` (working days, cross-zone overlap and DST, absence occupancy, notification recipients), `plane/tests/contract/app/test_availability_{capability,schedule,leave,approval,events,settings,capacity,review_fixes}.py`, `plane/tests/contract/api/test_availability.py`, `plane/tests/unit/management/test_seed_work_calendars.py`.
 
-The capability endpoint reports a false flag per unbuilt slice and the client renders an empty state for each, so the navigation, route and three tabs shipped before any migration existed. Flipping a flag belongs to the slice that earns it — see `docs/planning/team-calendar-wbs.md`.
+The capability endpoint reports a false flag per unbuilt slice and the client renders an empty state for each, so the navigation, route and three tabs shipped before any migration existed. Flipping a flag belongs to the slice that earns it — see `docs/planning/team-calendar-wbs.md`. **Every flag is now true**; the endpoint stays because it is what lets the next slice ship its shell before its migration.
 
 A service layer (`plane/availability/`) arrives with the first slice that writes: unlike the delivery surfaces, this one has four consumers from the start — app tree, `/api/v1`, MCP and CLI.
 

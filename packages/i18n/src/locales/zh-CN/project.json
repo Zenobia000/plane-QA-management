@@ -519,6 +519,7 @@
         "topic": "按主题"
       },
       "untagged": "未分类",
+      "show_fewer": "收起",
       "show_rest": "显示其余 {count} 条",
       "sections_overlap": "一条公告若挂了多个主题，会在每个主题下各出现一次，所以下方比实际条数多 {count} 行。"
     },

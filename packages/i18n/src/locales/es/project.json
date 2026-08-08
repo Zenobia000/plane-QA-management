@@ -519,6 +519,7 @@
         "topic": "Por tema"
       },
       "untagged": "Sin tema",
+      "show_fewer": "Mostrar menos",
       "show_rest": "Mostrar {count} más",
       "sections_overlap": "Una publicación archivada en varios temas aparece en cada uno, por lo que los grupos muestran {count} filas más de las que hay publicaciones."
     },

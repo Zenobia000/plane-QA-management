@@ -519,6 +519,7 @@
         "topic": "După subiect"
       },
       "untagged": "Fără subiect",
+      "show_fewer": "Afișează mai puține",
       "show_rest": "Afișează încă {count}",
       "sections_overlap": "O postare încadrată la mai multe subiecte apare la fiecare, așa că grupurile afișează cu {count} rânduri mai mult decât sunt postări."
     },

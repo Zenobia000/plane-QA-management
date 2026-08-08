@@ -519,6 +519,7 @@
         "topic": "Theo chủ đề"
       },
       "untagged": "Không có chủ đề",
+      "show_fewer": "Hiển thị ít hơn",
       "show_rest": "Hiển thị thêm {count}",
       "sections_overlap": "Một bài đăng thuộc nhiều chủ đề sẽ xuất hiện ở từng chủ đề, nên các nhóm hiển thị nhiều hơn số bài đăng {count} dòng."
     },

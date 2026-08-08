@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { IIssueLabel, TEntityUpdate, TUpdateStatus } from "@plane/types";
-import { UNTAGGED_SECTION, groupUpdates, overlap, sortUpdates } from "./shape";
+import { SECTION_PREVIEW, UNTAGGED_SECTION, groupUpdates, overlap, sectionView, sortUpdates } from "./shape";
 
 const post = (id: string, status: TUpdateStatus, createdAt: string, labelIds: string[] = []) =>
   ({
@@ -164,5 +164,55 @@ describe("overlap", () => {
     ];
 
     expect(overlap(groupUpdates(board, "status", LABELS), board)).toBe(0);
+  });
+});
+
+describe("sectionView", () => {
+  const run = (count: number) =>
+    Array.from({ length: count }, (_, index) =>
+      post(`p${index}`, "on_track", `2026-08-${String(index + 1).padStart(2, "0")}T00:00:00Z`)
+    );
+
+  it("caps a long section at the preview", () => {
+    const view = sectionView(run(SECTION_PREVIEW + 2), false);
+
+    expect(view.visible).toHaveLength(SECTION_PREVIEW);
+    expect(view.folded).toBe(2);
+  });
+
+  it("shows everything once the reader asks past the cap", () => {
+    const updates = run(SECTION_PREVIEW + 2);
+
+    expect(sectionView(updates, true).visible).toEqual(updates);
+  });
+
+  it("keeps the control once expanded, so the reader can fold it back", () => {
+    // The bug this exists to prevent: the panel used to decide the control existed by
+    // asking how many rows were hidden right now, which is zero the moment the section
+    // expands -- so the button removed itself and the only way back was a page reload.
+    const updates = run(SECTION_PREVIEW + 2);
+
+    expect(sectionView(updates, false).collapsible).toBe(true);
+    expect(sectionView(updates, true).collapsible).toBe(true);
+  });
+
+  it("reports the same fold size whichever way the section sits", () => {
+    // The label must not renumber itself between "show 2 more" and its own undo.
+    const updates = run(SECTION_PREVIEW + 2);
+
+    expect(sectionView(updates, true).folded).toBe(sectionView(updates, false).folded);
+  });
+
+  it("gives a short section no control at all", () => {
+    const updates = run(SECTION_PREVIEW);
+    const view = sectionView(updates, false);
+
+    expect(view.collapsible).toBe(false);
+    expect(view.folded).toBe(0);
+    expect(view.visible).toEqual(updates);
+  });
+
+  it("survives an empty section rather than returning a negative fold", () => {
+    expect(sectionView([], false)).toEqual({ visible: [], collapsible: false, folded: 0 });
   });
 });

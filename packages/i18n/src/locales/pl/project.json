@@ -519,6 +519,7 @@
         "topic": "Według tematu"
       },
       "untagged": "Bez tematu",
+      "show_fewer": "Pokaż mniej",
       "show_rest": "Pokaż jeszcze {count}",
       "sections_overlap": "Wpis przypisany do kilku tematów pojawia się przy każdym z nich, więc grupy pokazują o {count} wierszy więcej niż jest wpisów."
     },

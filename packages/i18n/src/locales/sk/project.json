@@ -519,6 +519,7 @@
         "topic": "Podľa témy"
       },
       "untagged": "Bez témy",
+      "show_fewer": "Zobraziť menej",
       "show_rest": "Zobraziť ďalších {count}",
       "sections_overlap": "Príspevok zaradený pod viac tém sa objaví pri každej z nich, takže skupiny zobrazujú o {count} riadkov viac, než je príspevkov."
     },

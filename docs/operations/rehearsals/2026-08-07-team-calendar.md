@@ -43,23 +43,35 @@ migrate db         → re-applied                                               
 | 7   | Cycle capacity drops by the right amount                    | 11 working days (10 weekdays + the make-up Saturday) × 8h × 50% = **44 gross**; away 2.5 days × 8h × 50% = **10 absent**; **34 available**. All three match the server. `committed_comparable: false` on a points project |
 | 8   | The same four questions through the CLI                     | `overlap`, `leaves`, `allocations` and `capacity` returned byte-identical figures — same 180-minute window, same 34 available hours, same 100% total — and the over-allocation was refused                                |
 
-## Found, not fixed
+## Found during the rehearsal, fixed the same day
 
-The `/api/v1` error envelope in `apps/api/plane/api/views/testing.py:61` keeps the server's message only when it
-is a string:
+The `/api/v1` error envelope in `apps/api/plane/api/views/testing.py` kept the server's message only when it
+was a string:
 
 ```python
 message = raw_message if isinstance(raw_message, str) else "The request could not be completed."
 ```
 
 Every refusal in this feature comes from `ValidationError.messages`, which is a **list**. So the specific reason
-the web UI shows — `That would allocate this member 110%…` — reaches the CLI and the MCP server as
-`The request could not be completed.` The parameters are equivalent, as WBS 2.12 / 3.11 / 4.9 / 5.9 claim; the
-refusals are not.
+the web UI shows — `That would allocate this member 110%…` — reached the CLI and the MCP server as
+`The request could not be completed.` The parameters were equivalent, as WBS 2.12 / 3.11 / 4.9 / 5.9 claim; the
+refusals were not.
 
-Not fixed here. The envelope is shared with the testing feature and predates this branch, so changing it changes
-behaviour for a feature this branch does not touch — the same reasoning WBS §1.8 used to leave two upstream 500s
-alone (guideline A1). It wants its own branch and its own contract test.
+**Fixed in `ca57a10ac`**, later the same day. `_readable()` joins a list into one sentence and flattens DRF's
+field-error dict as `field: message`; the generic line survives only as the last-resort fallback. Contract test:
+`test_availability_review_fixes.py` — a model validation message still readable after passing through the
+envelope.
+
+The first call was to defer it to its own branch, because the envelope is shared with the testing feature — the
+reasoning WBS §1.8 used to leave two upstream 500s alone. That was wrong here, and the difference is worth
+keeping: **no test asserted the generic string and nothing read it**, so no existing behaviour depended on it.
+Shared code is not automatically off-limits; code somebody relies on is.
+
+## Still found, still not fixed
+
+The two upstream 500s from WBS §1.8 — `workspaces/<slug>/file-assets/` and
+`workspaces/<slug>/user-favorite-projects/` — remain open, whitelisted in `KNOWN_WORKSPACE_500` in
+`test_endpoint_smoke.py`. Both are upstream registration errors, and nothing in this feature depends on either.
 
 ## Commands
 

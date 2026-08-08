@@ -114,7 +114,8 @@
 | 4.8 | 核准佇列 UI     | 4.3      | 「等你決定」面板,佇列為空時不顯示                           | `approval-queue.spec.tsx` 7 例      | DONE    |
 | 4.9 | MCP/CLI 第三組  | 4.1      | `leave_pending`、`leave_approve` + 2 個 CLI 動作            | `pnpm check:qa-tools`               | DONE    |
 
-出場 gate:**達成,只剩通知(4.4)。** 設定畫面在 `/[workspaceSlug]/calendar/settings`,三個區塊依「誰擁有這個答案」切開:我的工作時間(本人)、工作日曆(管理員)、假別(管理員)。
+出場 gate:**達成。** 通知(4.4)於 2026-08-07 補上(email 兩個事件,理由見本節末),本表已無非 DONE 的列。
+設定畫面在 `/[workspaceSlug]/calendar/settings`,三個區塊依「誰擁有這個答案」切開:我的工作時間(本人)、工作日曆(管理員)、假別(管理員)。
 
 **補做這一輪時發現 API 本身就有斷點**,不只是缺畫面:
 
@@ -170,12 +171,16 @@ email 不需要動這兩處就能把事件送到不在看畫面的人手上。
 `events/` 與 `leave-types/` POST 先前只有 service 層測試,端點本身從未被打過;
 `test_availability_events.py` 27 例補上,`leave.py` 因此從 67% 到 95%。
 
-**排練順帶找到一個既有缺陷**(不是本分支造成,未修):`apps/api/plane/api/views/testing.py:61` 的
-`/api/v1` 錯誤信封只在 `error` 是字串時保留伺服器的訊息。本功能的拒絕全部來自
+**排練順帶找到一個既有缺陷,已於同日修掉**(`ca57a10ac`):`apps/api/plane/api/views/testing.py` 的
+`/api/v1` 錯誤信封原本只在 `error` 是字串時保留伺服器的訊息。本功能的拒絕全部來自
 `ValidationError.messages`,那是 **list**,所以 web 上看得到的「That would allocate this member 110%…」
-到了 CLI 與 MCP 一律變成「The request could not be completed.」。2.12 / 3.11 / 4.9 / 5.9 宣稱的
-**參數**等價成立,**拒絕理由**不等價。這個信封與 testing 功能共用,修它會改到本分支沒碰的行為,
-歸另一個分支(守則 A1,同 §1.8 的處置)。
+到了 CLI 與 MCP 一律變成「The request could not be completed.」——2.12 / 3.11 / 4.9 / 5.9 宣稱的
+**參數**等價成立,**拒絕理由**不等價。
+
+現在 `_readable()` 會把 list 併成一句、把 DRF 的欄位錯誤字典攤成 `field: message`,泛用訊息只剩
+最後的 fallback。**當初判斷它「歸另一個分支」是錯的**:這個信封確實與 testing 功能共用,但沒有任何
+測試斷言過那句泛用字串,所以改它不會動到 testing 既有的行為 —— 共用不等於不能改,要看的是有沒有人
+依賴目前的行為。契約測試在 `test_availability_review_fixes.py`(模型驗證訊息穿過信封後仍在)。
 
 ### 排練腳本(6.2)
 
@@ -187,6 +192,12 @@ email 不需要動這兩處就能把事件送到不在看畫面的人手上。
 6. 分配矩陣把該員設為 Alpha 50% / Beta 50%,再試 60/60 → 被拒
 7. Cycle 產能面板數字下降,且與手算一致
 8. 用 CLI 重跑步驟 3、4、6 驗證參數等價
+
+**這八步不含 4.4 的通知。** 排練在 2026-08-07 執行,email 是同日稍後才進來的;4.4 的證據是
+12 例單元測試(收件人解析與兩個事件的觸發條件),不是排練。下一次排練應加一步:在設好 SMTP 的
+環境送出請假 → 核准人收到信,決定後 → 申請人收到信。另外
+`availability_notification_task.py:91` 的「沒設 EMAIL_HOST 就記 log 回 0」是全新安裝的常態路徑,
+目前既沒有單元測試也沒有排練走過。
 
 **E2E 誠實規則:這個 repo 沒有 Playwright 或 Cypress。** 本文件不得把 E2E acceptance 列為驗證
 方法。人工排練是「這條路走通過一次」的真實證據,**不是**「它不會壞掉」的 gate。

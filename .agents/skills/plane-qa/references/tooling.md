@@ -71,6 +71,7 @@ A quality requirement's pass mark lives on the **test case**, not the work item:
 | `run`        | `list` · `create --name --cases id1,id2 [--build --configuration <JSON> --body '{"cycle_id":"..."}']` · `get --run` · `record-result --run --run-case --status [--actual <JSON> --duration-ms]` · `create-defect --run --run-case --result [--name]` · `close --run`†                                                  |
 | `view`       | `list` · `create --name [--description --filters <JSON> --display_filters <JSON> --display_properties <JSON> --access 0\|1]` · `get --view` · `update --view [... --lock]` · `delete --view`† — add `--workspace_level` to address workspace views instead of the project's                                            |
 | `quality`    | `overview` · `release-gate` · `coverage` · `open-defects`                                                                                                                                                                                                                                                              |
+| `availability` | **Workspace-scoped — never resolves a project.** `schedule --from --to [--members]` · `overlap --members --from --to [--duration]` · `calendars` · `calendar-days --calendar [--year]` · `set-calendar-days --calendar --days <JSON>[ --replace_year]` · `profiles` · `set-profile` · `leave-types` · `leaves --from --to [--members]` · `request-leave --type --from --to [--start_part --end_part --reason --member]` · `cancel-leave --id`† · `pending-leaves` · `decide-leave --id --decision approve\|reject [--note]`† · `events --from --to` · `allocations` · `set-allocation` · `capacity --cycle --project`  |
 | `automation` | `upload-junit --idempotency-key K --file junit.xml --name "CI #42" [--source --build --configuration --artifact-ids]` · `upload-results --idempotency-key K --file results.json`                                                                                                                                       |
 
 † = destructive: requires `--yes`, interactive `yes`, or `--dry-run` (preview receipt, no write).
@@ -146,6 +147,7 @@ STDIO server: `node apps/plane-qa-mcp/dist/server.mjs`; needs `PLANE_URL` + `PLA
 | Views      | `view_list`, `view_get`, `view_create`, `view_update`, `view_delete`‡ — `project` is **optional here alone**: omit it to address workspace-level views spanning every project                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Quality    | `quality_overview`, `quality_coverage`, `quality_release_gate`, `quality_open_defects`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Automation | `automation_upload_junit` (`idempotency_key`, `name`, `junit_xml`), `automation_upload_results` (`idempotency_key`, `name`, `source`, `results[]` ≤10000)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Team calendar | Workspace-scoped, so these take `workspace` and **no `project`** (except `cycle_capacity`). Reads: `availability_schedule`, `availability_overlap` (returns `core` — everyone said they may be interrupted — separately from `working`; members who declared no hours are named in `members_without_hours` rather than silently emptying the result), `leave_list`, `leave_type_list`, `team_event_list`, `leave_pending`, `allocation_list`, `cycle_capacity`, `work_calendar_list`, `work_calendar_days_list`. Writes: `leave_request`, `leave_cancel`, `leave_approve` (nobody decides their own, including admins; a second decision returns conflict), `allocation_set` (a member's allocations must total ≤100%, refused at the write), `work_calendar_days_set` (`replace_year` re-imports a revised official list), `work_profile_set` |
 
 ‡ = destructive: requires `confirm: true` in the tool input. Note the CLI/MCP asymmetry: CLI `case unlink-issue` needs `--yes`, but MCP `test_case_unlink_issue` needs no confirm (it's a reversible idempotent write).
 
@@ -167,3 +169,17 @@ than a way to move a number.
 
 Do not route around a missing input by inventing a property or a type to carry the value — that is
 the failure mode `converge_work_item_types` exists to undo. `--body` and REST are the escape hatch.
+
+### Refusal reasons do reach you — report them verbatim
+
+`/api/v1`'s envelope (`_readable` in `apps/api/plane/api/views/testing.py`) forwards the server's own
+words: a Django `ValidationError.messages` list is joined, and DRF's field-error dict is flattened as
+`field: message`. So a refused write says
+`That would allocate this member 110%. One person's allocations must total 100% or less.`, not a
+generic line. `The request could not be completed.` is now the **last-resort fallback only**, meaning
+the payload carried nothing readable — treat seeing it as unusual rather than normal.
+
+This is worth knowing because it was not always true: until `ca57a10ac` the envelope kept the message
+only when it was a string, so every one of these refusals arrived generic. Docs or transcripts written
+before 2026-08-07 may still say the reason is lost. **Never paraphrase a refusal into "unknown error"
+— pass the server's sentence through to the user**, since it names the invariant that fired.

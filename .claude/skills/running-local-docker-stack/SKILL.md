@@ -92,7 +92,7 @@ docker compose -f $M/docker-compose-test.yml -p plane-merged-test --project-dire
   run --rm api-tests pytest -m "unit or contract" -q
 ```
 
-Subsets: append a path (`pytest plane/tests/contract/app/test_noticeboard.py`), or `-m unit`. Add `--create-db` after a migration change — the test DB is reused between runs and a stale schema shows up as errors that look like code bugs. `ruff check .` runs in the same container and is **not** covered by the pre-commit hook, which only lints JS/TS — run it before pushing backend changes.
+Subsets: append a path (`pytest plane/tests/contract/app/test_noticeboard.py`), or `-m unit`. Add `--create-db` after a migration change — the test DB is reused between runs and a stale schema shows up as errors that look like code bugs. `ruff check .` runs in the same container. Since 2026-08-09 the pre-commit hook lints staged Python too (`apps/api/bin/ruff-staged.sh`, pinned to the same version CI installs), so a clean commit is now a reasonable signal — but the hook only sees **staged** files, and CI lints all of `apps/api`, so run the full check before pushing a change that moved or deleted anything.
 
 ### 5. Generating a migration
 

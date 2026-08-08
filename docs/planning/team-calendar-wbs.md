@@ -226,3 +226,10 @@ git diff --check
 JS/TS,Python 沒有任何本機關卡。這一輪它擋下三個錯誤(一行過長、兩個未使用的 import),
 在推上去之後才發現。`running-local-docker-stack/SKILL.md` §4 早就寫了這件事——漏的是人,
 不是文件。
+
+**2026-08-09 補上關卡**:pre-commit 現在也 lint staged 的 `apps/api/**/*.py`
+(`apps/api/bin/ruff-staged.sh`),版本與 `requirements/local.txt` 對齊。順帶發現 CI 那一步跑的是
+`ruff check --fix`——修好的檔案隨 runner 一起丟掉,所以**凡是可自動修的違規,CI 都是綠的而錯誤留在
+commit 裡**。那三個錯誤裡擋下來的其實只有不可自動修的「一行過長」;兩個未使用的 import 是 F401,
+CI 一路放行。現在 CI 改成不帶 `--fix`。「文件早就寫了,漏的是人」這句當時只對一半:文件是對的,
+但那道關卡本身也只擋了一部分。

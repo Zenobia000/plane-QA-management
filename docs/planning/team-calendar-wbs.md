@@ -107,7 +107,7 @@
 | 4.1 | 狀態轉移服務    | 3.7      | PENDING → APPROVED/REJECTED,`select_for_update` 重讀        | **重複決定回 409,不覆寫第一個決定** | DONE    |
 | 4.2 | 核准人解析      | 2.2, 4.1 | `profile.approver`,未指定 → 任一 admin;**本人永不可核自己** | 13 例契約測試                       | DONE    |
 | 4.3 | 待決佇列        | 4.1      | `leaves/pending/`:指名給我的 + 沒指名任何人的(admin)        | 未指名時 admin 看得到;指名後看不到  | DONE    |
-| 4.4 | 通知            | 4.1      | Email 兩個事件:待決定 → 核准人、已決定 → 申請人             | 12 例單元測試,含與 `may_decide` 的規則一致性 | DONE    |
+| 4.4 | 通知            | 4.1      | Email 兩個事件:待決定 → 核准人、已決定 → 申請人             | 16 例單元測試,含與 `may_decide` 的規則一致性、寄送路徑與未設定 SMTP 的分支 | DONE    |
 | 4.5 | 工作日曆設定 UI | 2.11     | 建立/編輯行事曆與假日、補班日                               | `test_availability_settings.py`     | DONE    |
 | 4.6 | 假別設定 UI     | 3.1      | CRUD + 停用而非刪除                                         | 同上,含停用後不可再選一例           | DONE    |
 | 4.7 | 成員工作設定 UI | 2.2      | 綁行事曆、時區、時段、核心時段、核准人                      | `test_availability_events.py` 5 例  | DONE    |
@@ -194,10 +194,16 @@ email 不需要動這兩處就能把事件送到不在看畫面的人手上。
 8. 用 CLI 重跑步驟 3、4、6 驗證參數等價
 
 **這八步不含 4.4 的通知。** 排練在 2026-08-07 執行,email 是同日稍後才進來的;4.4 的證據是
-12 例單元測試(收件人解析與兩個事件的觸發條件),不是排練。下一次排練應加一步:在設好 SMTP 的
-環境送出請假 → 核准人收到信,決定後 → 申請人收到信。另外
-`availability_notification_task.py:91` 的「沒設 EMAIL_HOST 就記 log 回 0」是全新安裝的常態路徑,
-目前既沒有單元測試也沒有排練走過。
+單元測試,不是排練。下一次排練仍應加一步:在設好 SMTP 的環境送出請假 → 核准人收到信,
+決定後 → 申請人收到信。
+
+**2026-08-08 補記——原本那 12 例裡有兩例是空轉的。** `_send` 的 host 讀的是 instance
+configuration,不是 Django settings,而測試資料庫沒有那張表的資料,所以
+`availability_notification_task.py:91` 的 `if not EMAIL_HOST` 一律成立、任務在渲染樣板前就回 0。
+唯二驗證「信真的寄出去、內容對」的兩例把斷言包在 `if sent:` 裡,於是一次都沒執行過——
+檔案報綠,寄送路徑從未被走過。現改為以 `smtp` fixture 直接 patch `get_email_configuration`,
+四個正向斷言改成硬性 `== 1`;反向驗證做過:把 `if not EMAIL_HOST` 改成恆真,四例立刻轉紅。
+同時補上未設定 SMTP(全新安裝的常態路徑)與 SMTP 拒絕連線兩條分支,以及駁回信的樣板分支。
 
 **E2E 誠實規則:這個 repo 沒有 Playwright 或 Cypress。** 本文件不得把 E2E acceptance 列為驗證
 方法。人工排練是「這條路走通過一次」的真實證據,**不是**「它不會壞掉」的 gate。

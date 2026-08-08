@@ -33,12 +33,21 @@ jobs:
           python-version: "3.12.x"
           cache: 'pip'
           cache-dependency-path: 'apps/api/requirements.txt'
-      - name: Install Pylint
-        run: python -m pip install ruff
+      # Pinned to the version apps/api/requirements/local.txt installs and the
+      # pre-commit hook runs. An unpinned install here meant CI could lint with a
+      # ruff nobody has locally, so a rule added in a new release would land as a
+      # red build on a change that passed every check its author could run.
+      - name: Install ruff
+        run: python -m pip install ruff==0.9.7
       - name: Install API Dependencies
         run: cd apps/api && pip install -r requirements.txt
+      # No --fix. A fix applied here is thrown away with the runner, so
+      # `ruff check --fix` reported success for anything auto-fixable while the
+      # violation stayed in the commit -- the build passed on a working copy that
+      # never existed anywhere else. The pre-commit hook keeps --fix, where the
+      # result is staged and kept.
       - name: Lint apps/api
-        run: ruff check --fix apps/api
+        run: ruff check apps/api
 
   # The suite needs Postgres, Valkey, RabbitMQ and MinIO. docker-compose-test.yml
   # already wires them with health checks, so CI runs the same command a developer

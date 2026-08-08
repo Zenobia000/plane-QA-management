@@ -519,6 +519,7 @@
         "topic": "By topic"
       },
       "untagged": "No topic",
+      "show_fewer": "Show fewer",
       "show_rest": "Show {count} more",
       "sections_overlap": "A post filed under several topics appears under each, so the groups show {count} more rows than there are posts."
     },

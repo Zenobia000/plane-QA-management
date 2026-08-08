@@ -519,6 +519,7 @@
         "topic": "Menurut topik"
       },
       "untagged": "Tanpa topik",
+      "show_fewer": "Tampilkan lebih sedikit",
       "show_rest": "Tampilkan {count} lagi",
       "sections_overlap": "Kiriman yang diarsipkan di beberapa topik muncul di masing-masing, sehingga grup menampilkan {count} baris lebih banyak daripada jumlah kiriman."
     },

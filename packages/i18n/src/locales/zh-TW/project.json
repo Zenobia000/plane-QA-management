@@ -519,6 +519,7 @@
         "topic": "依主題"
       },
       "untagged": "未分類",
+      "show_fewer": "收合",
       "show_rest": "顯示其餘 {count} 則",
       "sections_overlap": "一則公告若掛了多個主題，會在每個主題下各出現一次，所以下方比實際則數多 {count} 列。"
     },

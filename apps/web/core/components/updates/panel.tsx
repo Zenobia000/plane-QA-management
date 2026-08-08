@@ -10,7 +10,7 @@ import { useTranslation } from "@plane/i18n";
 import type { IIssueLabel, TEntityUpdate, TUpdateEntityName, TUpdateStatus } from "@plane/types";
 import { CustomSearchSelect } from "@plane/ui";
 import { BoardControls, SectionHeader } from "./board-controls";
-import { SECTION_PREVIEW, type TBoardGrouping, type TBoardSort, groupUpdates, overlap, sortUpdates } from "./shape";
+import { type TBoardGrouping, type TBoardSort, groupUpdates, overlap, sectionView, sortUpdates } from "./shape";
 import { STATUS_CLASSES, UPDATE_STATUS_KEYS } from "./status";
 import { UpdateStatusPill } from "./status-pill";
 
@@ -630,8 +630,7 @@ export function UpdatesPanel({
           const inFull = openedInFull.has(section.key);
           // The cap is the point of the whole control: a board that renders everything it
           // has is the running log the reader was complaining about.
-          const visible = inFull ? section.updates : section.updates.slice(0, SECTION_PREVIEW);
-          const rest = section.updates.length - visible.length;
+          const { visible, collapsible, folded } = sectionView(section.updates, inFull);
 
           return (
             <div key={section.key}>
@@ -660,14 +659,19 @@ export function UpdatesPanel({
                     ))}
                   </ul>
                   {/* Distinct from "load earlier" below: these are already fetched and
-                      merely folded, so the control says so and costs no round trip. */}
-                  {rest > 0 && (
+                      merely folded, so the control says so and costs no round trip. It
+                      stays on screen once expanded -- a reader who opened a section to
+                      check one thing has no other way back to the short board. */}
+                  {collapsible && (
                     <button
                       type="button"
+                      aria-expanded={inFull}
                       className={`mt-2 text-11 font-medium text-accent-primary hover:underline ${grouped ? "ml-5" : ""}`}
                       onClick={() => toggleKey(setOpenedInFull, section.key)}
                     >
-                      {t("project_overview.updates.show_rest", { count: rest })}
+                      {inFull
+                        ? t("project_overview.updates.show_fewer")
+                        : t("project_overview.updates.show_rest", { count: folded })}
                     </button>
                   )}
                 </>

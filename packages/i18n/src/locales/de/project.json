@@ -519,6 +519,7 @@
         "topic": "Nach Thema"
       },
       "untagged": "Kein Thema",
+      "show_fewer": "Weniger anzeigen",
       "show_rest": "Weitere {count} anzeigen",
       "sections_overlap": "Ein Beitrag mit mehreren Themen erscheint unter jedem, daher zeigen die Gruppen {count} Zeilen mehr als es Beiträge gibt."
     },

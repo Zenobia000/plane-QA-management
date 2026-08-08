@@ -519,6 +519,7 @@
         "topic": "Por tópico"
       },
       "untagged": "Sem tópico",
+      "show_fewer": "Mostrar menos",
       "show_rest": "Mostrar mais {count}",
       "sections_overlap": "Uma publicação arquivada em vários tópicos aparece em cada um, então os grupos mostram {count} linhas a mais do que há publicações."
     },

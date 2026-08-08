@@ -519,6 +519,7 @@
         "topic": "Konuya göre"
       },
       "untagged": "Konu yok",
+      "show_fewer": "Daha az göster",
       "show_rest": "{count} tane daha göster",
       "sections_overlap": "Birden fazla konuya işlenen bir gönderi her birinin altında görünür, bu yüzden gruplar gönderi sayısından {count} satır fazla gösterir."
     },

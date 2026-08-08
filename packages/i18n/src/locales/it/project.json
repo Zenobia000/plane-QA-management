@@ -519,6 +519,7 @@
         "topic": "Per argomento"
       },
       "untagged": "Nessun argomento",
+      "show_fewer": "Mostra meno",
       "show_rest": "Mostra altri {count}",
       "sections_overlap": "Un messaggio classificato sotto più argomenti compare in ciascuno, quindi i gruppi mostrano {count} righe in più rispetto ai messaggi."
     },

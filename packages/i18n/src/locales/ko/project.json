@@ -519,6 +519,7 @@
         "topic": "주제별"
       },
       "untagged": "주제 없음",
+      "show_fewer": "간략히 보기",
       "show_rest": "나머지 {count}건 보기",
       "sections_overlap": "여러 주제를 단 게시물은 각 주제에 모두 표시되므로, 아래 그룹은 실제 건수보다 {count}줄 많습니다."
     },

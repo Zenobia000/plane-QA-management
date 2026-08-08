@@ -67,9 +67,9 @@ const time = (update: TEntityUpdate) => new Date(update.created_at).getTime();
 export function sortUpdates(updates: TEntityUpdate[], sort: TBoardSort): TEntityUpdate[] {
   const sorted = [...updates];
   if (sort === "severity") {
-    return sorted.sort((a, b) => SEVERITY_RANK[a.status] - SEVERITY_RANK[b.status] || time(b) - time(a));
+    return sorted.toSorted((a, b) => SEVERITY_RANK[a.status] - SEVERITY_RANK[b.status] || time(b) - time(a));
   }
-  return sorted.sort((a, b) => (sort === "oldest" ? time(a) - time(b) : time(b) - time(a)));
+  return sorted.toSorted((a, b) => (sort === "oldest" ? time(a) - time(b) : time(b) - time(a)));
 }
 
 /**
@@ -147,4 +147,34 @@ export function groupUpdates(
  */
 export function overlap(sections: TBoardSection[], updates: TEntityUpdate[]): number {
   return sections.reduce((running, section) => running + section.updates.length, 0) - updates.length;
+}
+
+export type TSectionView = {
+  /** The posts to render. Capped at the preview unless the reader asked past it. */
+  visible: TEntityUpdate[];
+  /** Whether this section has a fold at all. True whichever way the fold currently sits. */
+  collapsible: boolean;
+  /** How many the fold hides when shut. Fixed by the section's size, not by its state. */
+  folded: number;
+};
+
+/**
+ * One section's rows, and whether it owns a control for the rest.
+ *
+ * Here rather than in the panel for the reason the rest of this module is: the cap is a
+ * claim about how the board reads, and a claim worth asserting. Deriving it inline is what
+ * let "show the rest" become a one-way door — the panel decided the control existed by
+ * asking how many rows were currently hidden, which is zero the moment the reader expands,
+ * so the button removed itself and nothing could fold the section back.
+ *
+ * `collapsible` and `folded` therefore answer from the section's size alone. Neither moves
+ * when `inFull` does, so the control stays put and only its wording changes.
+ */
+export function sectionView(updates: TEntityUpdate[], inFull: boolean): TSectionView {
+  const collapsible = updates.length > SECTION_PREVIEW;
+  return {
+    visible: collapsible && !inFull ? updates.slice(0, SECTION_PREVIEW) : updates,
+    collapsible,
+    folded: collapsible ? updates.length - SECTION_PREVIEW : 0,
+  };
 }
